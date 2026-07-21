@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ResponsabiliMano.Core/ResponsabiliMano.Core.csproj" />
+    <Project Path="src/ResponsabiliMano.Infrastructure/ResponsabiliMano.Infrastructure.csproj" />
+    <Project Path="src/ResponsabiliMano.Web/ResponsabiliMano.Web.csproj" />
+  </Folder>
+</Solution>
