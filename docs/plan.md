@@ -72,6 +72,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
 *   Criar layout base Blazor Server com navegação responsiva.
 *   Tema visual simples.
 *   Integrar `IStringLocalizer` e carregar cultura padrão `pt-BR`.
+*   **Status:** Concluído — layout responsivo, tema simples e textos carregados em pt-BR.
 
 ### Spec S1.4 — Recuperação de Senha
 
@@ -217,6 +218,8 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S0.3 — Containerização e Deploy GCP
 *   [x] Sprint 1
     *   [x] S1.1 — Cadastro de Usuário
+    *   [x] S1.2 — Login
+    *   [x] S1.3 — Layout Base
 *   [ ] Sprint 2
 *   [ ] Sprint 3
 *   [ ] Sprint 4
