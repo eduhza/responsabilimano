@@ -27,4 +27,22 @@
   <data name="RegisterError" xml:space="preserve">
     <value>Ocorreu um erro ao cadastrar. Tente novamente.</value>
   </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="LoginInvalidCredentials" xml:space="preserve">
+    <value>E-mail ou senha inválidos.</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>Não tem uma conta?</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Já tem uma conta?</value>
+  </data>
+  <data name="LogoutButton" xml:space="preserve">
+    <value>Sair</value>
+  </data>
 </root>

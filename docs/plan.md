@@ -65,6 +65,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
 *   Autenticação com cookies ASP.NET Core Identity ou JWT.
 *   Endpoint `POST /api/auth/login`.
 *   Proteção das rotas internas.
+*   **Status:** Concluído — login/logout via cookie testados localmente, rotas internas protegidas.
 
 ### Spec S1.3 — Layout Base
 

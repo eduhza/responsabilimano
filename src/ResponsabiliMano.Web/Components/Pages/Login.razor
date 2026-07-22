@@ -1,0 +1,33 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["LoginTitle"]</PageTitle>
+
+<h3>@Localizer["LoginTitle"]</h3>
+
+<form method="post" action="/api/auth/login" class="mb-3">
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger" role="alert">@Localizer[$"Login{Error}"]</div>
+    }
+
+    <div class="mb-3">
+        <label for="email" class="form-label">@Localizer["EmailLabel"]</label>
+        <input id="email" name="email" type="email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">@Localizer["PasswordLabel"]</label>
+        <input id="password" name="password" type="password" class="form-control" required minlength="8" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">@Localizer["LoginButton"]</button>
+</form>
+
+<p>@Localizer["NoAccount"] <a href="/register">@Localizer["RegisterButton"]</a></p>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+}

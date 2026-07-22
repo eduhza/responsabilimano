@@ -1,4 +1,5 @@
 @page "/register"
+@attribute [AllowAnonymous]
 @inject IUserRegistrationService RegistrationService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
@@ -44,6 +45,8 @@
         @(_isLoading ? Localizer["Registering"] : Localizer["RegisterButton"])
     </button>
 </EditForm>
+
+<p>@Localizer["AlreadyHaveAccount"] <a href="/login">@Localizer["LoginButton"]</a></p>
 
 @code {
     private RegisterRequest _model = new();
