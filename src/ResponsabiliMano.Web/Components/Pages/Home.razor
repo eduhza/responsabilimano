@@ -1,7 +1,11 @@
 ﻿@page "/"
+@attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello, @context.User.Identity?.Name!</h1>
+        <p>Email: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+    </Authorized>
+</AuthorizeView>
