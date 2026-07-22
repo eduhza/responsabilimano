@@ -3,4 +3,28 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ResponsabiliMano</value>
   </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>Cadastro</value>
+  </data>
+  <data name="NameLabel" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Senha</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirme a Senha</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>Cadastrar</value>
+  </data>
+  <data name="Registering" xml:space="preserve">
+    <value>Cadastrando...</value>
+  </data>
+  <data name="RegisterError" xml:space="preserve">
+    <value>Ocorreu um erro ao cadastrar. Tente novamente.</value>
+  </data>
 </root>

@@ -1,0 +1,76 @@
+@page "/register"
+@inject IUserRegistrationService RegistrationService
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["RegisterTitle"]</PageTitle>
+
+<h3>@Localizer["RegisterTitle"]</h3>
+
+<EditForm Model="_model" OnValidSubmit="HandleRegister" FormName="registerForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="name" class="form-label">@Localizer["NameLabel"]</label>
+        <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+        <ValidationMessage For="@(() => _model.Name)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">@Localizer["EmailLabel"]</label>
+        <InputText id="email" type="email" class="form-control" @bind-Value="_model.Email" />
+        <ValidationMessage For="@(() => _model.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">@Localizer["PasswordLabel"]</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+        <ValidationMessage For="@(() => _model.Password)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label">@Localizer["ConfirmPasswordLabel"]</label>
+        <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="_model.ConfirmPassword" />
+        <ValidationMessage For="@(() => _model.ConfirmPassword)" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger" role="alert">@_error</div>
+    }
+
+    <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+        @(_isLoading ? Localizer["Registering"] : Localizer["RegisterButton"])
+    </button>
+</EditForm>
+
+@code {
+    private RegisterRequest _model = new();
+    private string? _error;
+    private bool _isLoading;
+
+    private async Task HandleRegister()
+    {
+        _isLoading = true;
+        _error = null;
+
+        try
+        {
+            await RegistrationService.RegisterAsync(_model.Name, _model.Email, _model.Password);
+            Navigation.NavigateTo("/");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception)
+        {
+            _error = Localizer["RegisterError"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

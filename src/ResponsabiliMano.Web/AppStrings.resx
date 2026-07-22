@@ -3,4 +3,28 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ResponsabiliMano</value>
   </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="NameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Registering" xml:space="preserve">
+    <value>Registering...</value>
+  </data>
+  <data name="RegisterError" xml:space="preserve">
+    <value>An error occurred while registering. Please try again.</value>
+  </data>
 </root>
