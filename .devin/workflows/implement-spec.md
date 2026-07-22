@@ -33,6 +33,24 @@ Use this workflow when the user asks to implement a feature that matches a spec 
 
 7. **Update status.** Mark the spec as completed in `docs/plan.md` when done.
 
+8. **Finalize.** Execute `.devin/workflows/finalize-spec.ps1` para garantir que as alterações sejam commitadas e enviadas:
+   - Verifica alterações pendentes e cria commit automaticamente.
+   - Faz push da branch atual para o origin.
+   - Abre (ou reaproveita) PR da branch atual para `develop` e aprova.
+   - Se solicitado, abre (ou reaproveita) PR de `develop` para `main` e aprova.
+
+   Exemplo de comando:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .devin/workflows/finalize-spec.ps1 -SpecId "S1.1"
+   ```
+
+   Para também gerar o PR de `develop` para `main`, adicione `-MainPR`:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .devin/workflows/finalize-spec.ps1 -SpecId "S1.1" -MainPR
+   ```
+
 ## Output
 
 - Summary of files changed.

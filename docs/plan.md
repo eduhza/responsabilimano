@@ -214,7 +214,8 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S0.1 — Estrutura da Solução
     *   [x] S0.2 — Banco de Dados e Migrations
     *   [x] S0.3 — Containerização e Deploy GCP
-*   [ ] Sprint 1
+*   [x] Sprint 1
+    *   [x] S1.1 — Cadastro de Usuário
 *   [ ] Sprint 2
 *   [ ] Sprint 3
 *   [ ] Sprint 4

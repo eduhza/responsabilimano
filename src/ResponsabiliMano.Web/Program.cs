@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.DependencyInjection;
+using ResponsabiliMano.Infrastructure.Services;
 using ResponsabiliMano.Web.Components;
+using ResponsabiliMano.Web.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddLocalization();
 builder.Services.AddResponsabiliManoInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 
 var app = builder.Build();
 
@@ -38,6 +42,36 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
     .AddSupportedUICultures("pt-BR"));
 
 app.UseAntiforgery();
+
+app.MapPost("/api/auth/register", async (RegisterRequest request, IUserRegistrationService service, CancellationToken cancellationToken) =>
+{
+    var errors = new Dictionary<string, string[]>();
+
+    if (string.IsNullOrWhiteSpace(request.Name))
+        errors.Add("name", ["Name is required."]);
+
+    if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+        errors.Add("email", ["A valid email is required."]);
+
+    if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
+        errors.Add("password", ["Password must be at least 8 characters."]);
+
+    if (request.Password != request.ConfirmPassword)
+        errors.Add("confirmPassword", ["Passwords do not match."]);
+
+    if (errors.Count > 0)
+        return Results.ValidationProblem(errors);
+
+    try
+    {
+        var user = await service.RegisterAsync(request.Name, request.Email, request.Password, cancellationToken);
+        return Results.Created($"/api/users/{user.Id}", new { user.Id, user.Name, user.Email });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
+    }
+});
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
