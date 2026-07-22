@@ -16,21 +16,19 @@ services:
       timeout: 5s
       retries: 5
 
-  # TODO: reabilitar quando o download da imagem base do .NET (aspnet:10.0) estiver estável.
-  # Por ora, rode a aplicacao localmente com `dotnet run --project src\ResponsabiliMano.Web`.
-  # web:
-  #   container_name: responsabilimano-web
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     ASPNETCORE_ENVIRONMENT: Development
-  #     ConnectionStrings__DefaultConnection: "Host=db;Database=responsabilimano;Username=postgres;Password=postgres"
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
+  web:
+    container_name: responsabilimano-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=db;Database=responsabilimano;Username=postgres;Password=postgres"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:

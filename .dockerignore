@@ -1,0 +1,26 @@
+# Build artifacts (evita clobbering do restore feito dentro do container)
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# IDE / VS
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+
+# Git / CI
+**/.git/
+**/.gitignore
+**/.github/
+
+# Docker
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*.yml
+
+# Diversos
+**/*.md
+**/.env
+**/*.log

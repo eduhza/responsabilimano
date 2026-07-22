@@ -66,5 +66,6 @@ jobs:
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:responsabilimano-db \
             --set-env-vars ASPNETCORE_ENVIRONMENT=Production \
-            --set-secrets CONNECTION_STRING=connection-string:latest
+            --set-secrets ConnectionStrings__DefaultConnection=connection-string:latest

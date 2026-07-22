@@ -18,13 +18,30 @@
 | `Email__FromAddress` | Endereço remetente padrão | `noreply@responsabilimano.app` |
 | `Email__FromName` | Nome remetente padrão | `ResponsabiliMano` |
 
-## GCP / Produção
+## GCP / Produção (secrets do GitHub Actions)
 
-| Variável | Descrição |
-|----------|-----------|
-| `GCP_PROJECT_ID` | ID do projeto no Google Cloud |
-| `GCP_REGION` | Região do Cloud Run (ex: `us-central1`) |
-| `GCP_SERVICE_NAME` | Nome do serviço no Cloud Run |
+Usados pelo workflow `.github/workflows/ci-cd.yml` no deploy para Cloud Run via Workload Identity Federation.
+
+| Secret | Descrição | Valor configurado |
+|--------|-----------|-------------------|
+| `GCP_PROJECT_ID` | ID do projeto no Google Cloud | `responsabilimano` |
+| `GCP_REGION` | Região do Cloud Run / Artifact Registry | `us-central1` |
+| `GCP_REPOSITORY` | Repositório do Artifact Registry (Docker) | `containers` |
+| `GCP_SERVICE_NAME` | Nome do serviço no Cloud Run | `responsabilimano-web` |
+| `GCP_SERVICE_ACCOUNT` | Service account de deploy | `github-deployer@responsabilimano.iam.gserviceaccount.com` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Provider WIF (OIDC) | `projects/144768016039/locations/global/workloadIdentityPools/github-pool/providers/github-provider` |
+
+### Recursos provisionados no GCP
+
+| Recurso | Nome |
+|---------|------|
+| Cloud SQL (PostgreSQL 16) | instância `responsabilimano-db`, database `responsabilimano`, usuário `appuser` |
+| Instance connection name | `responsabilimano:us-central1:responsabilimano-db` |
+| Secret Manager | `connection-string` (injetado no Cloud Run como `ConnectionStrings__DefaultConnection`) |
+| Artifact Registry | `us-central1-docker.pkg.dev/responsabilimano/containers` |
+
+> A connection string de produção usa o socket do Cloud SQL:
+> `Host=/cloudsql/responsabilimano:us-central1:responsabilimano-db;Database=responsabilimano;Username=appuser;Password=***`
 
 ## Segurança
 
