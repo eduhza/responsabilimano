@@ -303,7 +303,7 @@ public sealed class ProjectService : IProjectService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    private static void ApplyChangeRequest(Project project, ProjectChangeRequest changeRequest)
+    private void ApplyChangeRequest(Project project, ProjectChangeRequest changeRequest)
     {
         switch (changeRequest.Type)
         {
@@ -323,19 +323,23 @@ public sealed class ProjectService : IProjectService
                 var goalsPayload = JsonSerializer.Deserialize<GoalsPayload>(changeRequest.PayloadJson);
                 if (goalsPayload is not null)
                 {
+                    _context.GoalFields.RemoveRange(project.Goals);
                     project.Goals.Clear();
                     foreach (var g in goalsPayload.Goals)
                     {
-                        project.Goals.Add(new GoalField
+                        var goalField = new GoalField
                         {
                             Id = Guid.NewGuid(),
+                            ProjectId = project.Id,
                             Label = g.Label,
                             DataType = g.DataType,
                             Unit = g.Unit,
                             MinValue = g.MinValue,
                             MaxValue = g.MaxValue,
                             TargetValue = g.TargetValue
-                        });
+                        };
+                        _context.GoalFields.Add(goalField);
+                        project.Goals.Add(goalField);
                     }
                 }
                 break;
