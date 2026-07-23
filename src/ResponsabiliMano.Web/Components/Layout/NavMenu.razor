@@ -19,6 +19,12 @@
                 </div>
 
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="projects/new">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> @Localizer["NavCreateProject"]
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
                     <form method="post" action="api/auth/logout" class="d-inline w-100">
                         <button type="submit" class="nav-link btn btn-link text-start w-100" style="padding-left: 0;">
                             @Localizer["LogoutButton"]

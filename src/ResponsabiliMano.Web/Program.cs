@@ -36,6 +36,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 builder.Services.AddScoped<IUserLoginService, UserLoginService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
 
 var app = builder.Build();
 
@@ -164,6 +165,46 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest request, IPa
         return Results.BadRequest(new { error = "Invalid or expired token." });
 
     return Results.Ok(new { message = "Password reset successfully." });
+}).DisableAntiforgery();
+
+app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    var errors = new Dictionary<string, string[]>();
+
+    if (string.IsNullOrWhiteSpace(request.Name))
+        errors.Add("name", ["Project name is required."]);
+
+    if (request.EndDate <= request.StartDate)
+        errors.Add("endDate", ["End date must be after start date."]);
+
+    if (request.Goals.Count == 0)
+        errors.Add("goals", ["At least one goal is required."]);
+
+    if (errors.Count > 0)
+        return Results.ValidationProblem(errors);
+
+    try
+    {
+        var goals = request.Goals.Select(g => new GoalFieldInput(
+            g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
+
+        var project = await projectService.CreateProjectAsync(
+            userId, request.Name, request.StartDate, request.EndDate,
+            request.Frequency, goals, cancellationToken);
+
+        return Results.Created($"/api/projects/{project.Id}", new { project.Id, project.Name, project.Status });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 }).DisableAntiforgery();
 
 app.MapStaticAssets();
