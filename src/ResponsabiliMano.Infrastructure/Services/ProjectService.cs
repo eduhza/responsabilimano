@@ -319,19 +319,23 @@ public sealed class ProjectService : IProjectService
 
             case ChangeRequestType.Goals:
                 var goalsPayload = DeserializePayload<GoalsPayload>(changeRequest);
+                _context.GoalFields.RemoveRange(project.Goals);
                 project.Goals.Clear();
                 foreach (var g in goalsPayload.Goals)
                 {
-                    project.Goals.Add(new GoalField
+                    var goalField = new GoalField
                     {
                         Id = Guid.NewGuid(),
+                        ProjectId = project.Id,
                         Label = g.Label,
                         DataType = g.DataType,
                         Unit = g.Unit,
                         MinValue = g.MinValue,
                         MaxValue = g.MaxValue,
                         TargetValue = g.TargetValue
-                    });
+                    };
+                    _context.GoalFields.Add(goalField);
+                    project.Goals.Add(goalField);
                 }
                 break;
 
