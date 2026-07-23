@@ -2,6 +2,7 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.Identity;
@@ -25,7 +26,7 @@ public sealed class PasswordResetService : IPasswordResetService
 
     public async Task RequestResetAsync(string email, CancellationToken cancellationToken = default)
     {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = EmailAddress.Normalize(email);
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
 
@@ -35,7 +36,7 @@ public sealed class PasswordResetService : IPasswordResetService
             return;
         }
 
-        var rawToken = GenerateToken();
+        var rawToken = SecureTokenGenerator.Generate();
         var tokenHash = HashToken(rawToken);
 
         var resetToken = new Core.Entities.PasswordResetToken
@@ -90,15 +91,6 @@ public sealed class PasswordResetService : IPasswordResetService
 
         await _context.SaveChangesAsync(cancellationToken);
         return true;
-    }
-
-    private static string GenerateToken()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(32);
-        return Convert.ToBase64String(bytes)
-            .Replace('+', '-')
-            .Replace('/', '_')
-            .TrimEnd('=');
     }
 
     private static string HashToken(string token)
