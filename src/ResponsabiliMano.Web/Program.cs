@@ -9,6 +9,7 @@ using ResponsabiliMano.Infrastructure.DependencyInjection;
 using ResponsabiliMano.Infrastructure.Services;
 using ResponsabiliMano.Web.Components;
 using ResponsabiliMano.Web.Models;
+using ResponsabiliMano.Core.Enums;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -204,6 +205,165 @@ app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectReques
     catch (ArgumentException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+}).DisableAntiforgery();
+
+app.MapPost("/api/projects/{id:guid}/invite", async (Guid id, HttpContext httpContext, InvitePartnerRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    if (string.IsNullOrWhiteSpace(request.PartnerEmail) || !request.PartnerEmail.Contains('@'))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["partnerEmail"] = ["A valid email is required."]
+        });
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+
+    try
+    {
+        var invitation = await projectService.InvitePartnerAsync(id, userId, request.PartnerEmail, baseUrl, cancellationToken);
+        return Results.Ok(new { invitation.Id, invitation.Email, invitation.ExpiresAt });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).DisableAntiforgery();
+
+app.MapGet("/api/projects/{id:guid}", async (Guid id, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    try
+    {
+        var project = await projectService.GetProjectAsync(id, userId, cancellationToken);
+        if (project is null)
+            return Results.NotFound();
+
+        return Results.Ok(new
+        {
+            project.Id,
+            project.Name,
+            project.StartDate,
+            project.EndDate,
+            project.Frequency,
+            project.Status,
+            CreatorName = project.Creator.Name,
+            PartnerName = project.Partner?.Name,
+            Goals = project.Goals.Select(g => new { g.Id, g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue }),
+            ChangeRequests = project.ChangeRequests.Select(cr => new
+            {
+                cr.Id, cr.Type, cr.Status, cr.CreatedAt, cr.RequestedByUserId
+            })
+        });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+});
+
+app.MapPost("/api/projects/{id:guid}/approve", async (Guid id, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    try
+    {
+        await projectService.ApproveProjectAsync(id, userId, cancellationToken);
+        return Results.Ok(new { message = "Project approved." });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
+    }
+}).DisableAntiforgery();
+
+app.MapPost("/api/projects/{id:guid}/change-requests", async (Guid id, HttpContext httpContext, ProposeChangeRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    try
+    {
+        var payloadJson = request.ToPayloadJson();
+        var changeRequest = await projectService.ProposeChangeAsync(id, userId, request.Type, payloadJson, cancellationToken);
+        return Results.Created($"/api/projects/{id}/change-requests/{changeRequest.Id}", new { changeRequest.Id, changeRequest.Status });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
+    }
+}).DisableAntiforgery();
+
+app.MapPost("/api/projects/{id:guid}/change-requests/{crId:guid}/respond", async (Guid id, Guid crId, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    var approveStr = httpContext.Request.Query["approve"];
+    if (!bool.TryParse(approveStr, out var approve))
+        return Results.BadRequest(new { error = "The 'approve' query parameter must be true or false." });
+
+    try
+    {
+        await projectService.RespondToChangeRequestAsync(id, crId, userId, approve, cancellationToken);
+        return Results.Ok(new { message = approve ? "Change request approved." : "Change request rejected." });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
     }
 }).DisableAntiforgery();
 

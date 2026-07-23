@@ -1,6 +1,8 @@
 ﻿@page "/"
 @attribute [Authorize]
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IProjectService ProjectService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>@Localizer["HomeTitle"]</PageTitle>
 
@@ -8,5 +10,50 @@
     <Authorized>
         <h1>@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
         <p>@Localizer["EmailLabel"]: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+
+        @if (_projects.Count > 0)
+        {
+            <h4 class="mt-4">@Localizer["MyProjectsTitle"]</h4>
+            <ul class="list-group">
+                @foreach (var project in _projects)
+                {
+                    <li class="list-group-item">
+                        <a href="@($"/projects/{project.Id}")">@project.Name</a>
+                        <span class="badge bg-secondary float-end">@GetStatusText(project.Status)</span>
+                    </li>
+                }
+            </ul>
+        }
     </Authorized>
 </AuthorizeView>
+
+@code {
+    private List<Core.Entities.Project> _projects = new();
+    private Guid _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdStr is not null && Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            try
+            {
+                _projects = await ProjectService.GetUserProjectsAsync(_currentUserId);
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
+    {
+        Core.Enums.ProjectStatus.Pending => Localizer["StatusPending"],
+        Core.Enums.ProjectStatus.Active => Localizer["StatusActive"],
+        Core.Enums.ProjectStatus.Finished => Localizer["StatusFinished"],
+        Core.Enums.ProjectStatus.Cancelled => Localizer["StatusCancelled"],
+        _ => status.ToString()
+    };
+}

@@ -1,0 +1,407 @@
+@page "/projects/{ProjectId:guid}"
+@attribute [Authorize]
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>@Localizer["ProjectDetailTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <p>@Localizer["Loading"]</p>
+}
+else if (_project is null)
+{
+    <div class="alert alert-danger" role="alert">@Localizer["ProjectNotFound"]</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else
+{
+    <h3>@_project.Name</h3>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <strong>@Localizer["StatusLabel"]:</strong>
+            @GetStatusText(_project.Status)
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <strong>@Localizer["CreatorLabel"]:</strong> @_project.Creator?.Name
+        </div>
+        <div class="col-md-6">
+            <strong>@Localizer["PartnerLabel"]:</strong>
+            @if (_project.Partner is not null)
+            {
+                @_project.Partner.Name
+            }
+            else
+            {
+                <span class="text-muted">@Localizer["NoPartnerYet"]</span>
+                @if (_project.CreatorId == _currentUserId)
+                {
+                    <a href="@($"/projects/{_project.Id}/invite")" class="btn btn-sm btn-outline-primary ms-2">@Localizer["InvitePartnerButton"]</a>
+                }
+            }
+        </div>
+    </div>
+
+    <h4>@Localizer["GoalsSectionTitle"]</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>@Localizer["GoalFieldLabel"]</th>
+                <th>@Localizer["GoalDataTypeLabel"]</th>
+                <th>@Localizer["GoalUnitLabel"]</th>
+                <th>@Localizer["GoalMinValueLabel"]</th>
+                <th>@Localizer["GoalMaxValueLabel"]</th>
+                <th>@Localizer["GoalTargetValueLabel"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var goal in _project.Goals)
+            {
+                <tr>
+                    <td>@goal.Label</td>
+                    <td>@goal.DataType</td>
+                    <td>@goal.Unit</td>
+                    <td>@goal.MinValue</td>
+                    <td>@goal.MaxValue</td>
+                    <td>@goal.TargetValue</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (_project.Status == Core.Enums.ProjectStatus.Pending && _project.PartnerId is not null)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@Localizer["ApproveProjectTitle"]</h5>
+                <p class="card-text">@Localizer["ApproveProjectDescription"]</p>
+                <button type="button" class="btn btn-success" disabled="@_actionLoading" @onclick="HandleApproveProject">
+                    @(_actionLoading ? Localizer["Processing"] : Localizer["ApproveButton"])
+                </button>
+            </div>
+        </div>
+    }
+
+    <h4>@Localizer["ChangeRequestsTitle"]</h4>
+    @if (_project.ChangeRequests.Count == 0)
+    {
+        <p class="text-muted">@Localizer["NoChangeRequests"]</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>@Localizer["ChangeRequestTypeLabel"]</th>
+                    <th>@Localizer["ChangeRequestStatusLabel"]</th>
+                    <th>@Localizer["ChangeRequestDateLabel"]</th>
+                    <th>@Localizer["ChangeRequestedByLabel"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cr in _project.ChangeRequests.OrderByDescending(c => c.CreatedAt))
+                {
+                    <tr>
+                        <td>@GetChangeRequestTypeText(cr.Type)</td>
+                        <td>@GetChangeRequestStatusText(cr.Status)</td>
+                        <td>@cr.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)</td>
+                        <td>
+                            @if (cr.Status == Core.Enums.ChangeRequestStatus.Pending && cr.RequestedByUserId != _currentUserId)
+                            {
+                                <button type="button" class="btn btn-sm btn-success me-1" disabled="@_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, true)">
+                                    @Localizer["ApproveButton"]
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" disabled="@_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, false)">
+                                    @Localizer["RejectButton"]
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (_project.Status is Core.Enums.ProjectStatus.Pending or Core.Enums.ProjectStatus.Active)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@Localizer["ProposeChangeTitle"]</h5>
+
+                <div class="mb-2">
+                    <label class="form-label">@Localizer["ChangeTypeLabel"]</label>
+                    <select class="form-select" @bind="_proposeType">
+                        <option value="@Core.Enums.ChangeRequestType.EndDate">@Localizer["ChangeTypeEndDate"]</option>
+                        <option value="@Core.Enums.ChangeRequestType.Frequency">@Localizer["ChangeTypeFrequency"]</option>
+                        <option value="@Core.Enums.ChangeRequestType.Goals">@Localizer["ChangeTypeGoals"]</option>
+                    </select>
+                </div>
+
+                @if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
+                {
+                    <div class="mb-2">
+                        <label class="form-label">@Localizer["NewEndDateLabel"]</label>
+                        <input type="date" class="form-control" @bind="_proposeEndDate" />
+                    </div>
+                }
+                else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
+                {
+                    <div class="mb-2">
+                        <label class="form-label">@Localizer["NewFrequencyLabel"]</label>
+                        <select class="form-select" @bind="_proposeFrequency">
+                            <option value="@Core.Enums.ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
+                            <option value="@Core.Enums.ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
+                            <option value="@Core.Enums.ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
+                            <option value="@Core.Enums.ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
+                        </select>
+                    </div>
+                }
+                else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
+                {
+                    @for (var i = 0; i < _proposeGoals.Count; i++)
+                    {
+                        var index = i;
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">@Localizer["GoalFieldLabel"]</label>
+                                        <input class="form-control" @bind="_proposeGoals[index].Label" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">@Localizer["GoalDataTypeLabel"]</label>
+                                        <select class="form-select" @bind="_proposeGoals[index].DataType">
+                                            <option value="@Core.Enums.GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
+                                            <option value="@Core.Enums.GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
+                                            <option value="@Core.Enums.GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">@Localizer["GoalUnitLabel"]</label>
+                                        <input class="form-control" @bind="_proposeGoals[index].Unit" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">@Localizer["GoalMinValueLabel"]</label>
+                                        <input type="number" class="form-control" @bind="_proposeGoals[index].MinValue" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">@Localizer["GoalMaxValueLabel"]</label>
+                                        <input type="number" class="form-control" @bind="_proposeGoals[index].MaxValue" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">@Localizer["GoalTargetValueLabel"]</label>
+                                        <input type="number" class="form-control" @bind="_proposeGoals[index].TargetValue" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-2" @onclick="AddProposeGoal">@Localizer["AddGoalButton"]</button>
+                }
+
+                @if (!string.IsNullOrEmpty(_proposeError))
+                {
+                    <div class="alert alert-danger mt-2">@_proposeError</div>
+                }
+
+                <button type="button" class="btn btn-primary" disabled="@_actionLoading" @onclick="HandleProposeChange">
+                    @(_actionLoading ? Localizer["Processing"] : Localizer["ProposeChangeButton"])
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="alert alert-info" role="alert">@_statusMessage</div>
+    }
+
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private Core.Entities.Project? _project;
+    private Guid _currentUserId;
+    private bool _loading = true;
+    private bool _actionLoading;
+    private string? _statusMessage;
+    private string? _proposeError;
+
+    private Core.Enums.ChangeRequestType _proposeType = Core.Enums.ChangeRequestType.EndDate;
+    private DateTime? _proposeEndDate;
+    private Core.Enums.ProjectFrequency _proposeFrequency = Core.Enums.ProjectFrequency.Weekly;
+    private List<GoalFieldRequest> _proposeGoals = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+            if (_project is not null)
+            {
+                _proposeEndDate = _project.EndDate;
+                _proposeFrequency = _project.Frequency;
+                _proposeGoals = _project.Goals.Select(g => new GoalFieldRequest
+                {
+                    Label = g.Label,
+                    DataType = g.DataType,
+                    Unit = g.Unit,
+                    MinValue = g.MinValue,
+                    MaxValue = g.MaxValue,
+                    TargetValue = g.TargetValue
+                }).ToList();
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _project = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void AddProposeGoal()
+    {
+        _proposeGoals.Add(new GoalFieldRequest());
+    }
+
+    private async Task HandleApproveProject()
+    {
+        _actionLoading = true;
+        _statusMessage = null;
+
+        try
+        {
+            await ProjectService.ApproveProjectAsync(ProjectId, _currentUserId);
+            _statusMessage = Localizer["ProjectApprovedSuccess"];
+            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = ex.Message;
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task HandleProposeChange()
+    {
+        _actionLoading = true;
+        _proposeError = null;
+        _statusMessage = null;
+
+        try
+        {
+            var request = new ProposeChangeRequest { Type = _proposeType };
+
+            if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
+                request.NewEndDate = _proposeEndDate;
+            else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
+                request.NewFrequency = _proposeFrequency;
+            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
+                request.Goals = _proposeGoals;
+
+            var payloadJson = request.ToPayloadJson();
+            await ProjectService.ProposeChangeAsync(ProjectId, _currentUserId, _proposeType, payloadJson);
+            _statusMessage = Localizer["ChangeRequestCreatedSuccess"];
+            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _proposeError = ex.Message;
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task HandleRespondToChangeRequest(Guid changeRequestId, bool approve)
+    {
+        _actionLoading = true;
+        _statusMessage = null;
+
+        try
+        {
+            await ProjectService.RespondToChangeRequestAsync(ProjectId, changeRequestId, _currentUserId, approve);
+            _statusMessage = approve ? Localizer["ChangeRequestApprovedSuccess"] : Localizer["ChangeRequestRejectedSuccess"];
+            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = ex.Message;
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
+    {
+        Core.Enums.ProjectStatus.Pending => Localizer["StatusPending"],
+        Core.Enums.ProjectStatus.Active => Localizer["StatusActive"],
+        Core.Enums.ProjectStatus.Finished => Localizer["StatusFinished"],
+        Core.Enums.ProjectStatus.Cancelled => Localizer["StatusCancelled"],
+        _ => status.ToString()
+    };
+
+    private string GetFrequencyText(Core.Enums.ProjectFrequency freq) => freq switch
+    {
+        Core.Enums.ProjectFrequency.Daily => Localizer["FrequencyDaily"],
+        Core.Enums.ProjectFrequency.Weekly => Localizer["FrequencyWeekly"],
+        Core.Enums.ProjectFrequency.Biweekly => Localizer["FrequencyBiweekly"],
+        Core.Enums.ProjectFrequency.Monthly => Localizer["FrequencyMonthly"],
+        _ => freq.ToString()
+    };
+
+    private string GetChangeRequestTypeText(Core.Enums.ChangeRequestType type) => type switch
+    {
+        Core.Enums.ChangeRequestType.EndDate => Localizer["ChangeTypeEndDate"],
+        Core.Enums.ChangeRequestType.Frequency => Localizer["ChangeTypeFrequency"],
+        Core.Enums.ChangeRequestType.Goals => Localizer["ChangeTypeGoals"],
+        _ => type.ToString()
+    };
+
+    private string GetChangeRequestStatusText(Core.Enums.ChangeRequestStatus status) => status switch
+    {
+        Core.Enums.ChangeRequestStatus.Pending => Localizer["ChangeRequestStatusPending"],
+        Core.Enums.ChangeRequestStatus.Approved => Localizer["ChangeRequestStatusApproved"],
+        Core.Enums.ChangeRequestStatus.Rejected => Localizer["ChangeRequestStatusRejected"],
+        _ => status.ToString()
+    };
+}

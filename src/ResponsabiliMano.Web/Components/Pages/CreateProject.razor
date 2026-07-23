@@ -12,6 +12,7 @@
 @if (_success)
 {
     <div class="alert alert-success" role="alert">@Localizer["CreateProjectSuccess"]</div>
+    <a href="@($"/projects/{_createdProjectId}/invite")" class="btn btn-primary">@Localizer["InvitePartnerButton"]</a>
     <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
 }
 else
@@ -123,6 +124,7 @@ else
     private string? _error;
     private bool _isLoading;
     private bool _success;
+    private Guid _createdProjectId;
 
     protected override void OnInitialized()
     {
@@ -164,10 +166,11 @@ else
             var goals = _model.Goals.Select(g => new GoalFieldInput(
                 g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
 
-            await ProjectService.CreateProjectAsync(
+            var project = await ProjectService.CreateProjectAsync(
                 userId, _model.Name, _model.StartDate, _model.EndDate,
                 _model.Frequency, goals);
 
+            _createdProjectId = project.Id;
             _success = true;
         }
         catch (ArgumentException ex)

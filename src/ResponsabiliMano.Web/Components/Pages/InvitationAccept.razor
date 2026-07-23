@@ -1,0 +1,265 @@
+@page "/invitations/{Token}"
+@attribute [Authorize]
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>@Localizer["InvitationTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <p>@Localizer["Loading"]</p>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else if (_accepted && _project is not null)
+{
+    <div class="alert alert-success" role="alert">@Localizer["InvitationAccepted"]</div>
+
+    <h3>@_project.Name</h3>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <strong>@Localizer["StatusLabel"]:</strong>
+            @GetStatusText(_project.Status)
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="col-md-3">
+            <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
+        </div>
+    </div>
+
+    <h4>@Localizer["GoalsSectionTitle"]</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>@Localizer["GoalFieldLabel"]</th>
+                <th>@Localizer["GoalDataTypeLabel"]</th>
+                <th>@Localizer["GoalUnitLabel"]</th>
+                <th>@Localizer["GoalMinValueLabel"]</th>
+                <th>@Localizer["GoalMaxValueLabel"]</th>
+                <th>@Localizer["GoalTargetValueLabel"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var goal in _project.Goals)
+            {
+                <tr>
+                    <td>@goal.Label</td>
+                    <td>@goal.DataType</td>
+                    <td>@goal.Unit</td>
+                    <td>@goal.MinValue</td>
+                    <td>@goal.MaxValue</td>
+                    <td>@goal.TargetValue</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (_project.Status == Core.Enums.ProjectStatus.Pending)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@Localizer["ApproveProjectTitle"]</h5>
+                <p class="card-text">@Localizer["ApproveProjectDescription"]</p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" disabled="@_actionLoading" @onclick="HandleApproveProject">
+                        @(_actionLoading ? Localizer["Processing"] : Localizer["ApproveButton"])
+                    </button>
+                    <a href="@($"/projects/{_project.Id}")" class="btn btn-outline-primary">
+                        @Localizer["ProposeChangeButton"]
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="alert alert-info" role="alert">@_statusMessage</div>
+    }
+
+    <a href="@($"/projects/{_project.Id}")" class="btn btn-outline-secondary">@Localizer["ViewProjectDetails"]</a>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <h4>@Localizer["InvitationTitle"]</h4>
+            <p>@Localizer["InvitationPreviewText"]</p>
+
+            @if (_project is not null)
+            {
+                <h5>@_project.Name</h5>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
+                    </div>
+                    <div class="col-md-4">
+                        <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
+                    </div>
+                    <div class="col-md-4">
+                        <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
+                    </div>
+                </div>
+
+                <h6>@Localizer["GoalsSectionTitle"]</h6>
+                <ul>
+                    @foreach (var goal in _project.Goals)
+                    {
+                        <li>@goal.Label (@goal.Unit) - @Localizer["GoalTargetValueLabel"]: @goal.TargetValue</li>
+                    }
+                </ul>
+
+                <button type="button" class="btn btn-primary" disabled="@_actionLoading" @onclick="HandleAcceptInvitation">
+                    @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
+                </button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Token { get; set; } = string.Empty;
+
+    private Core.Entities.Project? _project;
+    private Guid _currentUserId;
+    private bool _loading = true;
+    private bool _accepted;
+    private bool _actionLoading;
+    private string? _error;
+    private string? _statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _project = await ProjectService.AcceptInvitationAsync(Token, _currentUserId);
+
+            if (_project is null)
+            {
+                var invitationProject = await TryPreviewProject();
+                if (invitationProject is null)
+                {
+                    _error = Localizer["InvitationInvalidOrExpired"];
+                }
+                else
+                {
+                    _project = invitationProject;
+                }
+            }
+            else
+            {
+                _accepted = true;
+            }
+        }
+        catch (Exception)
+        {
+            _error = Localizer["InvitationError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task<Core.Entities.Project?> TryPreviewProject()
+    {
+        try
+        {
+            return await ProjectService.GetInvitationProjectAsync(Token);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task HandleAcceptInvitation()
+    {
+        _actionLoading = true;
+        _error = null;
+
+        try
+        {
+            var result = await ProjectService.AcceptInvitationAsync(Token, _currentUserId);
+            if (result is null)
+            {
+                _error = Localizer["InvitationInvalidOrExpired"];
+            }
+            else
+            {
+                _project = result;
+                _accepted = true;
+            }
+        }
+        catch (Exception)
+        {
+            _error = Localizer["InvitationError"];
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private async Task HandleApproveProject()
+    {
+        _actionLoading = true;
+        _statusMessage = null;
+
+        try
+        {
+            if (_project is null) return;
+            await ProjectService.ApproveProjectAsync(_project.Id, _currentUserId);
+            _project = await ProjectService.GetProjectAsync(_project.Id, _currentUserId);
+            _statusMessage = Localizer["ProjectApprovedSuccess"];
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = ex.Message;
+        }
+        finally
+        {
+            _actionLoading = false;
+        }
+    }
+
+    private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
+    {
+        Core.Enums.ProjectStatus.Pending => Localizer["StatusPending"],
+        Core.Enums.ProjectStatus.Active => Localizer["StatusActive"],
+        Core.Enums.ProjectStatus.Finished => Localizer["StatusFinished"],
+        Core.Enums.ProjectStatus.Cancelled => Localizer["StatusCancelled"],
+        _ => status.ToString()
+    };
+
+    private string GetFrequencyText(Core.Enums.ProjectFrequency freq) => freq switch
+    {
+        Core.Enums.ProjectFrequency.Daily => Localizer["FrequencyDaily"],
+        Core.Enums.ProjectFrequency.Weekly => Localizer["FrequencyWeekly"],
+        Core.Enums.ProjectFrequency.Biweekly => Localizer["FrequencyBiweekly"],
+        Core.Enums.ProjectFrequency.Monthly => Localizer["FrequencyMonthly"],
+        _ => freq.ToString()
+    };
+}
