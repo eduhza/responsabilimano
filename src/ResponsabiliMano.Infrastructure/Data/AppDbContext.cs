@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<ProjectChangeRequest> ProjectChangeRequests => Set<ProjectChangeRequest>();
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
     public DbSet<CheckInMetric> CheckInMetrics => Set<CheckInMetric>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +122,20 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.CheckIn).WithMany(c => c.Metrics).HasForeignKey(e => e.CheckInId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.GoalField).WithMany(g => g.Metrics).HasForeignKey(e => e.GoalFieldId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.CheckInId, e.GoalFieldId }).IsUnique();
+        });
+
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.ToTable("password_reset_tokens");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.TokenHash).HasColumnName("token_hash").IsRequired().HasMaxLength(256);
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UsedAt).HasColumnName("used_at");
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.TokenHash).IsUnique();
         });
     }
 }

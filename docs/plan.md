@@ -65,18 +65,21 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
 *   Autenticação com cookies ASP.NET Core Identity ou JWT.
 *   Endpoint `POST /api/auth/login`.
 *   Proteção das rotas internas.
+*   **Status:** Concluído — login/logout via cookie testados localmente, rotas internas protegidas.
 
 ### Spec S1.3 — Layout Base
 
 *   Criar layout base Blazor Server com navegação responsiva.
 *   Tema visual simples.
 *   Integrar `IStringLocalizer` e carregar cultura padrão `pt-BR`.
+*   **Status:** Concluído — layout responsivo, tema simples e textos carregados em pt-BR.
 
 ### Spec S1.4 — Recuperação de Senha
 
 *   Fluxo "Esqueci minha senha" com envio de e-mail via `IEmailService`.
 *   Tela para inserir nova senha usando token único com expiração.
 *   Endpoints `POST /api/auth/forgot-password` e `POST /api/auth/reset-password`.
+*   **Status:** Concluído — fluxo de recuperação testado via e2e, token com expiração de 1h, e-mail enviado via LoggingEmailService (dev).
 
 **Critérios de aceite da Sprint 1:**
 
@@ -214,7 +217,10 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S0.1 — Estrutura da Solução
     *   [x] S0.2 — Banco de Dados e Migrations
     *   [x] S0.3 — Containerização e Deploy GCP
-*   [ ] Sprint 1
+*   [x] Sprint 1
+    *   [x] S1.1 — Cadastro de Usuário
+    *   [x] S1.2 — Login
+    *   [x] S1.3 — Layout Base
 *   [ ] Sprint 2
 *   [ ] Sprint 3
 *   [ ] Sprint 4

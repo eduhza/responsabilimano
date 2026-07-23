@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
+using ResponsabiliMano.Infrastructure.Identity;
 
 namespace ResponsabiliMano.Infrastructure.Data;
 
@@ -20,7 +21,7 @@ public static class SeedData
             Id = Guid.NewGuid(),
             Name = "Usuário A",
             Email = "a@example.com",
-            PasswordHash = "TODO-HASH",
+            PasswordHash = PasswordHasher.Hash("Password123"),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -29,7 +30,7 @@ public static class SeedData
             Id = Guid.NewGuid(),
             Name = "Usuário B",
             Email = "b@example.com",
-            PasswordHash = "TODO-HASH",
+            PasswordHash = PasswordHasher.Hash("Password123"),
             CreatedAt = DateTime.UtcNow
         };
 

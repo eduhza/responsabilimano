@@ -3,4 +3,121 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ResponsabiliMano</value>
   </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>Cadastro</value>
+  </data>
+  <data name="NameLabel" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Senha</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirme a Senha</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>Cadastrar</value>
+  </data>
+  <data name="Registering" xml:space="preserve">
+    <value>Cadastrando...</value>
+  </data>
+  <data name="RegisterError" xml:space="preserve">
+    <value>Ocorreu um erro ao cadastrar. Tente novamente.</value>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="LoginInvalidCredentials" xml:space="preserve">
+    <value>E-mail ou senha inválidos.</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>Não tem uma conta?</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Já tem uma conta?</value>
+  </data>
+  <data name="LogoutButton" xml:space="preserve">
+    <value>Sair</value>
+  </data>
+  <data name="HomeTitle" xml:space="preserve">
+    <value>Início</value>
+  </data>
+  <data name="HomeWelcome" xml:space="preserve">
+    <value>Olá, {0}!</value>
+  </data>
+  <data name="NavHome" xml:space="preserve">
+    <value>Início</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Página não encontrada</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Desculpe, o conteúdo que você procura não existe.</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Erro.</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Ocorreu um erro ao processar a sua solicitação.</value>
+  </data>
+  <data name="ErrorRequestIdLabel" xml:space="preserve">
+    <value>ID da solicitação:</value>
+  </data>
+  <data name="LoadingAuth" xml:space="preserve">
+    <value>Carregando estado de autenticação...</value>
+  </data>
+  <data name="BlazorErrorMessage" xml:space="preserve">
+    <value>Ocorreu um erro não tratado.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Recarregar</value>
+  </data>
+  <data name="ForgotPasswordLink" xml:space="preserve">
+    <value>Esqueci minha senha</value>
+  </data>
+  <data name="ForgotPasswordTitle" xml:space="preserve">
+    <value>Recuperar Senha</value>
+  </data>
+  <data name="ForgotPasswordSent" xml:space="preserve">
+    <value>Se o e-mail existir, um link de recuperação foi enviado.</value>
+  </data>
+  <data name="ForgotPasswordError" xml:space="preserve">
+    <value>Ocorreu um erro ao enviar o e-mail. Tente novamente.</value>
+  </data>
+  <data name="SendResetLinkButton" xml:space="preserve">
+    <value>Enviar link de recuperação</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Enviando...</value>
+  </data>
+  <data name="BackToLogin" xml:space="preserve">
+    <value>Voltar para o login</value>
+  </data>
+  <data name="ResetPasswordTitle" xml:space="preserve">
+    <value>Nova Senha</value>
+  </data>
+  <data name="ResetPasswordButton" xml:space="preserve">
+    <value>Redefinir senha</value>
+  </data>
+  <data name="Resetting" xml:space="preserve">
+    <value>Redefinindo...</value>
+  </data>
+  <data name="ResetPasswordSuccess" xml:space="preserve">
+    <value>Senha redefinida com sucesso! Você já pode fazer login.</value>
+  </data>
+  <data name="ResetPasswordInvalidToken" xml:space="preserve">
+    <value>Token inválido ou expirado.</value>
+  </data>
+  <data name="ResetPasswordError" xml:space="preserve">
+    <value>Ocorreu um erro ao redefinir a senha. Tente novamente.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>Nova Senha</value>
+  </data>
 </root>

@@ -1,7 +1,12 @@
 ﻿@page "/"
+@attribute [Authorize]
+@inject IStringLocalizer<AppStrings> Localizer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>@Localizer["HomeTitle"]</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+<AuthorizeView>
+    <Authorized>
+        <h1>@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
+        <p>@Localizer["EmailLabel"]: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+    </Authorized>
+</AuthorizeView>

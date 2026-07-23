@@ -3,4 +3,121 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ResponsabiliMano</value>
   </data>
+  <data name="RegisterTitle" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="NameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="RegisterButton" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Registering" xml:space="preserve">
+    <value>Registering...</value>
+  </data>
+  <data name="RegisterError" xml:space="preserve">
+    <value>An error occurred while registering. Please try again.</value>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="LoginInvalidCredentials" xml:space="preserve">
+    <value>Invalid email or password.</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>Don't have an account?</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="LogoutButton" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="HomeTitle" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="HomeWelcome" xml:space="preserve">
+    <value>Hello, {0}!</value>
+  </data>
+  <data name="NavHome" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Not Found</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Sorry, the content you are looking for does not exist.</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Error.</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>An error occurred while processing your request.</value>
+  </data>
+  <data name="ErrorRequestIdLabel" xml:space="preserve">
+    <value>Request ID:</value>
+  </data>
+  <data name="LoadingAuth" xml:space="preserve">
+    <value>Loading authentication state...</value>
+  </data>
+  <data name="BlazorErrorMessage" xml:space="preserve">
+    <value>An unhandled error has occurred.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="ForgotPasswordLink" xml:space="preserve">
+    <value>Forgot password?</value>
+  </data>
+  <data name="ForgotPasswordTitle" xml:space="preserve">
+    <value>Recover Password</value>
+  </data>
+  <data name="ForgotPasswordSent" xml:space="preserve">
+    <value>If the email exists, a recovery link has been sent.</value>
+  </data>
+  <data name="ForgotPasswordError" xml:space="preserve">
+    <value>An error occurred while sending the email. Please try again.</value>
+  </data>
+  <data name="SendResetLinkButton" xml:space="preserve">
+    <value>Send recovery link</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Sending...</value>
+  </data>
+  <data name="BackToLogin" xml:space="preserve">
+    <value>Back to login</value>
+  </data>
+  <data name="ResetPasswordTitle" xml:space="preserve">
+    <value>New Password</value>
+  </data>
+  <data name="ResetPasswordButton" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="Resetting" xml:space="preserve">
+    <value>Resetting...</value>
+  </data>
+  <data name="ResetPasswordSuccess" xml:space="preserve">
+    <value>Password reset successfully! You can now log in.</value>
+  </data>
+  <data name="ResetPasswordInvalidToken" xml:space="preserve">
+    <value>Invalid or expired token.</value>
+  </data>
+  <data name="ResetPasswordError" xml:space="preserve">
+    <value>An error occurred while resetting the password. Please try again.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>New Password</value>
+  </data>
 </root>
