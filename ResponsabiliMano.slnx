@@ -4,4 +4,7 @@
     <Project Path="src/ResponsabiliMano.Infrastructure/ResponsabiliMano.Infrastructure.csproj" />
     <Project Path="src/ResponsabiliMano.Web/ResponsabiliMano.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ResponsabiliMano.Infrastructure.Tests/ResponsabiliMano.Infrastructure.Tests.csproj" />
+  </Folder>
 </Solution>
