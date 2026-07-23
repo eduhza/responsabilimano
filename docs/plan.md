@@ -223,6 +223,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S1.3 — Layout Base
 *   [ ] Sprint 2
     *   [x] S2.1 — Criar Projeto
+    *   [x] S2.2 — Convidar Parceiro
 *   [ ] Sprint 3
 *   [ ] Sprint 4
 *   [ ] Sprint 5

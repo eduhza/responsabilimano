@@ -12,6 +12,13 @@ public interface IProjectService
         Core.Enums.ProjectFrequency frequency,
         IEnumerable<GoalFieldInput> goals,
         CancellationToken cancellationToken = default);
+
+    Task<ProjectInvitation> InvitePartnerAsync(
+        Guid projectId,
+        Guid inviterUserId,
+        string partnerEmail,
+        string baseUrl,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record GoalFieldInput(

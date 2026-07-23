@@ -207,4 +207,22 @@
   <data name="Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
+  <data name="InvitePartnerTitle" xml:space="preserve">
+    <value>Convidar Parceiro</value>
+  </data>
+  <data name="InvitePartnerButton" xml:space="preserve">
+    <value>Convidar Parceiro</value>
+  </data>
+  <data name="InvitePartnerSuccess" xml:space="preserve">
+    <value>Convite enviado com sucesso!</value>
+  </data>
+  <data name="InvitePartnerError" xml:space="preserve">
+    <value>Ocorreu um erro ao enviar o convite. Tente novamente.</value>
+  </data>
+  <data name="InvitePartnerUnauthorized" xml:space="preserve">
+    <value>Você não tem permissão para convidar parceiros para este projeto.</value>
+  </data>
+  <data name="PartnerEmailLabel" xml:space="preserve">
+    <value>E-mail do Parceiro</value>
+  </data>
 </root>
