@@ -225,4 +225,139 @@
   <data name="PartnerEmailLabel" xml:space="preserve">
     <value>Partner Email</value>
   </data>
+  <data name="ProjectDetailTitle" xml:space="preserve">
+    <value>Project Details</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="ProjectNotFound" xml:space="preserve">
+    <value>Project not found or you do not have access.</value>
+  </data>
+  <data name="StatusLabel" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="StatusPending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="StatusActive" xml:space="preserve">
+    <value>In Progress</value>
+  </data>
+  <data name="StatusFinished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="StatusCancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="CreatorLabel" xml:space="preserve">
+    <value>Creator</value>
+  </data>
+  <data name="PartnerLabel" xml:space="preserve">
+    <value>Partner</value>
+  </data>
+  <data name="NoPartnerYet" xml:space="preserve">
+    <value>No partner yet</value>
+  </data>
+  <data name="ApproveProjectTitle" xml:space="preserve">
+    <value>Approve Project</value>
+  </data>
+  <data name="ApproveProjectDescription" xml:space="preserve">
+    <value>By approving, you accept the current goals, end date and frequency. The project will start.</value>
+  </data>
+  <data name="ApproveButton" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="RejectButton" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="Processing" xml:space="preserve">
+    <value>Processing...</value>
+  </data>
+  <data name="ProjectApprovedSuccess" xml:space="preserve">
+    <value>Project approved! Status changed to In Progress.</value>
+  </data>
+  <data name="ChangeRequestsTitle" xml:space="preserve">
+    <value>Change Requests</value>
+  </data>
+  <data name="NoChangeRequests" xml:space="preserve">
+    <value>No change requests yet.</value>
+  </data>
+  <data name="ChangeRequestTypeLabel" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ChangeRequestStatusLabel" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="ChangeRequestDateLabel" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="ChangeRequestedByLabel" xml:space="preserve">
+    <value>Requested By</value>
+  </data>
+  <data name="ChangeRequestStatusPending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="ChangeRequestStatusApproved" xml:space="preserve">
+    <value>Approved</value>
+  </data>
+  <data name="ChangeRequestStatusRejected" xml:space="preserve">
+    <value>Rejected</value>
+  </data>
+  <data name="ChangeTypeEndDate" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="ChangeTypeFrequency" xml:space="preserve">
+    <value>Frequency</value>
+  </data>
+  <data name="ChangeTypeGoals" xml:space="preserve">
+    <value>Goals</value>
+  </data>
+  <data name="ProposeChangeTitle" xml:space="preserve">
+    <value>Propose Change</value>
+  </data>
+  <data name="ProposeChangeButton" xml:space="preserve">
+    <value>Propose Change</value>
+  </data>
+  <data name="ChangeTypeLabel" xml:space="preserve">
+    <value>Change Type</value>
+  </data>
+  <data name="NewEndDateLabel" xml:space="preserve">
+    <value>New End Date</value>
+  </data>
+  <data name="NewFrequencyLabel" xml:space="preserve">
+    <value>New Frequency</value>
+  </data>
+  <data name="ChangeRequestCreatedSuccess" xml:space="preserve">
+    <value>Change request created. Waiting for partner approval.</value>
+  </data>
+  <data name="ChangeRequestApprovedSuccess" xml:space="preserve">
+    <value>Change request approved and applied.</value>
+  </data>
+  <data name="ChangeRequestRejectedSuccess" xml:space="preserve">
+    <value>Change request rejected.</value>
+  </data>
+  <data name="InvitationTitle" xml:space="preserve">
+    <value>Project Invitation</value>
+  </data>
+  <data name="InvitationAccepted" xml:space="preserve">
+    <value>Invitation accepted! You are now a partner.</value>
+  </data>
+  <data name="InvitationInvalidOrExpired" xml:space="preserve">
+    <value>Invitation is invalid or has expired.</value>
+  </data>
+  <data name="InvitationError" xml:space="preserve">
+    <value>An error occurred while processing the invitation.</value>
+  </data>
+  <data name="InvitationPreviewText" xml:space="preserve">
+    <value>You have been invited to participate in this project. Review the details below and accept to become a partner.</value>
+  </data>
+  <data name="AcceptInvitationButton" xml:space="preserve">
+    <value>Accept Invitation</value>
+  </data>
+  <data name="ViewProjectDetails" xml:space="preserve">
+    <value>View Project Details</value>
+  </data>
+  <data name="MyProjectsTitle" xml:space="preserve">
+    <value>My Projects</value>
+  </data>
 </root>
