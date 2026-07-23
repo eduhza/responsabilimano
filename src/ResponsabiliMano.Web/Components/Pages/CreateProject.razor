@@ -1,0 +1,186 @@
+@page "/projects/new"
+@attribute [Authorize]
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>@Localizer["CreateProjectTitle"]</PageTitle>
+
+<h3>@Localizer["CreateProjectTitle"]</h3>
+
+@if (_success)
+{
+    <div class="alert alert-success" role="alert">@Localizer["CreateProjectSuccess"]</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="createProjectForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="name" class="form-label">@Localizer["ProjectNameLabel"]</label>
+            <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+            <ValidationMessage For="@(() => _model.Name)" />
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="startDate" class="form-label">@Localizer["StartDateLabel"]</label>
+                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                <ValidationMessage For="@(() => _model.StartDate)" />
+            </div>
+            <div class="col-md-4">
+                <label for="endDate" class="form-label">@Localizer["EndDateLabel"]</label>
+                <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                <ValidationMessage For="@(() => _model.EndDate)" />
+            </div>
+            <div class="col-md-4">
+                <label for="frequency" class="form-label">@Localizer["FrequencyLabel"]</label>
+                <InputSelect id="frequency" class="form-control" @bind-Value="_model.Frequency">
+                    <option value="@ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
+                    <option value="@ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
+                    <option value="@ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
+                    <option value="@ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => _model.Frequency)" />
+            </div>
+        </div>
+
+        <h4>@Localizer["GoalsSectionTitle"]</h4>
+
+        @for (var i = 0; i < _model.Goals.Count; i++)
+        {
+            var index = i;
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">@Localizer["GoalLabel", index + 1]</h5>
+                        @if (_model.Goals.Count > 1)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveGoal(index)">
+                                @Localizer["RemoveGoalButton"]
+                            </button>
+                        }
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label">@Localizer["GoalFieldLabel"]</label>
+                            <InputText class="form-control" @bind-Value="_model.Goals[index].Label" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">@Localizer["GoalDataTypeLabel"]</label>
+                            <InputSelect class="form-control" @bind-Value="_model.Goals[index].DataType">
+                                <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
+                                <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
+                                <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">@Localizer["GoalUnitLabel"]</label>
+                            <InputText class="form-control" @bind-Value="_model.Goals[index].Unit" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">@Localizer["GoalMinValueLabel"]</label>
+                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].MinValue" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">@Localizer["GoalMaxValueLabel"]</label>
+                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].MaxValue" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">@Localizer["GoalTargetValueLabel"]</label>
+                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].TargetValue" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <button type="button" class="btn btn-outline-secondary mb-3" @onclick="AddGoal">
+            @Localizer["AddGoalButton"]
+        </button>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
+
+        <div>
+            <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                @(_isLoading ? Localizer["Creating"] : Localizer["CreateProjectButton"])
+            </button>
+            <a href="/" class="btn btn-link">@Localizer["Cancel"]</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private CreateProjectRequest _model = new();
+    private string? _error;
+    private bool _isLoading;
+    private bool _success;
+
+    protected override void OnInitialized()
+    {
+        if (_model.Goals.Count == 0)
+        {
+            _model.Goals.Add(new GoalFieldRequest());
+        }
+    }
+
+    private void AddGoal()
+    {
+        _model.Goals.Add(new GoalFieldRequest());
+    }
+
+    private void RemoveGoal(int index)
+    {
+        if (_model.Goals.Count > 1)
+        {
+            _model.Goals.RemoveAt(index);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isLoading = true;
+        _error = null;
+
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+            {
+                _error = Localizer["CreateProjectError"];
+                return;
+            }
+
+            var goals = _model.Goals.Select(g => new GoalFieldInput(
+                g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
+
+            await ProjectService.CreateProjectAsync(
+                userId, _model.Name, _model.StartDate, _model.EndDate,
+                _model.Frequency, goals);
+
+            _success = true;
+        }
+        catch (ArgumentException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception)
+        {
+            _error = Localizer["CreateProjectError"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
