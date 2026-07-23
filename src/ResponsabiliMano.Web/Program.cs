@@ -130,6 +130,42 @@ app.MapPost("/api/auth/logout", async (HttpContext httpContext) =>
     return Results.Redirect("/login");
 }).DisableAntiforgery();
 
+app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest request, IPasswordResetService resetService, CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["email"] = ["A valid email is required."]
+        });
+
+    await resetService.RequestResetAsync(request.Email, cancellationToken);
+    return Results.Ok(new { message = "If the email exists, a reset link has been sent." });
+}).DisableAntiforgery();
+
+app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest request, IPasswordResetService resetService, CancellationToken cancellationToken) =>
+{
+    var errors = new Dictionary<string, string[]>();
+
+    if (string.IsNullOrWhiteSpace(request.Token))
+        errors.Add("token", ["Token is required."]);
+
+    if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
+        errors.Add("password", ["Password must be at least 8 characters."]);
+
+    if (request.Password != request.ConfirmPassword)
+        errors.Add("confirmPassword", ["Passwords do not match."]);
+
+    if (errors.Count > 0)
+        return Results.ValidationProblem(errors);
+
+    var success = await resetService.ResetPasswordAsync(request.Token, request.Password, cancellationToken);
+
+    if (!success)
+        return Results.BadRequest(new { error = "Invalid or expired token." });
+
+    return Results.Ok(new { message = "Password reset successfully." });
+}).DisableAntiforgery();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
