@@ -207,4 +207,22 @@
   <data name="Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="InvitePartnerTitle" xml:space="preserve">
+    <value>Invite Partner</value>
+  </data>
+  <data name="InvitePartnerButton" xml:space="preserve">
+    <value>Invite Partner</value>
+  </data>
+  <data name="InvitePartnerSuccess" xml:space="preserve">
+    <value>Invitation sent successfully!</value>
+  </data>
+  <data name="InvitePartnerError" xml:space="preserve">
+    <value>An error occurred while sending the invitation. Please try again.</value>
+  </data>
+  <data name="InvitePartnerUnauthorized" xml:space="preserve">
+    <value>You are not authorized to invite partners to this project.</value>
+  </data>
+  <data name="PartnerEmailLabel" xml:space="preserve">
+    <value>Partner Email</value>
+  </data>
 </root>

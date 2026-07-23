@@ -1,0 +1,91 @@
+@page "/projects/{ProjectId:guid}/invite"
+@attribute [Authorize]
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>@Localizer["InvitePartnerTitle"]</PageTitle>
+
+<h3>@Localizer["InvitePartnerTitle"]</h3>
+
+@if (_success)
+{
+    <div class="alert alert-success" role="alert">@Localizer["InvitePartnerSuccess"]</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="invitePartnerForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="partnerEmail" class="form-label">@Localizer["PartnerEmailLabel"]</label>
+            <InputText id="partnerEmail" type="email" class="form-control" @bind-Value="_model.PartnerEmail" />
+            <ValidationMessage For="@(() => _model.PartnerEmail)" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
+
+        <div>
+            <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                @(_isLoading ? Localizer["Sending"] : Localizer["InvitePartnerButton"])
+            </button>
+            <a href="/" class="btn btn-link">@Localizer["Cancel"]</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private InvitePartnerRequest _model = new();
+    private string? _error;
+    private bool _isLoading;
+    private bool _success;
+
+    private async Task HandleSubmit()
+    {
+        _isLoading = true;
+        _error = null;
+
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+            {
+                _error = Localizer["InvitePartnerError"];
+                return;
+            }
+
+            var baseUrl = Navigation.BaseUri.TrimEnd('/');
+
+            await ProjectService.InvitePartnerAsync(ProjectId, userId, _model.PartnerEmail, baseUrl);
+
+            _success = true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _error = Localizer["InvitePartnerUnauthorized"];
+        }
+        catch (ArgumentException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception)
+        {
+            _error = Localizer["InvitePartnerError"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

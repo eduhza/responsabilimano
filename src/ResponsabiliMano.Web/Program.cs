@@ -207,6 +207,38 @@ app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectReques
     }
 }).DisableAntiforgery();
 
+app.MapPost("/api/projects/{id:guid}/invite", async (Guid id, HttpContext httpContext, InvitePartnerRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
+{
+    if (httpContext.User.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
+
+    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+        return Results.Unauthorized();
+
+    if (string.IsNullOrWhiteSpace(request.PartnerEmail) || !request.PartnerEmail.Contains('@'))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["partnerEmail"] = ["A valid email is required."]
+        });
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+
+    try
+    {
+        var invitation = await projectService.InvitePartnerAsync(id, userId, request.PartnerEmail, baseUrl, cancellationToken);
+        return Results.Ok(new { invitation.Id, invitation.Email, invitation.ExpiresAt });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).DisableAntiforgery();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
