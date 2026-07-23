@@ -3,6 +3,7 @@
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IProjectService ProjectService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<Home> Logger
 
 <PageTitle>@Localizer["HomeTitle"]</PageTitle>
 
@@ -10,6 +11,11 @@
     <Authorized>
         <h1>@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
         <p>@Localizer["EmailLabel"]: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
 
         @if (_projects.Count > 0)
         {
@@ -30,6 +36,7 @@
 @code {
     private List<Core.Entities.Project> _projects = new();
     private Guid _currentUserId;
+    private string? _error;
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,8 +49,10 @@
             {
                 _projects = await ProjectService.GetUserProjectsAsync(_currentUserId);
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError(ex, "Failed to load projects for user {UserId}", _currentUserId);
+                _error = Localizer["HomeLoadError"];
             }
         }
     }
