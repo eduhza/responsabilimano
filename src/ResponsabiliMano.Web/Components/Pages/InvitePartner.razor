@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<InvitePartner> Logger
 
 <PageTitle>@Localizer["InvitePartnerTitle"]</PageTitle>
 
@@ -79,8 +80,9 @@ else
         {
             _error = ex.Message;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to invite partner to project {ProjectId}", ProjectId);
             _error = Localizer["InvitePartnerError"];
         }
         finally

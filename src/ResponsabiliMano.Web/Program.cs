@@ -43,12 +43,16 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 
 var app = builder.Build();
 
-// Apply migrations and seed in development
-if (app.Environment.IsDevelopment())
+// Apply migrations in every environment; seed demo data only in development.
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await SeedData.SeedAsync(db);
+    await db.Database.MigrateAsync();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await SeedData.SeedAsync(db);
+    }
 }
 
 // Configure the HTTP request pipeline.

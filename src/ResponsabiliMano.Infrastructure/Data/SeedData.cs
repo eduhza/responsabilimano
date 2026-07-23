@@ -9,8 +9,6 @@ public static class SeedData
 {
     public static async Task SeedAsync(AppDbContext context)
     {
-        await context.Database.MigrateAsync();
-
         if (await context.Users.AnyAsync())
         {
             return;

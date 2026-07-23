@@ -9,6 +9,18 @@ public static class PasswordHasher
 
     public static bool Verify(string password, string hash)
     {
-        return BCrypt.Net.BCrypt.EnhancedVerify(password, hash);
+        if (string.IsNullOrEmpty(hash))
+            return false;
+
+        try
+        {
+            return BCrypt.Net.BCrypt.EnhancedVerify(password, hash);
+        }
+        catch (BCrypt.Net.SaltParseException)
+        {
+            // A stored hash that cannot be parsed must fail verification rather than
+            // surface as an unhandled 500 during login.
+            return false;
+        }
     }
 }

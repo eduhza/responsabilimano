@@ -90,6 +90,9 @@
   <data name="ForgotPasswordError" xml:space="preserve">
     <value>An error occurred while sending the email. Please try again.</value>
   </data>
+  <data name="HomeLoadError" xml:space="preserve">
+    <value>Could not load your projects. Please try again later.</value>
+  </data>
   <data name="SendResetLinkButton" xml:space="preserve">
     <value>Send recovery link</value>
   </data>

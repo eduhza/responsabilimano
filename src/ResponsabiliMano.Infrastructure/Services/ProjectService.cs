@@ -304,42 +304,66 @@ public sealed class ProjectService : IProjectService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    private static void ApplyChangeRequest(Project project, ProjectChangeRequest changeRequest)
+    private void ApplyChangeRequest(Project project, ProjectChangeRequest changeRequest)
     {
         switch (changeRequest.Type)
         {
             case ChangeRequestType.EndDate:
-                var endDatePayload = JsonSerializer.Deserialize<EndDatePayload>(changeRequest.PayloadJson);
-                if (endDatePayload is not null)
-                    project.EndDate = DateTime.SpecifyKind(endDatePayload.EndDate, DateTimeKind.Utc);
+                var endDatePayload = DeserializePayload<EndDatePayload>(changeRequest);
+                project.EndDate = DateTime.SpecifyKind(endDatePayload.EndDate, DateTimeKind.Utc);
                 break;
 
             case ChangeRequestType.Frequency:
-                var freqPayload = JsonSerializer.Deserialize<FrequencyPayload>(changeRequest.PayloadJson);
-                if (freqPayload is not null)
-                    project.Frequency = freqPayload.Frequency;
+                var freqPayload = DeserializePayload<FrequencyPayload>(changeRequest);
+                project.Frequency = freqPayload.Frequency;
                 break;
 
             case ChangeRequestType.Goals:
-                var goalsPayload = JsonSerializer.Deserialize<GoalsPayload>(changeRequest.PayloadJson);
-                if (goalsPayload is not null)
+                var goalsPayload = DeserializePayload<GoalsPayload>(changeRequest);
+                _context.GoalFields.RemoveRange(project.Goals);
+                project.Goals.Clear();
+                foreach (var g in goalsPayload.Goals)
                 {
-                    project.Goals.Clear();
-                    foreach (var g in goalsPayload.Goals)
+                    var goalField = new GoalField
                     {
-                        project.Goals.Add(new GoalField
-                        {
-                            Id = Guid.NewGuid(),
-                            Label = g.Label,
-                            DataType = g.DataType,
-                            Unit = g.Unit,
-                            MinValue = g.MinValue,
-                            MaxValue = g.MaxValue,
-                            TargetValue = g.TargetValue
-                        });
-                    }
+                        Id = Guid.NewGuid(),
+                        ProjectId = project.Id,
+                        Label = g.Label,
+                        DataType = g.DataType,
+                        Unit = g.Unit,
+                        MinValue = g.MinValue,
+                        MaxValue = g.MaxValue,
+                        TargetValue = g.TargetValue
+                    };
+                    _context.GoalFields.Add(goalField);
+                    project.Goals.Add(goalField);
                 }
                 break;
+
+            default:
+                throw new InvalidOperationException($"Unsupported change request type '{changeRequest.Type}'.");
+        }
+    }
+
+    private T DeserializePayload<T>(ProjectChangeRequest changeRequest) where T : class
+    {
+        try
+        {
+            var payload = JsonSerializer.Deserialize<T>(changeRequest.PayloadJson);
+            if (payload is null)
+                throw new InvalidOperationException(
+                    $"Change request {changeRequest.Id} has an empty payload for type '{changeRequest.Type}'.");
+
+            return payload;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex,
+                "Failed to deserialize payload for change request {ChangeRequestId} of type {ChangeRequestType}",
+                changeRequest.Id, changeRequest.Type);
+
+            throw new InvalidOperationException(
+                $"Change request {changeRequest.Id} has a malformed payload for type '{changeRequest.Type}'.", ex);
         }
     }
 
