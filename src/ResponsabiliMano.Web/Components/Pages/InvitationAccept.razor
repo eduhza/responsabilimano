@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<InvitationAccept> Logger
 
 <PageTitle>@Localizer["InvitationTitle"]</PageTitle>
 
@@ -173,8 +174,9 @@ else
                 _accepted = true;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to accept invitation for token {Token}, user {UserId}", Token, _currentUserId);
             _error = Localizer["InvitationError"];
         }
         finally
@@ -189,8 +191,9 @@ else
         {
             return await ProjectService.GetInvitationProjectAsync(Token);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to load invitation preview for token {Token}", Token);
             return null;
         }
     }
@@ -213,8 +216,9 @@ else
                 _accepted = true;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to accept invitation for token {Token}, user {UserId}", Token, _currentUserId);
             _error = Localizer["InvitationError"];
         }
         finally

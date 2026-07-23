@@ -3,6 +3,7 @@
 @inject IUserRegistrationService RegistrationService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
+@inject ILogger<Register> Logger
 
 <PageTitle>@Localizer["RegisterTitle"]</PageTitle>
 
@@ -67,8 +68,9 @@
         {
             _error = ex.Message;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to register user");
             _error = Localizer["RegisterError"];
         }
         finally

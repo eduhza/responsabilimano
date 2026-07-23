@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<CreateProject> Logger
 
 <PageTitle>@Localizer["CreateProjectTitle"]</PageTitle>
 
@@ -177,8 +178,9 @@ else
         {
             _error = ex.Message;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to create project");
             _error = Localizer["CreateProjectError"];
         }
         finally
