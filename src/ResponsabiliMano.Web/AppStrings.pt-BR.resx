@@ -45,4 +45,37 @@
   <data name="LogoutButton" xml:space="preserve">
     <value>Sair</value>
   </data>
+  <data name="HomeTitle" xml:space="preserve">
+    <value>Início</value>
+  </data>
+  <data name="HomeWelcome" xml:space="preserve">
+    <value>Olá, {0}!</value>
+  </data>
+  <data name="NavHome" xml:space="preserve">
+    <value>Início</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Página não encontrada</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Desculpe, o conteúdo que você procura não existe.</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Erro.</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Ocorreu um erro ao processar a sua solicitação.</value>
+  </data>
+  <data name="ErrorRequestIdLabel" xml:space="preserve">
+    <value>ID da solicitação:</value>
+  </data>
+  <data name="LoadingAuth" xml:space="preserve">
+    <value>Carregando estado de autenticação...</value>
+  </data>
+  <data name="BlazorErrorMessage" xml:space="preserve">
+    <value>Ocorreu um erro não tratado.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Recarregar</value>
+  </data>
 </root>

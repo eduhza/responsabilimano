@@ -1,4 +1,6 @@
-﻿<CascadingAuthenticationState>
+﻿@inject IStringLocalizer<AppStrings> Localizer
+
+<CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
@@ -6,7 +8,7 @@
                     <RedirectToLogin />
                 </NotAuthorized>
                 <Authorizing>
-                    <p>Loading authentication state...</p>
+                    <p>@Localizer["LoadingAuth"]</p>
                 </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
