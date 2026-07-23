@@ -222,6 +222,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S1.2 — Login
     *   [x] S1.3 — Layout Base
 *   [ ] Sprint 2
+    *   [x] S2.1 — Criar Projeto
 *   [ ] Sprint 3
 *   [ ] Sprint 4
 *   [ ] Sprint 5

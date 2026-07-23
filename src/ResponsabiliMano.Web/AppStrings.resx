@@ -120,4 +120,91 @@
   <data name="NewPasswordLabel" xml:space="preserve">
     <value>New Password</value>
   </data>
+  <data name="NavCreateProject" xml:space="preserve">
+    <value>New Project</value>
+  </data>
+  <data name="CreateProjectTitle" xml:space="preserve">
+    <value>Create Project</value>
+  </data>
+  <data name="CreateProjectButton" xml:space="preserve">
+    <value>Create Project</value>
+  </data>
+  <data name="Creating" xml:space="preserve">
+    <value>Creating...</value>
+  </data>
+  <data name="CreateProjectSuccess" xml:space="preserve">
+    <value>Project created successfully!</value>
+  </data>
+  <data name="CreateProjectError" xml:space="preserve">
+    <value>An error occurred while creating the project. Please try again.</value>
+  </data>
+  <data name="ProjectNameLabel" xml:space="preserve">
+    <value>Project Name</value>
+  </data>
+  <data name="StartDateLabel" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="EndDateLabel" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="FrequencyLabel" xml:space="preserve">
+    <value>Check-in Frequency</value>
+  </data>
+  <data name="FrequencyDaily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="FrequencyWeekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="FrequencyBiweekly" xml:space="preserve">
+    <value>Biweekly</value>
+  </data>
+  <data name="FrequencyMonthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="GoalsSectionTitle" xml:space="preserve">
+    <value>Goal Fields</value>
+  </data>
+  <data name="GoalLabel" xml:space="preserve">
+    <value>Goal {0}</value>
+  </data>
+  <data name="GoalFieldLabel" xml:space="preserve">
+    <value>Label</value>
+  </data>
+  <data name="GoalDataTypeLabel" xml:space="preserve">
+    <value>Data Type</value>
+  </data>
+  <data name="GoalUnitLabel" xml:space="preserve">
+    <value>Unit</value>
+  </data>
+  <data name="GoalMinValueLabel" xml:space="preserve">
+    <value>Min Value</value>
+  </data>
+  <data name="GoalMaxValueLabel" xml:space="preserve">
+    <value>Max Value</value>
+  </data>
+  <data name="GoalTargetValueLabel" xml:space="preserve">
+    <value>Target Value</value>
+  </data>
+  <data name="AddGoalButton" xml:space="preserve">
+    <value>Add Goal</value>
+  </data>
+  <data name="RemoveGoalButton" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="DataTypeDecimal" xml:space="preserve">
+    <value>Decimal</value>
+  </data>
+  <data name="DataTypeInteger" xml:space="preserve">
+    <value>Integer</value>
+  </data>
+  <data name="DataTypePercent" xml:space="preserve">
+    <value>Percent</value>
+  </data>
+  <data name="BackToHome" xml:space="preserve">
+    <value>Back to Home</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>
