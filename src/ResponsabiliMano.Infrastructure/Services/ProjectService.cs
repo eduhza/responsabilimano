@@ -41,8 +41,8 @@ public sealed class ProjectService : IProjectService
             Id = Guid.NewGuid(),
             Name = name.Trim(),
             CreatorId = creatorId,
-            StartDate = startDate,
-            EndDate = endDate,
+            StartDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
+            EndDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
             Frequency = frequency,
             Status = ProjectStatus.Pending
         };
@@ -310,7 +310,7 @@ public sealed class ProjectService : IProjectService
             case ChangeRequestType.EndDate:
                 var endDatePayload = JsonSerializer.Deserialize<EndDatePayload>(changeRequest.PayloadJson);
                 if (endDatePayload is not null)
-                    project.EndDate = endDatePayload.EndDate;
+                    project.EndDate = DateTime.SpecifyKind(endDatePayload.EndDate, DateTimeKind.Utc);
                 break;
 
             case ChangeRequestType.Frequency:
