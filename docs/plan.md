@@ -114,6 +114,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
 *   Ambos os participantes podem visualizar, aprovar ou rejeitar uma proposta.
 *   Ao aprovar, o sistema aplica a mudança no projeto.
 *   Fluxo de aceite mútuo: status muda para `Em Andamento` após aprovação de metas, data de fim e frequência.
+*   **Status:** Concluído — tela de detalhes do projeto, aceite de convite, propostas de alteração e aprovação/rejeição implementadas. Endpoints `GET /api/projects/{id}`, `POST /api/projects/{id}/approve`, `POST /api/projects/{id}/change-requests`, `POST /api/projects/{id}/change-requests/{crId}/respond`.
 
 **Critérios de aceite da Sprint 2:**
 
