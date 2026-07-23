@@ -8,7 +8,9 @@ using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.DependencyInjection;
 using ResponsabiliMano.Infrastructure.Services;
 using ResponsabiliMano.Web.Components;
+using ResponsabiliMano.Web.Endpoints;
 using ResponsabiliMano.Web.Models;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Enums;
 using System.Security.Claims;
 
@@ -80,7 +82,7 @@ app.MapPost("/api/auth/register", async (RegisterRequest request, IUserRegistrat
     if (string.IsNullOrWhiteSpace(request.Name))
         errors.Add("name", ["Name is required."]);
 
-    if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+    if (!EmailAddress.IsValid(request.Email))
         errors.Add("email", ["A valid email is required."]);
 
     if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
@@ -138,7 +140,7 @@ app.MapPost("/api/auth/logout", async (HttpContext httpContext) =>
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordRequest request, IPasswordResetService resetService, CancellationToken cancellationToken) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+    if (!EmailAddress.IsValid(request.Email))
         return Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["email"] = ["A valid email is required."]
@@ -174,11 +176,7 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordRequest request, IPa
 
 app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
-        return Results.Unauthorized();
-
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
     var errors = new Dictionary<string, string[]>();
@@ -195,7 +193,7 @@ app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectReques
     if (errors.Count > 0)
         return Results.ValidationProblem(errors);
 
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         var goals = request.Goals.Select(g => new GoalFieldInput(
             g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
@@ -205,23 +203,15 @@ app.MapPost("/api/projects", async (HttpContext httpContext, CreateProjectReques
             request.Frequency, goals, cancellationToken);
 
         return Results.Created($"/api/projects/{project.Id}", new { project.Id, project.Name, project.Status });
-    }
-    catch (ArgumentException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
+    });
 }).DisableAntiforgery();
 
 app.MapPost("/api/projects/{id:guid}/invite", async (Guid id, HttpContext httpContext, InvitePartnerRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
-        return Results.Unauthorized();
-
-    if (string.IsNullOrWhiteSpace(request.PartnerEmail) || !request.PartnerEmail.Contains('@'))
+    if (!EmailAddress.IsValid(request.PartnerEmail))
         return Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["partnerEmail"] = ["A valid email is required."]
@@ -229,31 +219,19 @@ app.MapPost("/api/projects/{id:guid}/invite", async (Guid id, HttpContext httpCo
 
     var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
 
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         var invitation = await projectService.InvitePartnerAsync(id, userId, request.PartnerEmail, baseUrl, cancellationToken);
         return Results.Ok(new { invitation.Id, invitation.Email, invitation.ExpiresAt });
-    }
-    catch (ArgumentException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Forbid();
-    }
+    });
 }).DisableAntiforgery();
 
 app.MapGet("/api/projects/{id:guid}", async (Guid id, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
-        return Results.Unauthorized();
-
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         var project = await projectService.GetProjectAsync(id, userId, cancellationToken);
         if (project is null)
@@ -275,100 +253,48 @@ app.MapGet("/api/projects/{id:guid}", async (Guid id, HttpContext httpContext, I
                 cr.Id, cr.Type, cr.Status, cr.CreatedAt, cr.RequestedByUserId
             })
         });
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Forbid();
-    }
+    });
 });
 
 app.MapPost("/api/projects/{id:guid}/approve", async (Guid id, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
-        return Results.Unauthorized();
-
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         await projectService.ApproveProjectAsync(id, userId, cancellationToken);
         return Results.Ok(new { message = "Project approved." });
-    }
-    catch (ArgumentException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Forbid();
-    }
-    catch (InvalidOperationException ex)
-    {
-        return Results.Conflict(new { error = ex.Message });
-    }
+    });
 }).DisableAntiforgery();
 
 app.MapPost("/api/projects/{id:guid}/change-requests", async (Guid id, HttpContext httpContext, ProposeChangeRequest request, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
-        return Results.Unauthorized();
-
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         var payloadJson = request.ToPayloadJson();
         var changeRequest = await projectService.ProposeChangeAsync(id, userId, request.Type, payloadJson, cancellationToken);
         return Results.Created($"/api/projects/{id}/change-requests/{changeRequest.Id}", new { changeRequest.Id, changeRequest.Status });
-    }
-    catch (ArgumentException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Forbid();
-    }
-    catch (InvalidOperationException ex)
-    {
-        return Results.Conflict(new { error = ex.Message });
-    }
+    });
 }).DisableAntiforgery();
 
 app.MapPost("/api/projects/{id:guid}/change-requests/{crId:guid}/respond", async (Guid id, Guid crId, HttpContext httpContext, IProjectService projectService, CancellationToken cancellationToken) =>
 {
-    if (httpContext.User.Identity?.IsAuthenticated != true)
-        return Results.Unauthorized();
-
-    var userIdStr = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
+    if (!httpContext.TryGetAuthenticatedUserId(out var userId))
         return Results.Unauthorized();
 
     var approveStr = httpContext.Request.Query["approve"];
     if (!bool.TryParse(approveStr, out var approve))
         return Results.BadRequest(new { error = "The 'approve' query parameter must be true or false." });
 
-    try
+    return await EndpointHelpers.ExecuteAsync(async () =>
     {
         await projectService.RespondToChangeRequestAsync(id, crId, userId, approve, cancellationToken);
         return Results.Ok(new { message = approve ? "Change request approved." : "Change request rejected." });
-    }
-    catch (ArgumentException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Forbid();
-    }
-    catch (InvalidOperationException ex)
-    {
-        return Results.Conflict(new { error = ex.Message });
-    }
+    });
 }).DisableAntiforgery();
 
 app.MapStaticAssets();
