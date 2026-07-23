@@ -79,6 +79,7 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
 *   Fluxo "Esqueci minha senha" com envio de e-mail via `IEmailService`.
 *   Tela para inserir nova senha usando token único com expiração.
 *   Endpoints `POST /api/auth/forgot-password` e `POST /api/auth/reset-password`.
+*   **Status:** Concluído — fluxo de recuperação testado via e2e, token com expiração de 1h, e-mail enviado via LoggingEmailService (dev).
 
 **Critérios de aceite da Sprint 1:**
 

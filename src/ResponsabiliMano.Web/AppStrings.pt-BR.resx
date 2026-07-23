@@ -78,4 +78,46 @@
   <data name="Reload" xml:space="preserve">
     <value>Recarregar</value>
   </data>
+  <data name="ForgotPasswordLink" xml:space="preserve">
+    <value>Esqueci minha senha</value>
+  </data>
+  <data name="ForgotPasswordTitle" xml:space="preserve">
+    <value>Recuperar Senha</value>
+  </data>
+  <data name="ForgotPasswordSent" xml:space="preserve">
+    <value>Se o e-mail existir, um link de recuperação foi enviado.</value>
+  </data>
+  <data name="ForgotPasswordError" xml:space="preserve">
+    <value>Ocorreu um erro ao enviar o e-mail. Tente novamente.</value>
+  </data>
+  <data name="SendResetLinkButton" xml:space="preserve">
+    <value>Enviar link de recuperação</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Enviando...</value>
+  </data>
+  <data name="BackToLogin" xml:space="preserve">
+    <value>Voltar para o login</value>
+  </data>
+  <data name="ResetPasswordTitle" xml:space="preserve">
+    <value>Nova Senha</value>
+  </data>
+  <data name="ResetPasswordButton" xml:space="preserve">
+    <value>Redefinir senha</value>
+  </data>
+  <data name="Resetting" xml:space="preserve">
+    <value>Redefinindo...</value>
+  </data>
+  <data name="ResetPasswordSuccess" xml:space="preserve">
+    <value>Senha redefinida com sucesso! Você já pode fazer login.</value>
+  </data>
+  <data name="ResetPasswordInvalidToken" xml:space="preserve">
+    <value>Token inválido ou expirado.</value>
+  </data>
+  <data name="ResetPasswordError" xml:space="preserve">
+    <value>Ocorreu um erro ao redefinir a senha. Tente novamente.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>Nova Senha</value>
+  </data>
 </root>
