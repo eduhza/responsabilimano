@@ -1,11 +1,12 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
+using ResponsabiliMano.Infrastructure.Identity;
 
 namespace ResponsabiliMano.Infrastructure.Services;
 
@@ -88,7 +89,7 @@ public sealed class ProjectService : IProjectService
         if (project.CreatorId != inviterUserId)
             throw new UnauthorizedAccessException("Only the project creator can invite partners.");
 
-        var normalizedEmail = partnerEmail.Trim().ToLowerInvariant();
+        var normalizedEmail = EmailAddress.Normalize(partnerEmail);
 
         if (project.CreatorId == await _context.Users
             .Where(u => u.Email.ToLower() == normalizedEmail)
@@ -98,7 +99,7 @@ public sealed class ProjectService : IProjectService
             throw new ArgumentException("Cannot invite yourself.");
         }
 
-        var token = GenerateToken();
+        var token = SecureTokenGenerator.Generate();
         var invitation = new ProjectInvitation
         {
             Id = Guid.NewGuid(),
@@ -342,14 +343,6 @@ public sealed class ProjectService : IProjectService
         }
     }
 
-    private static string GenerateToken()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(32);
-        return Convert.ToBase64String(bytes)
-            .Replace('+', '-')
-            .Replace('/', '_')
-            .TrimEnd('=');
-    }
 }
 
 internal sealed class EndDatePayload

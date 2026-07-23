@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
@@ -17,7 +18,7 @@ public sealed class UserRegistrationService : IUserRegistrationService
 
     public async Task<User> RegisterAsync(string name, string email, string password, CancellationToken cancellationToken = default)
     {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = EmailAddress.Normalize(email);
 
         if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken))
         {
