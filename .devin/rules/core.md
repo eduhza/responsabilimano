@@ -4,7 +4,22 @@
 
 - This is a .NET 10 + Blazor + PostgreSQL web application.
 - It runs on Google Cloud Platform (GCP).
-- Development follows Spec Driven Development (SDD): every code change must trace back to a spec in `docs/plan.md` or a decision in `docs/architecture.md`.
+- Development follows the **AI-Native SDLC** (Dell framework): the AI is the primary author of code and tests; the human curates. See `docs/plano-ai-native-sdlc.md`.
+- Development follows Spec Driven Development (SDD): every code change traces back to an **approved spec in `specs/`**. `docs/plan.md` is the roadmap/index; `docs/architecture.md` + `docs/adr/` hold decisions.
+
+## The 3 human gates (this is where the PM intervenes)
+
+The loop runs autonomously except at three points. Do not proceed past a gate without human approval:
+
+- **Gate 1 — Approve the spec** (before generating). Enforced by `.devin/rules/spec-driven.md`.
+- **Gate 2 — Approve the MR** (after CI is 100% green). Enforced by `.devin/rules/quality-gates.md` and the `review-and-merge` workflow.
+- **Gate 3 — Accept the feature** (E2E, only for multi-spec features). Flip the feature flag to release.
+
+Everything between gates — generation, PR, CI, security auto-remediation — is autonomous.
+
+## Rule index
+
+Read the focused rule for the concern at hand: `spec-driven.md`, `quality-gates.md`, `security.md`, `architecture.md`, `contracts.md`, `dotnet-conventions.md`. This file holds the cross-cutting basics below.
 
 ## AI Working Modes (Agent vs Editor)
 

@@ -12,6 +12,7 @@ on:
 
 jobs:
   build-and-test:
+    name: Build, Test & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,11 +28,78 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test --no-build --configuration Release
+      - name: Test (+ coverage)
+        run: >
+          dotnet test --no-build --configuration Release
+          --collect:"XPlat Code Coverage"
+          --results-directory ./coverage
+
+      # Quality gate: fail the build if line coverage drops below the minimum.
+      # Tune 'thresholds' (min recommended) as coverage grows. See rule quality-gates.md.
+      - name: Coverage gate
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/**/coverage.cobertura.xml
+          badge: false
+          fail_below_min: true
+          format: markdown
+          thresholds: '55 80'
+          output: both
+
+      # SCA: fail on known-vulnerable NuGet packages (direct or transitive).
+      - name: Dependency vulnerability scan (SCA)
+        run: |
+          echo "Scanning for vulnerable NuGet packages..."
+          report=$(dotnet list package --vulnerable --include-transitive 2>&1 || true)
+          echo "$report"
+          if echo "$report" | grep -q "has the following vulnerable"; then
+            echo "::error::Vulnerable packages detected — see log above."
+            exit 1
+          fi
+          echo "No vulnerable packages found."
+
+  # SAST: static analysis of the C# code. Never skipped (Tenet 5).
+  codeql:
+    name: CodeQL (SAST)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Reserved AI-Native gate. Implemented by spec R9 (OpenAPI baseline + contract
+  # tests) and spec-conformance checks. Currently a documented no-op placeholder.
+  spec-and-contract-gate:
+    name: Spec Conformance & Contract Test (pending R9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reserved gate
+        run: |
+          echo "Reserved pipeline stage — wired up in spec R9."
+          echo "Will enforce: (1) the PR references an approved spec in specs/;"
+          echo "(2) the implementation honours contracts/*.yaml (contract tests)."
 
   deploy:
-    needs: build-and-test
+    needs: [build-and-test, codeql]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
