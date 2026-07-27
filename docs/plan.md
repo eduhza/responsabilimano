@@ -2,11 +2,16 @@
 
 Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui um spec com critérios de aceite claros, seguindo Spec Driven Development (SDD).
 
+> **Nota (AI-Native SDLC):** este documento é o **roadmap/índice**. As specs
+> atômicas — a fonte da verdade que a IA consome — vivem em `specs/` (uma por
+> arquivo, no template). Ver `docs/plano-ai-native-sdlc.md` e `specs/README.md`.
+> Specs são escritas just-in-time, imediatamente antes de cada iteração.
+
 ## Convenções
 
-*   Todo código deve ser gerado a partir de um spec aprovado.
-*   Antes de iniciar uma sprint, a IA deve reler o PRD (`docs/prd.md`) e a Arquitetura (`docs/architecture.md`).
-*   Ao final de cada sprint, o spec deve ser marcado como concluído e uma breve nota de status adicionada.
+*   Todo código deve ser gerado a partir de um spec **aprovado** em `specs/` (Gate 1).
+*   Antes de implementar, a IA relê o PRD (`docs/prd.md`), a Arquitetura (`docs/architecture.md`), os ADRs (`docs/adr/`) e as rules em `.devin/rules/`.
+*   Ao concluir, atualize o `status` da spec e este índice de status.
 
 ---
 
@@ -222,9 +227,18 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] S1.1 — Cadastro de Usuário
     *   [x] S1.2 — Login
     *   [x] S1.3 — Layout Base
-*   [ ] Sprint 2
+    *   [x] S1.4 — Recuperação de Senha
+*   [x] Sprint 2
     *   [x] S2.1 — Criar Projeto
     *   [x] S2.2 — Convidar Parceiro
-*   [ ] Sprint 3
-*   [ ] Sprint 4
-*   [ ] Sprint 5
+    *   [x] S2.3 — Aprovar ou Sugerir Alterações
+*   [ ] **Fase P0 — Fundação do loop autônomo** (ver `docs/plano-ai-native-sdlc.md`)
+    *   [x] Projeto de testes (`tests/ResponsabiliMano.Infrastructure.Tests`)
+    *   [x] Rules do loop (`.devin/rules/*`) e workflows (`write-spec`, `review-and-merge`)
+    *   [x] `specs/` + template + specs de leadoff migradas
+    *   [x] CI estendido (cobertura, CodeQL/SAST, SCA, stage de spec/contract)
+    *   [ ] MCP do GitHub + GitHub Issues como tracker (requer OAuth do usuário)
+*   [ ] **Fase P1 — Higiene de engenharia (dogfooding)** → specs `R1`, `R3`, `R4`, `R5`, `R7`, `R8`, `R9`, `X1`
+*   [ ] Sprint 3 — Check-in e Notificações → specs `S3.1`–`S3.4` (`draft`, aguardando Gate 1)
+*   [ ] Sprint 4 — Dashboard → specs a escrever (S4.1–S4.3) quando iniciar a iteração
+*   [ ] Sprint 5 — Polimento/Produção → specs a escrever (S5.1–S5.3) quando iniciar a iteração

@@ -1,0 +1,11 @@
+# Redocly lint config for the contract gate (spec R9).
+# Keeps structural + security rules as hard errors; silences rules that do not
+# apply to this internal, redirect-based API so the gate output stays actionable.
+extends:
+  - recommended
+rules:
+  struct: error
+  security-defined: error
+  info-license: off          # internal API, not distributed under a license
+  operation-2xx-response: off # login/logout are redirect-only (302 by design)
+  operation-4xx-response: off

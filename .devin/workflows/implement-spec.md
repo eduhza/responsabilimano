@@ -2,38 +2,47 @@
 description: Implement a single approved spec end-to-end
 ---
 
-# Workflow: Implement a Spec
+# Workflow: Implement a Spec (loop steps 2–3)
 
-Use this workflow when the user asks to implement a feature that matches a spec in `docs/plan.md`.
+Use this workflow when the user asks to implement a spec in `specs/`. This is the
+autonomous part of the loop: it starts **only after Gate 1** (spec approved) and
+ends by handing off to Gate 2 (`review-and-merge`).
 
 ## Steps
 
-1. **Identify the spec.** Ask the user which spec to implement, or infer from the request. Confirm the spec ID (e.g., `S1.1`).
+1. **Identify the spec.** Confirm the spec id and open `specs/<id>-<slug>.md`.
+   **GATE 1 CHECK:** if front-matter `status` is not `approved`, STOP — run the
+   `write-spec` workflow and get approval first. Never generate code from a draft.
 
 2. **Read required context.** Before writing code, read:
-   - `docs/prd.md`
-   - `docs/plan.md` (the target spec and any dependent specs)
-   - `docs/architecture.md`
-   - `.devin/rules/core.md`
-   - `.devin/skills/sdd.md`
+   - The target spec in `specs/` (and any dependency specs)
+   - The referenced contract in `contracts/` (if any)
+   - `docs/prd.md`, `docs/architecture.md`, relevant `docs/adr/*`
+   - `.devin/rules/core.md` and the focused rules (`spec-driven`, `quality-gates`,
+     `security`, `architecture`, `contracts`, `dotnet-conventions`)
 
 3. **Check dependencies.** If the spec depends on another incomplete spec, warn the user and propose to implement dependencies first.
 
 4. **Design the minimal change.** Write a short 2-3 sentence implementation plan and present it to the user if the change is non-trivial. Otherwise proceed.
 
-5. **Implement.** Follow the rules in `.devin/rules/core.md`:
-   - Prefer small, focused edits.
-   - Add only the code needed for the spec.
-   - Add migrations if the database model changes.
-   - Add tests only if requested or obviously required for correctness.
+5. **Implement.** Follow the focused rules:
+   - Prefer small, focused edits; add only the code the spec needs.
+   - Business logic in services; keep endpoints/components thin (`architecture.md`).
+   - Add EF Core migrations if the data model changes.
+   - **Generate tests from the acceptance criteria** — required, not optional
+     (`quality-gates.md`). Cover real edge cases.
 
 6. **Verify.**
-   - Run the minimal command needed to verify the change (build, test, or start app).
-   - If automated verification is not available, describe manual steps.
+   - Run build + test (with coverage). CI must be able to reach 100% green.
+   - If automated verification is not available locally, describe manual steps.
 
-7. **Update status.** Mark the spec as completed in `docs/plan.md` when done.
+7. **Update status.** Set the spec `status: in-progress` while working; the switch
+   to `done` happens at Gate 2 after merge.
 
-8. **Finalize.** Execute `.devin/workflows/finalize-spec.ps1` para garantir que as alterações sejam commitadas e enviadas:
+8. **Hand off to Gate 2.** Open the PR (below) and stop for human review via the
+   `review-and-merge` workflow. Do not self-merge without Gate 2 approval.
+
+9. **Finalize.** Execute `.devin/workflows/finalize-spec.ps1` para garantir que as alterações sejam commitadas e enviadas:
    - Verifica alterações pendentes e cria commit automaticamente.
    - Faz push da branch atual para o origin.
    - Abre (ou reaproveita) PR da branch atual para `develop` e aprova.
