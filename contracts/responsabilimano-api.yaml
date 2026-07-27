@@ -1,0 +1,450 @@
+openapi: 3.1.0
+info:
+  title: ResponsabiliMano API
+  version: 0.1.0
+  description: >
+    Brownfield baseline (spec R9) of the existing minimal-API endpoints served by
+    ResponsabiliMano.Web. Enums are serialized as integers (System.Text.Json
+    default); the mapping is documented per schema. This contract is the baseline
+    for contract testing (Tenet 6) — evolve it before changing an endpoint.
+
+servers:
+  - url: /
+    description: Same-origin (Blazor Server host)
+
+tags:
+  - name: Auth
+    description: Authentication and account recovery (/api/auth)
+  - name: Projects
+    description: Project lifecycle and change requests (/api/projects)
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserSummary' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in and receive the auth cookie (form post; antiforgery disabled)
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '302':
+          description: >
+            Redirect to '/' on success (Set-Cookie: ResponsabiliMano.Auth) or to
+            '/login?error=InvalidCredentials' on failure.
+          headers:
+            Location:
+              schema: { type: string }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out (antiforgery disabled)
+      operationId: logout
+      responses:
+        '302':
+          description: Redirect to '/login'
+          headers:
+            Location:
+              schema: { type: string }
+
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset link (antiforgery disabled)
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordRequest' }
+      responses:
+        '200':
+          description: Always OK — does not reveal whether the email exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset the password using a valid token (antiforgery disabled)
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordRequest' }
+      responses:
+        '200':
+          description: Password reset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '400':
+          description: Validation error or invalid/expired token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /api/projects:
+    post:
+      tags: [Projects]
+      summary: Create a project (antiforgery disabled)
+      operationId: createProject
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProjectRequest' }
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectCreated' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Get a project the caller participates in
+      operationId: getProject
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Project not found or not visible to the caller }
+
+  /api/projects/{id}/invite:
+    post:
+      tags: [Projects]
+      summary: Invite a partner to the project (antiforgery disabled)
+      operationId: invitePartner
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvitePartnerRequest' }
+      responses:
+        '200':
+          description: Invitation created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitationSummary' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/approve:
+    post:
+      tags: [Projects]
+      summary: Approve the project (antiforgery disabled)
+      operationId: approveProject
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/change-requests:
+    post:
+      tags: [Projects]
+      summary: Propose a change to the project (antiforgery disabled)
+      operationId: proposeChange
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProposeChangeRequest' }
+      responses:
+        '201':
+          description: Change request created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeRequestCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/change-requests/{crId}/respond:
+    post:
+      tags: [Projects]
+      summary: Approve or reject a change request (antiforgery disabled)
+      operationId: respondToChangeRequest
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: crId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: approve
+          in: query
+          required: true
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Change request resolved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ResponsabiliMano.Auth
+      description: Cookie authentication issued by /api/auth/login.
+
+  parameters:
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    ValidationProblem:
+      description: RFC 7807 validation problem (field -> messages)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ValidationProblemDetails' }
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Caller is not authenticated
+    Forbidden:
+      description: Caller may not act on this resource
+    Conflict:
+      description: Domain rule violated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ProjectFrequency:
+      type: integer
+      description: '0=Daily, 1=Weekly, 2=Biweekly, 3=Monthly'
+      enum: [0, 1, 2, 3]
+    GoalDataType:
+      type: integer
+      description: '0=Decimal, 1=Integer, 2=Percent'
+      enum: [0, 1, 2]
+    ChangeRequestType:
+      type: integer
+      description: '0=EndDate, 1=Frequency, 2=Goals'
+      enum: [0, 1, 2]
+    ProjectStatus:
+      type: integer
+      description: '0=Pending, 1=Active, 2=Finished, 3=Cancelled'
+      enum: [0, 1, 2, 3]
+    ChangeRequestStatus:
+      type: integer
+      description: '0=Pending, 1=Approved, 2=Rejected'
+      enum: [0, 1, 2]
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password, confirmPassword]
+      properties:
+        name: { type: string, maxLength: 200 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        confirmPassword: { type: string, minLength: 8 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    ResetPasswordRequest:
+      type: object
+      required: [token, password, confirmPassword]
+      properties:
+        token: { type: string }
+        password: { type: string, minLength: 8 }
+        confirmPassword: { type: string, minLength: 8 }
+    GoalFieldRequest:
+      type: object
+      required: [label, dataType, unit]
+      properties:
+        label: { type: string, maxLength: 200 }
+        dataType: { $ref: '#/components/schemas/GoalDataType' }
+        unit: { type: string, maxLength: 50 }
+        minValue: { type: number, nullable: true }
+        maxValue: { type: number, nullable: true }
+        targetValue: { type: number, nullable: true }
+    CreateProjectRequest:
+      type: object
+      required: [name, startDate, endDate, frequency, goals]
+      properties:
+        name: { type: string, maxLength: 200 }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        frequency: { $ref: '#/components/schemas/ProjectFrequency' }
+        goals:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/GoalFieldRequest' }
+    InvitePartnerRequest:
+      type: object
+      required: [partnerEmail]
+      properties:
+        partnerEmail: { type: string, format: email, maxLength: 256 }
+    ProposeChangeRequest:
+      type: object
+      required: [type]
+      properties:
+        type: { $ref: '#/components/schemas/ChangeRequestType' }
+        newEndDate: { type: string, format: date-time, nullable: true }
+        newFrequency:
+          oneOf:
+            - $ref: '#/components/schemas/ProjectFrequency'
+          nullable: true
+        goals:
+          type: array
+          nullable: true
+          items: { $ref: '#/components/schemas/GoalFieldRequest' }
+
+    UserSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+    ProjectCreated:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+    InvitationSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        expiresAt: { type: string, format: date-time }
+    ChangeRequestCreated:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/ChangeRequestStatus' }
+    ProjectDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        frequency: { $ref: '#/components/schemas/ProjectFrequency' }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+        creatorName: { type: string }
+        partnerName: { type: string, nullable: true }
+        goals:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              label: { type: string }
+              dataType: { $ref: '#/components/schemas/GoalDataType' }
+              unit: { type: string }
+              minValue: { type: number, nullable: true }
+              maxValue: { type: number, nullable: true }
+              targetValue: { type: number, nullable: true }
+        changeRequests:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              type: { $ref: '#/components/schemas/ChangeRequestType' }
+              status: { $ref: '#/components/schemas/ChangeRequestStatus' }
+              createdAt: { type: string, format: date-time }
+              requestedByUserId: { type: string, format: uuid }
+
+    MessageResponse:
+      type: object
+      properties:
+        message: { type: string }
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+    ValidationProblemDetails:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }

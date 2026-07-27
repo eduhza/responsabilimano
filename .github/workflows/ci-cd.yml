@@ -85,21 +85,27 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  # Reserved AI-Native gate. Implemented by spec R9 (OpenAPI baseline + contract
-  # tests) and spec-conformance checks. Currently a documented no-op placeholder.
+  # AI-Native gate (spec R9): lint the OpenAPI baseline and verify the mapped
+  # routes still match the documented contract (conformance).
   spec-and-contract-gate:
-    name: Spec Conformance & Contract Test (pending R9)
+    name: Spec Conformance & Contract Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reserved gate
-        run: |
-          echo "Reserved pipeline stage — wired up in spec R9."
-          echo "Will enforce: (1) the PR references an approved spec in specs/;"
-          echo "(2) the implementation honours contracts/*.yaml (contract tests)."
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Lint OpenAPI contract
+        run: npx --yes @redocly/cli@latest lint contracts/responsabilimano-api.yaml
+
+      - name: Contract conformance (routes match contract)
+        run: python scripts/contract-conformance.py
 
   deploy:
-    needs: [build-and-test, codeql]
+    needs: [build-and-test, codeql, spec-and-contract-gate]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

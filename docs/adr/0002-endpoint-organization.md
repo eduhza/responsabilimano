@@ -1,19 +1,22 @@
 # 0002 — Organização dos endpoints e validação
 
-- **Status:** proposed
+- **Status:** accepted
 - **Data:** 2026-07-27
-- **Contexto:** Hoje todos os endpoints HTTP estão inline em `Program.cs`
+- **Contexto:** Todos os endpoints HTTP estavam inline em `Program.cs`
   (~374 linhas), misturando bootstrap, roteamento e validação. As páginas Blazor
   também postam para esses minimal APIs, o que duplica validação (endpoint +
-  componente). Precisamos decidir (a) como organizar os endpoints e (b) se o
+  componente). Precisávamos decidir (a) como organizar os endpoints e (b) se o
   Blazor deve chamar `IProjectService` direto ou continuar via API.
-- **Decisão (a decidir na spec R1/R4):** Proposta — extrair os endpoints para
-  módulos por área (`Web/Endpoints/*.cs`) via `MapGroup` + extension methods,
-  deixando `Program.cs` só com bootstrap; centralizar validação (ex.:
-  FluentValidation) para eliminar duplicação. A decisão sobre "Blazor chama
-  serviço direto vs. via API" será registrada ao concluir R4.
+- **Decisão (a):** Extrair os endpoints para módulos por área
+  (`Web/Endpoints/AuthEndpoints.cs`, `ProjectEndpoints.cs`) via `MapGroup` +
+  extension methods sobre `IEndpointRouteBuilder`, deixando `Program.cs` só com
+  bootstrap + pipeline (< 80 linhas). Implementado na spec **R1** sem mudança de
+  comportamento observável.
+- **Decisão (b) — em aberto:** manter o padrão híbrido atual (Blazor → API) por
+  ora. Centralizar validação (ex.: FluentValidation compartilhada) para eliminar
+  a duplicação endpoint/componente continua débito, a ser tratado numa spec
+  **R4** dedicada. Registrar aqui quando decidido.
 - **Consequências:** `Program.cs` enxuto e testável; menor risco de regressão; a
-  IA gera código mais focado. Custo: refatoração sem mudança de comportamento
-  (coberta por testes de paridade).
+  IA gera código mais focado. A duplicação de validação permanece até R4.
 - **Alternativas consideradas:** Migrar para Controllers MVC (mais cerimônia que
   o necessário para o MVP); manter tudo inline (não escala, dificulta review).

@@ -26,5 +26,6 @@ arquitetura vira um ADR, referenciado pela spec que o motivou (campo `adr:`).
 | ADR | Título | Status |
 |---|---|---|
 | 0001 | Adotar o AI-Native SDLC com 3 gates humanos | accepted |
-| 0002 | Organização dos endpoints e validação | proposed |
+| 0002 | Organização dos endpoints e validação | accepted |
 | 0003 | Render mode do Blazor (Interactive Server) | proposed |
+| 0004 | Postura de antiforgery/CSRF nos endpoints de estado | accepted |
