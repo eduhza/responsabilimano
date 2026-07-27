@@ -31,6 +31,7 @@ jobs:
       - name: Test (+ coverage)
         run: >
           dotnet test --no-build --configuration Release
+          --settings coverage.runsettings
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
 

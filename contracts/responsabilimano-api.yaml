@@ -24,6 +24,7 @@ paths:
       tags: [Auth]
       summary: Register a new user
       operationId: register
+      security: []
       requestBody:
         required: true
         content:
@@ -43,6 +44,7 @@ paths:
       tags: [Auth]
       summary: Sign in and receive the auth cookie (form post; antiforgery disabled)
       operationId: login
+      security: []
       requestBody:
         required: true
         content:
@@ -62,6 +64,7 @@ paths:
       tags: [Auth]
       summary: Sign out (antiforgery disabled)
       operationId: logout
+      security: []
       responses:
         '302':
           description: Redirect to '/login'
@@ -74,6 +77,7 @@ paths:
       tags: [Auth]
       summary: Request a password-reset link (antiforgery disabled)
       operationId: forgotPassword
+      security: []
       requestBody:
         required: true
         content:
@@ -92,6 +96,7 @@ paths:
       tags: [Auth]
       summary: Reset the password using a valid token (antiforgery disabled)
       operationId: resetPassword
+      security: []
       requestBody:
         required: true
         content:
@@ -337,9 +342,9 @@ components:
         label: { type: string, maxLength: 200 }
         dataType: { $ref: '#/components/schemas/GoalDataType' }
         unit: { type: string, maxLength: 50 }
-        minValue: { type: number, nullable: true }
-        maxValue: { type: number, nullable: true }
-        targetValue: { type: number, nullable: true }
+        minValue: { type: [number, 'null'] }
+        maxValue: { type: [number, 'null'] }
+        targetValue: { type: [number, 'null'] }
     CreateProjectRequest:
       type: object
       required: [name, startDate, endDate, frequency, goals]
@@ -362,14 +367,13 @@ components:
       required: [type]
       properties:
         type: { $ref: '#/components/schemas/ChangeRequestType' }
-        newEndDate: { type: string, format: date-time, nullable: true }
+        newEndDate: { type: [string, 'null'], format: date-time }
         newFrequency:
           oneOf:
             - $ref: '#/components/schemas/ProjectFrequency'
-          nullable: true
+            - type: 'null'
         goals:
-          type: array
-          nullable: true
+          type: [array, 'null']
           items: { $ref: '#/components/schemas/GoalFieldRequest' }
 
     UserSummary:
@@ -405,7 +409,7 @@ components:
         frequency: { $ref: '#/components/schemas/ProjectFrequency' }
         status: { $ref: '#/components/schemas/ProjectStatus' }
         creatorName: { type: string }
-        partnerName: { type: string, nullable: true }
+        partnerName: { type: [string, 'null'] }
         goals:
           type: array
           items:
@@ -415,9 +419,9 @@ components:
               label: { type: string }
               dataType: { $ref: '#/components/schemas/GoalDataType' }
               unit: { type: string }
-              minValue: { type: number, nullable: true }
-              maxValue: { type: number, nullable: true }
-              targetValue: { type: number, nullable: true }
+              minValue: { type: [number, 'null'] }
+              maxValue: { type: [number, 'null'] }
+              targetValue: { type: [number, 'null'] }
         changeRequests:
           type: array
           items:
