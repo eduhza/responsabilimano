@@ -13,8 +13,21 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddResponsabiliManoInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+        {
+            if (connectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase)
+                || connectionString.Contains("Version=", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseSqlite(connectionString);
+            }
+            else
+            {
+                options.UseNpgsql(connectionString);
+            }
+        });
 
         // Email: send over SMTP when a password is configured (production, via
         // Secret Manager); otherwise fall back to logging (local dev sends nothing).
