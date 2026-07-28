@@ -22,6 +22,10 @@ tags:
       Check-in capture and scheduler-driven notifications (Sprint 3, specs
       S3.2–S3.4). These routes are gated behind the CheckIns feature flag and
       respond 404 while the flag is off (spec R7).
+  - name: Dashboard
+    description: >
+      Aggregated dashboard data for a project (Sprint 4, spec S4.1). Gated behind
+      the Dashboard feature flag; responds 404 while the flag is off (spec R7).
   - name: Cron
     description: Scheduler-only jobs (/api/cron), authenticated by a shared secret header.
 
@@ -306,6 +310,27 @@ paths:
         '404': { description: 'Project not found, or the CheckIns feature is disabled' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /api/projects/{id}/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: >
+        Get aggregated dashboard data for a project (spec S4.1). Behind the
+        Dashboard feature flag: 404 while off.
+      operationId: getProjectDashboard
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: 'Project not found, or the Dashboard feature is disabled' }
+
   /api/cron/checkins/dispatch:
     post:
       tags: [Cron]
@@ -559,6 +584,45 @@ components:
       properties:
         sent: { type: integer, description: Number of messages sent on this run }
 
+    DashboardResponse:
+      type: object
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        participants:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardParticipant' }
+        metrics:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardMetricSeries' }
+    DashboardParticipant:
+      type: object
+      properties:
+        userId: { type: string, format: uuid }
+        name: { type: string }
+        latestFeeling:
+          oneOf:
+            - $ref: '#/components/schemas/Feeling'
+            - type: 'null'
+    DashboardMetricSeries:
+      type: object
+      properties:
+        goalFieldId: { type: string, format: uuid }
+        label: { type: string }
+        unit: { type: string }
+        dataType: { $ref: '#/components/schemas/GoalDataType' }
+        targetValue: { type: [number, 'null'] }
+        series:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesEntry' }
+    DashboardSeriesEntry:
+      type: object
+      properties:
+        userId: { type: string, format: uuid }
+        periodNumber: { type: integer }
+        submittedAt: { type: string, format: date-time }
+        value: { type: number }
+        averageValue: { type: [number, 'null'] }
     MessageResponse:
       type: object
       properties:

@@ -143,6 +143,8 @@ public partial class Program
         // gated behind the CheckIns feature flag and ship dark until Gate 3.
         app.MapCheckInEndpoints();
         app.MapCronEndpoints();
+        // Sprint 4 (spec S4.1): dashboard data API. Gated behind the Dashboard feature flag.
+        app.MapDashboardEndpoints();
 
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
