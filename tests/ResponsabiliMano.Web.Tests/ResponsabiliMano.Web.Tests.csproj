@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <!-- The component under test lives in a Microsoft.NET.Sdk.Web project, which builds
+       against the ASP.NET Core shared framework. The test host needs it at runtime. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- No coverlet.collector on purpose: this project asserts UI *behavior* (bUnit),
+       not line coverage. Collecting here would emit a second report measuring the
+       shared Core/Infrastructure assemblies at ~0%, double-counting them in the
+       aggregate coverage gate. The gate is driven by ResponsabiliMano.Infrastructure.Tests. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="bunit.web" />
+    <!-- Direct reference forces bunit.web's transitive AngleSharp up to the patched
+         version pinned in Directory.Packages.props (SCA gate). -->
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ResponsabiliMano.Web\ResponsabiliMano.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

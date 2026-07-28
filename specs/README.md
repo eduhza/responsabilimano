@@ -37,7 +37,7 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 |---|---|---|
 | R1 | Extrair endpoints do `Program.cs` para módulos | done |
 | R9 | Baseline OpenAPI dos endpoints atuais | done |
-| X1 | Aplicar `@rendermode InteractiveServer` nas páginas com EditForm | draft |
+| X1 | Aplicar `@rendermode InteractiveServer` nas páginas interativas | done |
 | S3.1 | Modelo de dados de check-in | done |
 | S3.2 | Tela de check-in | done |
 | S3.3 | Cronjob de envio de check-in | done |

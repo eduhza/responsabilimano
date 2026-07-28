@@ -22,5 +22,9 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="bunit.web" Version="1.40.0" />
+    <!-- Override bunit.web's transitive AngleSharp 1.2.0 (NU1902 / GHSA-pgww-w46g-26qg,
+         vulnerable < 1.5.0) with the patched version so the SCA gate stays green. -->
+    <PackageVersion Include="AngleSharp" Version="1.5.0" />
   </ItemGroup>
 </Project>
