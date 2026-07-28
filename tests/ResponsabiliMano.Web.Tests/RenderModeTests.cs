@@ -22,6 +22,7 @@ public class RenderModeTests
         typeof(ProjectDetail),
         typeof(InvitationAccept),
         typeof(CheckIn),
+        typeof(Dashboard),
     ];
 
     // Pages that must remain static SSR (see ADR-0003).
