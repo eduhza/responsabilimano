@@ -42,6 +42,7 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | S3.2 | Tela de check-in | done |
 | S3.3 | Cronjob de envio de check-in | done |
 | S3.4 | Lembretes de check-in não respondido | done |
+| S3.5 | Envio real de e-mail (SMTP) + base URL nos links | done |
 
 > As specs de produto (`S*`/`X*`) nascem `draft`; o PM aprova (muda para
 > `approved`) no Gate 1, uma de cada vez, antes de implementar.
@@ -76,6 +77,9 @@ aceitas no Gate 2 (`done`). Toda a feature nasce **atrás da flag `CheckIns`**
   idempotente via `CheckInNotification`.
 - **S3.4** — `DispatchRemindersAsync` + `POST /api/cron/checkins/reminders`;
   lembra só quem não preencheu, idempotente por período.
+- **S3.5** — `SmtpEmailService` (MailKit) habilita envio real de e-mail;
+  seleção por presença de `EmailSettings__SmtpPassword` (senão log). Corrige o
+  link de recuperação de senha para usar o baseUrl da requisição.
 
 `PeriodCalculator` (Core) deriva o período corrente a partir da frequência do
 projeto — nunca confiado do cliente. Contrato de evento em
