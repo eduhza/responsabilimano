@@ -165,7 +165,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load invitation preview for token {Token}", Token);
+            Logger.LogError(ex, "Failed to load invitation preview");
             _error = Localizer["InvitationError"];
         }
         finally
@@ -182,7 +182,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load invitation preview for token {Token}", Token);
+            Logger.LogError(ex, "Failed to load invitation preview");
             return null;
         }
     }
@@ -207,7 +207,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to accept invitation for token {Token}, user {UserId}", Token, _currentUserId);
+            Logger.LogError(ex, "Failed to accept invitation for user {UserId}", _currentUserId);
             _error = Localizer["InvitationError"];
         }
         finally
