@@ -11,7 +11,7 @@ RUN dotnet restore src/ResponsabiliMano.Web/ResponsabiliMano.Web.csproj
 
 COPY . .
 
-RUN dotnet publish src/ResponsabiliMano.Web/ResponsabiliMano.Web.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/ResponsabiliMano.Web/ResponsabiliMano.Web.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
