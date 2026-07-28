@@ -17,6 +17,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IEmailService, LoggingEmailService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
+        services.AddScoped<ICheckInService, CheckInService>();
+        services.AddScoped<ICheckInNotificationService, CheckInNotificationService>();
 
         return services;
     }

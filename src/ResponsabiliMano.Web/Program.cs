@@ -94,6 +94,10 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check 
 // HTTP endpoints, grouped by area (spec R1). Program.cs only composes.
 app.MapAuthEndpoints();
 app.MapProjectEndpoints();
+// Sprint 3 (specs S3.2–S3.4): check-in capture + scheduler jobs. Both groups are
+// gated behind the CheckIns feature flag and ship dark until Gate 3.
+app.MapCheckInEndpoints();
+app.MapCronEndpoints();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

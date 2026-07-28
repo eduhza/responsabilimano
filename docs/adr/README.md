@@ -29,3 +29,4 @@ arquitetura vira um ADR, referenciado pela spec que o motivou (campo `adr:`).
 | 0002 | Organização dos endpoints e validação | accepted |
 | 0003 | Render mode do Blazor (Interactive Server) | proposed |
 | 0004 | Postura de antiforgery/CSRF nos endpoints de estado | accepted |
+| 0005 | Segurança dos endpoints de cron (check-in) | accepted |

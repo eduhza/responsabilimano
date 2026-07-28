@@ -4,6 +4,8 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IFeatureManager FeatureManager
+@using Microsoft.FeatureManagement
 
 <PageTitle>@Localizer["ProjectDetailTitle"]</PageTitle>
 
@@ -56,6 +58,11 @@ else
             }
         </div>
     </div>
+
+    @if (_project.Status == Core.Enums.ProjectStatus.Active && _checkInsEnabled)
+    {
+        <a href="@($"/projects/{_project.Id}/checkin")" class="btn btn-primary mb-3">@Localizer["CheckInButton"]</a>
+    }
 
     <h4>@Localizer["GoalsSectionTitle"]</h4>
     <table class="table table-striped">
@@ -243,6 +250,7 @@ else
     private Core.Entities.Project? _project;
     private Guid _currentUserId;
     private bool _loading = true;
+    private bool _checkInsEnabled;
     private bool _actionLoading;
     private string? _statusMessage;
     private string? _proposeError;
@@ -255,6 +263,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
+        _checkInsEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns);
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 

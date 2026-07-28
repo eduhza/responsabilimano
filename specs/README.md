@@ -38,10 +38,10 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | R1 | Extrair endpoints do `Program.cs` para módulos | done |
 | R9 | Baseline OpenAPI dos endpoints atuais | done |
 | X1 | Aplicar `@rendermode InteractiveServer` nas páginas com EditForm | draft |
-| S3.1 | Modelo de dados de check-in | draft |
-| S3.2 | Tela de check-in | draft |
-| S3.3 | Cronjob de envio de check-in | draft |
-| S3.4 | Lembretes de check-in não respondido | draft |
+| S3.1 | Modelo de dados de check-in | done |
+| S3.2 | Tela de check-in | done |
+| S3.3 | Cronjob de envio de check-in | done |
+| S3.4 | Lembretes de check-in não respondido | done |
 
 > As specs de produto (`S*`/`X*`) nascem `draft`; o PM aprova (muda para
 > `approved`) no Gate 1, uma de cada vez, antes de implementar.
@@ -60,3 +60,23 @@ A primeira leva de refactors rodou como dogfooding do processo:
 
 R3/R7/R8 não têm arquivo de spec próprio (mudanças pequenas/infra); estão
 rastreadas aqui e no plano de ação (`docs/plano-ai-native-sdlc.md`, §4.8).
+
+## Fase P2 (retomar o produto) — Sprint 3 feito
+
+Segunda leva pelo loop: specs `approved` no Gate 1, implementadas + testadas e
+aceitas no Gate 2 (`done`). Toda a feature nasce **atrás da flag `CheckIns`**
+(desligada em produção; ligada em `Development`) — o release fica para o Gate 3:
+
+- **S3.1** — `CheckIn`/`CheckInMetric` (já modeladas na Sprint 0); testes de
+  unicidade por período e cascade adicionados.
+- **S3.2** — `ICheckInService` + página `/projects/{id}/checkin` (feeling em 5
+  rostos SVG, campos gerados das metas) + `POST /api/projects/{id}/checkins`.
+- **S3.3** — `ICheckInNotificationService.DispatchCheckInEmailsAsync` +
+  `POST /api/cron/checkins/dispatch` (secret `X-Cron-Secret`, ver `docs/adr/0005`),
+  idempotente via `CheckInNotification`.
+- **S3.4** — `DispatchRemindersAsync` + `POST /api/cron/checkins/reminders`;
+  lembra só quem não preencheu, idempotente por período.
+
+`PeriodCalculator` (Core) deriva o período corrente a partir da frequência do
+projeto — nunca confiado do cliente. Contrato de evento em
+`contracts/checkin-events.yaml` (AsyncAPI); endpoints no OpenAPI + gate verde.
