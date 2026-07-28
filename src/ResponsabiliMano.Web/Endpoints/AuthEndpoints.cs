@@ -96,7 +96,7 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> ForgotPasswordAsync(
-        ForgotPasswordRequest request, IPasswordResetService resetService, CancellationToken cancellationToken)
+        ForgotPasswordRequest request, IPasswordResetService resetService, HttpContext httpContext, CancellationToken cancellationToken)
     {
         if (!EmailAddress.IsValid(request.Email))
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -104,7 +104,8 @@ public static class AuthEndpoints
                 ["email"] = ["A valid email is required."]
             });
 
-        await resetService.RequestResetAsync(request.Email, cancellationToken);
+        var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+        await resetService.RequestResetAsync(request.Email, baseUrl, cancellationToken);
         return Results.Ok(new { message = "If the email exists, a reset link has been sent." });
     }
 

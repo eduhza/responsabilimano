@@ -24,7 +24,7 @@ public sealed class PasswordResetService : IPasswordResetService
         _logger = logger;
     }
 
-    public async Task RequestResetAsync(string email, CancellationToken cancellationToken = default)
+    public async Task RequestResetAsync(string email, string baseUrl, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = EmailAddress.Normalize(email);
         var user = await _context.Users
@@ -51,7 +51,7 @@ public sealed class PasswordResetService : IPasswordResetService
         _context.PasswordResetTokens.Add(resetToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        var resetLink = $"https://localhost:8080/reset-password?token={rawToken}";
+        var resetLink = $"{baseUrl.TrimEnd('/')}/reset-password?token={rawToken}";
         var subject = "Recuperacao de Senha - ResponsabiliMano";
         var body = $"""
             <h2>Recuperacao de Senha</h2>
