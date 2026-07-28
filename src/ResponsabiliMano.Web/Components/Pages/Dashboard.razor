@@ -1,0 +1,291 @@
+@page "/projects/{ProjectId:guid}/dashboard"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDashboardService DashboardService
+@inject IFeatureManager FeatureManager
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+@inject ILogger<Dashboard> Logger
+@using Microsoft.FeatureManagement
+@implements IAsyncDisposable
+
+<PageTitle>@Localizer["DashboardTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <p>@Localizer["Loading"]</p>
+}
+else if (!_available)
+{
+    <div class="alert alert-danger" role="alert">@Localizer["ProjectNotFound"]</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <a href="@($"/projects/{ProjectId}")" class="btn btn-outline-secondary">@Localizer["BackToProject"]</a>
+}
+else if (_dashboard is not null)
+{
+    <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
+
+    @if (_dashboard.Metrics.Count > 1)
+    {
+        <div class="mb-3">
+            <label class="form-label">@Localizer["DashboardGoalSelector"]</label>
+            <select class="form-select" style="max-width: 300px;" @bind="_selectedGoalIndex" @bind:after="RenderChartAsync">
+                @for (var i = 0; i < _dashboard.Metrics.Count; i++)
+                {
+                    var idx = i;
+                    <option value="@idx">@_dashboard.Metrics[idx].Label (@_dashboard.Metrics[idx].Unit)</option>
+                }
+            </select>
+        </div>
+    }
+
+    @if (_dashboard.Metrics.Count > 0)
+    {
+        <div class="mb-4" style="max-width: 100%;">
+            <canvas id="dashboardChart" style="max-height: 400px;"></canvas>
+        </div>
+    }
+
+    <h4>@Localizer["DashboardFeelingCards"]</h4>
+    <div class="row g-3 mb-4">
+        @foreach (var participant in _dashboard.Participants)
+        {
+            <div class="col-12 col-sm-6">
+                <div class="card">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        @if (participant.LatestFeeling is not null)
+                        {
+                            @((MarkupString)FaceSvg(participant.LatestFeeling.Value))
+                        }
+                        else
+                        {
+                            <span class="text-muted fs-3">—</span>
+                        }
+                        <div>
+                            <strong>@participant.Name</strong>
+                            <br />
+                            @if (participant.LatestFeeling is not null)
+                            {
+                                <span class="text-muted">@FeelingText(participant.LatestFeeling.Value)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">@Localizer["DashboardNoCheckIns"]</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <h4>@Localizer["DashboardAverages"]</h4>
+    <div class="row g-3 mb-4">
+        @foreach (var metric in _dashboard.Metrics)
+        {
+            @foreach (var participant in _dashboard.Participants)
+            {
+                var avg = metric.Series.FirstOrDefault(s => s.UserId == participant.UserId)?.AverageValue;
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">@participant.Name — @metric.Label</h6>
+                            <p class="card-text fs-5">
+                                @if (avg is not null)
+                                {
+                                    <span>@avg @metric.Unit</span>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <a href="@($"/projects/{ProjectId}")" class="btn btn-outline-secondary">@Localizer["BackToProject"]</a>
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private DashboardResponse? _dashboard;
+    private bool _loading = true;
+    private bool _available = true;
+    private string? _error;
+    private int _selectedGoalIndex;
+    private Guid _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard))
+        {
+            _available = false;
+            _loading = false;
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _dashboard = await DashboardService.GetDashboardAsync(ProjectId, _currentUserId);
+            if (_dashboard is null)
+            {
+                _available = false;
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _available = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load dashboard for project {ProjectId}", ProjectId);
+            _error = Localizer["DashboardError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _dashboard is not null && _available && _error is null)
+        {
+            await RenderChartAsync();
+        }
+    }
+
+    private async Task RenderChartAsync()
+    {
+        if (_dashboard is null || _dashboard.Metrics.Count == 0) return;
+        var config = BuildChartConfig(_selectedGoalIndex);
+        await JS.InvokeVoidAsync("dashboardChart.render", "dashboardChart", config);
+    }
+
+    private object BuildChartConfig(int goalIndex)
+    {
+        var metric = _dashboard!.Metrics[goalIndex];
+
+        var allPeriods = metric.Series
+            .Select(s => s.PeriodNumber)
+            .Distinct()
+            .OrderBy(p => p)
+            .ToList();
+
+        var datasets = new List<object>();
+        var colors = new[]
+        {
+            "rgb(54, 162, 235)",
+            "rgb(255, 99, 132)",
+            "rgb(75, 192, 192)",
+            "rgb(153, 102, 255)"
+        };
+
+        for (var i = 0; i < _dashboard.Participants.Count; i++)
+        {
+            var participant = _dashboard.Participants[i];
+            var entries = metric.Series
+                .Where(s => s.UserId == participant.UserId)
+                .OrderBy(s => s.PeriodNumber)
+                .ToList();
+
+            var data = allPeriods.Select(period =>
+            {
+                var entry = entries.FirstOrDefault(e => e.PeriodNumber == period);
+                return entry is not null ? (object?)entry.Value : null;
+            }).ToList();
+
+            datasets.Add(new
+            {
+                label = participant.Name,
+                data = data,
+                borderColor = colors[i % colors.Length],
+                tension = 0.1,
+                fill = false
+            });
+        }
+
+        return new
+        {
+            type = "line",
+            data = new
+            {
+                labels = allPeriods.Select(p => (object)p).ToList(),
+                datasets = datasets
+            },
+            options = new
+            {
+                responsive = true,
+                maintainAspectRatio = false,
+                scales = new
+                {
+                    x = new { title = new { display = true, text = Localizer["DashboardPeriodAxis"].ToString() } },
+                    y = new { title = new { display = true, text = Localizer["DashboardValueAxis"].ToString() } }
+                }
+            }
+        };
+    }
+
+    private string FeelingText(Feeling feeling) => feeling switch
+    {
+        Feeling.VerySad => Localizer["FeelingVerySad"],
+        Feeling.Sad => Localizer["FeelingSad"],
+        Feeling.Neutral => Localizer["FeelingNeutral"],
+        Feeling.Happy => Localizer["FeelingHappy"],
+        Feeling.VeryHappy => Localizer["FeelingVeryHappy"],
+        _ => feeling.ToString()
+    };
+
+    private static string FaceSvg(Feeling feeling)
+    {
+        var mouth = feeling switch
+        {
+            Feeling.VerySad => "M8 17 Q12 12 16 17",
+            Feeling.Sad => "M8 16 Q12 13 16 16",
+            Feeling.Neutral => "M8 15 L16 15",
+            Feeling.Happy => "M8 14 Q12 17 16 14",
+            Feeling.VeryHappy => "M8 13 Q12 19 16 13",
+            _ => "M8 15 L16 15"
+        };
+
+        return $"""
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="9" cy="10" r="1" fill="currentColor" />
+              <circle cx="15" cy="10" r="1" fill="currentColor" />
+              <path d="{mouth}" stroke-linecap="round" />
+            </svg>
+            """;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("dashboardChart.destroy");
+        }
+        catch
+        {
+        }
+    }
+}
