@@ -73,7 +73,14 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// Re-execute error responses to the Blazor not-found page — for the UI only. The
+// /api surface is excluded: re-executing an empty-body API error (e.g. 401 from
+// Unauthorized(), 404 from a disabled feature gate) as a POST to the /not-found
+// Razor component hits antiforgery and turns every such response into an empty 400.
+// APIs must keep their real status codes.
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

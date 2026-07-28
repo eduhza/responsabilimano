@@ -23,22 +23,29 @@
   R1. (2) Mover os endpoints para dentro dos componentes Blazor (chamada direta a
   `IProjectService`) — é a decisão (b) em aberto no ADR-0002, maior que R5.
 
-## Adendo (2026-07-28) — antiforgery escopado à UI (fecha parte de R5)
+## Adendo (2026-07-28) — middlewares de UI escopados para fora de `/api`
 
-Ao subir para produção (Cloud Run), descobrimos que os POST de `/api/*` recebiam
-**400 do middleware de antiforgery** mesmo com `DisableAntiforgery()` por endpoint
-(o `DisableAntiforgery` não estava sendo honrado de forma consistente para os grupos
-`/api/projects` e `/api/cron`; a UI usa os serviços diretamente, então o problema
-só aparecia via HTTP). Como **todos** os endpoints `/api` já eram antiforgery-exempt
-por intenção (este ADR) e a UI **não** chama `/api`, escopamos o middleware:
+Ao subir para produção (Cloud Run), **todo POST para `/api/*` que produzia um erro
+com corpo vazio** (ex.: `401` do `Results.Unauthorized()`, `404` do feature gate do
+cron) voltava como **`400` vazio**. Diagnóstico: `UseStatusCodePagesWithReExecute("/not-found")`
+**re-executa** respostas de erro sem corpo re-emitindo a requisição para `/not-found`
+com o **método original**. Para GET isso renderiza a página (404); para **POST**, a
+re-execução bate no endpoint Razor de `/not-found`, que exige **antiforgery**, e o
+resultado vira `400` vazio — mascarando o status real do endpoint `/api`. (A UI chama
+os serviços direto, então isso só aparecia via HTTP.)
+
+Correção: os dois middlewares **orientados à UI** passam a ser escopados para
+requisições **não-`/api`**, deixando o `/api` com seus status reais (401/404/JSON):
 
 ```csharp
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"),
     branch => branch.UseAntiforgery());
 ```
 
-Antiforgery continua protegendo os formulários Blazor (não-`/api`). O `/api` fica
-exempt, apoiado no cookie `SameSite=Lax` (bloqueia POST cross-site) para endpoints
-de usuário e no secret `X-Cron-Secret` para o cron (ADR-0005). Isso desbloqueia o
+Antiforgery continua protegendo os formulários Blazor (não-`/api`); no `/api` ele é
+redundante (todos já usam `DisableAntiforgery`) e o CSRF é mitigado pelo cookie
+`SameSite=Lax` e, no cron, pelo secret `X-Cron-Secret` (ADR-0005). Isso desbloqueia o
 cron do Cloud Scheduler (S3.3/S3.4). O restante de R5 (reavaliar CSRF caso a UI passe
 a chamar `/api`, ou tokens por request no cron) segue aberto.
