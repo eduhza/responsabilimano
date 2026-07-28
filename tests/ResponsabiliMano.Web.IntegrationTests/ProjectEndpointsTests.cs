@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json;
 
 namespace ResponsabiliMano.Web.IntegrationTests;
 
@@ -9,12 +8,7 @@ namespace ResponsabiliMano.Web.IntegrationTests;
 public class ProjectEndpointsTests : IAsyncLifetime
 {
     private readonly IntegrationFixture _fixture;
-
-    public ProjectEndpointsTests(IntegrationFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
+    public ProjectEndpointsTests(IntegrationFixture fixture) => _fixture = fixture;
     public async Task InitializeAsync() => await _fixture.ResetAsync();
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -28,22 +22,19 @@ public class ProjectEndpointsTests : IAsyncLifetime
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.GetAsync($"/api/projects/{project.Id}");
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(project.Name, body.GetProperty("name").GetString());
+        Assert.Equal("Test Project", body.GetProperty("name").GetString());
     }
 
     [Fact]
     public async Task GetProject_NonParticipant_Returns403()
     {
-        var (creator, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
-        // Register an outsider
+        var (_, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
         var outsiderCookie = await _fixture.RegisterAndLoginAsync("Outsider", "outsider@example.com", "Password123!");
         var client = _fixture.AuthenticatedClient(outsiderCookie);
 
         var response = await client.GetAsync($"/api/projects/{project.Id}");
-
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -54,7 +45,6 @@ public class ProjectEndpointsTests : IAsyncLifetime
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.GetAsync($"/api/projects/{Guid.NewGuid()}");
-
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -71,12 +61,11 @@ public class ProjectEndpointsTests : IAsyncLifetime
             Name = "New Project",
             StartDate = DateTime.UtcNow.AddDays(1),
             EndDate = DateTime.UtcNow.AddDays(31),
-            Frequency = 1, // Weekly
-            Goals = new[] { new { Label = "Steps", DataType = 1, Unit = "count", TargetValue = 10000 } }
+            Frequency = 1,
+            Goals = new[] { new { Label = "Steps", DataType = 0, Unit = "count", TargetValue = 10000m } }
         };
 
         var response = await client.PostAsJsonAsync("/api/projects", request);
-
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("New Project", body.GetProperty("name").GetString());
@@ -85,20 +74,19 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task CreateProject_Invalid_ReturnsValidationProblem()
     {
-        var cookie = await _fixture.RegisterAndLoginAsync("Creator", "creator2@example.com", "Password123!");
+        var cookie = await _fixture.RegisterAndLoginAsync("Creator", "creator@example.com", "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
         var request = new
         {
             Name = "",
-            StartDate = DateTime.UtcNow.AddDays(10),
-            EndDate = DateTime.UtcNow.AddDays(1), // end before start
+            StartDate = DateTime.UtcNow.AddDays(1),
+            EndDate = DateTime.UtcNow.AddDays(-1),
             Frequency = 1,
             Goals = Array.Empty<object>()
         };
 
         var response = await client.PostAsJsonAsync("/api/projects", request);
-
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -107,15 +95,14 @@ public class ProjectEndpointsTests : IAsyncLifetime
     {
         var request = new
         {
-            Name = "Test",
+            Name = "New Project",
             StartDate = DateTime.UtcNow.AddDays(1),
             EndDate = DateTime.UtcNow.AddDays(31),
             Frequency = 1,
-            Goals = new[] { new { Label = "Steps", DataType = 1, Unit = "count" } }
+            Goals = new[] { new { Label = "Steps", DataType = 0, Unit = "count", TargetValue = 10000m } }
         };
 
         var response = await _fixture.Client.PostAsJsonAsync("/api/projects", request);
-
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -124,17 +111,12 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task InvitePartner_Success_ReturnsOk()
     {
-        var (creator, _, project) = await SeedHelper.SeedPendingProjectAsync(_fixture);
-        // Register the partner so the email exists in the system
-        await _fixture.RegisterAndLoginAsync("Partner", "partner@example.com", "Password123!");
-        await _fixture.ResetAsync();
-        // Re-seed since reset cleared DB
-        var (creator2, _, project2) = await SeedHelper.SeedPendingProjectAsync(_fixture);
-        var cookie = await _fixture.LoginAsync(creator2.Email, "Password123!");
+        var (creator, project) = await SeedHelper.SeedPendingProjectAsync(_fixture);
+        var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.PostAsJsonAsync(
-            $"/api/projects/{project2.Id}/invite",
+            $"/api/projects/{project.Id}/invite",
             new { PartnerEmail = "partner@example.com" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -143,14 +125,13 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task InvitePartner_NonCreator_Returns403()
     {
-        var (creator, partner, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
-        // Login as partner (not creator)
+        var (_, partner, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
         var cookie = await _fixture.LoginAsync(partner.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.PostAsJsonAsync(
             $"/api/projects/{project.Id}/invite",
-            new { PartnerEmail = "someone@example.com" });
+            new { PartnerEmail = "other@example.com" });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -161,13 +142,10 @@ public class ProjectEndpointsTests : IAsyncLifetime
     public async Task ApproveProject_Success_ReturnsOk()
     {
         var (creator, partner, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
-        // Project is already Active (seeded as Active). Let's seed a pending project with partner.
-        // Actually, let's use the partner to approve.
-        var cookie = await _fixture.LoginAsync(partner.Email, "Password123!");
+        var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.PostAsync($"/api/projects/{project.Id}/approve", null);
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -179,7 +157,6 @@ public class ProjectEndpointsTests : IAsyncLifetime
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.PostAsync($"/api/projects/{project.Id}/approve", null);
-
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
@@ -188,15 +165,11 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task ProposeChange_Success_ReturnsCreated()
     {
-        var (creator, partner, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
+        var (creator, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
         var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
-        var request = new
-        {
-            Type = 1, // Frequency
-            NewFrequency = 2 // Monthly
-        };
+        var request = new { Type = 1, NewFrequency = 2 };
 
         var response = await client.PostAsJsonAsync(
             $"/api/projects/{project.Id}/change-requests", request);
@@ -207,16 +180,11 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task ProposeChange_InvalidPayload_Returns400()
     {
-        var (creator, partner, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
+        var (creator, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
         var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
-        // Type = EndDate (0) but no NewEndDate provided -> ToPayloadJson throws ArgumentException
-        var request = new
-        {
-            Type = 0, // EndDate
-            // NewEndDate missing
-        };
+        var request = new { Type = 0 };
 
         var response = await client.PostAsJsonAsync(
             $"/api/projects/{project.Id}/change-requests", request);
@@ -229,8 +197,7 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task RespondToChangeRequest_Success_ReturnsOk()
     {
-        var (cr, project, creator, partner) = await SeedHelper.SeedChangeRequestAsync(_fixture);
-        // Partner responds to creator's change request
+        var (cr, project, _, partner) = await SeedHelper.SeedChangeRequestAsync(_fixture);
         var cookie = await _fixture.LoginAsync(partner.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
@@ -243,8 +210,7 @@ public class ProjectEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task RespondToChangeRequest_NonParticipant_Returns403()
     {
-        var (cr, project, creator, partner) = await SeedHelper.SeedChangeRequestAsync(_fixture);
-        // Register an outsider
+        var (cr, project, _, _) = await SeedHelper.SeedChangeRequestAsync(_fixture);
         var outsiderCookie = await _fixture.RegisterAndLoginAsync("Outsider", "outsider@example.com", "Password123!");
         var client = _fixture.AuthenticatedClient(outsiderCookie);
 
