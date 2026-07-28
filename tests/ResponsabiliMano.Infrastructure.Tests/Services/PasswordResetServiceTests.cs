@@ -10,6 +10,8 @@ namespace ResponsabiliMano.Infrastructure.Tests.Services;
 
 public class PasswordResetServiceTests
 {
+    private const string BaseUrl = "https://app.example.com";
+
     private static User SeedUser(AppDbContext context, string email = "user@example.com")
     {
         var user = new User
@@ -36,7 +38,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
 
-        await service.RequestResetAsync("ghost@example.com");
+        await service.RequestResetAsync("ghost@example.com", BaseUrl);
 
         Assert.Empty(context.PasswordResetTokens);
         Assert.Empty(email.SentEmails);
@@ -50,7 +52,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
 
-        await service.RequestResetAsync("USER@example.com");
+        await service.RequestResetAsync("USER@example.com", BaseUrl);
 
         var token = Assert.Single(context.PasswordResetTokens);
         Assert.Equal(user.Id, token.UserId);
@@ -59,6 +61,7 @@ public class PasswordResetServiceTests
 
         var sent = Assert.Single(email.SentEmails);
         Assert.Equal(user.Email, sent.To);
+        Assert.Contains($"{BaseUrl}/reset-password?token=", sent.HtmlBody);
     }
 
     [Fact]
@@ -69,7 +72,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
 
-        await service.RequestResetAsync("user@example.com");
+        await service.RequestResetAsync("user@example.com", BaseUrl);
 
         var stored = Assert.Single(context.PasswordResetTokens);
         var sentBody = email.SentEmails[0].HtmlBody;
@@ -109,7 +112,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
         SeedUser(context);
-        await service.RequestResetAsync("user@example.com");
+        await service.RequestResetAsync("user@example.com", BaseUrl);
         var rawToken = email.SentEmails[0].HtmlBody.Split("token=")[1].Split('"')[0];
 
         var token = await context.PasswordResetTokens.FirstAsync();
@@ -126,7 +129,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
         SeedUser(context);
-        await service.RequestResetAsync("user@example.com");
+        await service.RequestResetAsync("user@example.com", BaseUrl);
         var rawToken = email.SentEmails[0].HtmlBody.Split("token=")[1].Split('"')[0];
 
         Assert.True(await service.ResetPasswordAsync(rawToken, "first-new-pass"));
@@ -140,7 +143,7 @@ public class PasswordResetServiceTests
         var email = new FakeEmailService();
         var service = CreateService(context, email);
         var user = SeedUser(context);
-        await service.RequestResetAsync("user@example.com");
+        await service.RequestResetAsync("user@example.com", BaseUrl);
         var rawToken = email.SentEmails[0].HtmlBody.Split("token=")[1].Split('"')[0];
 
         var result = await service.ResetPasswordAsync(rawToken, "the-new-password");

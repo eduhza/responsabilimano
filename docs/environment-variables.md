@@ -7,16 +7,19 @@
 | `ASPNETCORE_ENVIRONMENT` | Ambiente de execução (`Development`, `Staging`, `Production`) | `Development` |
 | `ConnectionStrings__DefaultConnection` | Connection string do PostgreSQL | `Host=db;Database=responsabilimano;Username=postgres;Password=postgres` |
 
-## Configuração do E-mail (S1.x)
+## Configuração do E-mail (S3.5)
+
+Seção `EmailSettings`. Sem `SmtpPassword` a aplicação usa o `LoggingEmailService`
+(dev local não envia nada); com a senha, usa o `SmtpEmailService` (MailKit).
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `Email__SmtpHost` | Host do servidor SMTP | `smtp.example.com` |
-| `Email__SmtpPort` | Porta do servidor SMTP | `587` |
-| `Email__SmtpUser` | Usuário SMTP | `noreply@example.com` |
-| `Email__SmtpPassword` | Senha SMTP | `secret` |
-| `Email__FromAddress` | Endereço remetente padrão | `noreply@responsabilimano.app` |
-| `Email__FromName` | Nome remetente padrão | `ResponsabiliMano` |
+| `EmailSettings__SmtpHost` | Host do servidor SMTP | `smtp.gmail.com` |
+| `EmailSettings__SmtpPort` | Porta do servidor SMTP (STARTTLS) | `587` |
+| `EmailSettings__SmtpUser` | Usuário SMTP (autenticação) | `eduardo.arruda@bomvoarturismo.com` |
+| `EmailSettings__SmtpPassword` | Senha/app password — **só via Secret Manager** | `secret` |
+| `EmailSettings__FromName` | Nome do remetente | `Clube BomVoar` |
+| `EmailSettings__FromEmail` | Endereço do remetente | `no-reply@bomvoarturismo.com` |
 
 ## GCP / Produção (secrets do GitHub Actions)
 
@@ -37,7 +40,7 @@ Usados pelo workflow `.github/workflows/ci-cd.yml` no deploy para Cloud Run via 
 |---------|------|
 | Cloud SQL (PostgreSQL 16) | instância `responsabilimano-db`, database `responsabilimano`, usuário `appuser` |
 | Instance connection name | `responsabilimano:us-central1:responsabilimano-db` |
-| Secret Manager | `connection-string` (injetado no Cloud Run como `ConnectionStrings__DefaultConnection`) |
+| Secret Manager | `connection-string` → `ConnectionStrings__DefaultConnection`; `cron-secret` → `Cron__Secret`; `email-smtp-password` → `EmailSettings__SmtpPassword` |
 | Artifact Registry | `us-central1-docker.pkg.dev/responsabilimano/containers` |
 
 > A connection string de produção usa o socket do Cloud SQL:
@@ -47,5 +50,6 @@ Usados pelo workflow `.github/workflows/ci-cd.yml` no deploy para Cloud Run via 
 
 | Variável | Descrição |
 |----------|-----------|
-| `CRON_API_KEY` | Chave para proteger endpoints de cronjob (S3.x) |
-| `ALLOWED_ORIGINS` | Origens permitidas para CORS, separadas por vírgula |
+| `Cron__Secret` | Segredo do header `X-Cron-Secret` dos endpoints de cron (S3.3/S3.4, ver `docs/adr/0005`) — **só via Secret Manager** |
+| `FeatureManagement__CheckIns` | Liga/desliga a feature de check-in (deploy ≠ release; `true` libera aos usuários) |
+| `ALLOWED_ORIGINS` | Origens permitidas para CORS, separadas por vírgula (futuro) |

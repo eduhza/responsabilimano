@@ -1,0 +1,222 @@
+@page "/projects/{ProjectId:guid}/checkin"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject ICheckInService CheckInService
+@inject IFeatureManager FeatureManager
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<CheckIn> Logger
+@using Microsoft.FeatureManagement
+@using ResponsabiliMano.Core.Entities
+
+<PageTitle>@Localizer["CheckInTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <p>@Localizer["Loading"]</p>
+}
+else if (!_available || _project is null)
+{
+    <div class="alert alert-danger" role="alert">@Localizer["ProjectNotFound"]</div>
+    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+}
+else if (_success || _alreadySubmitted)
+{
+    <h3>@Localizer["CheckInTitle"]</h3>
+    <div class="alert alert-success" role="alert">
+        @(_success ? Localizer["CheckInSuccess"] : Localizer["CheckInAlreadyDone"])
+    </div>
+    <a href="@($"/projects/{ProjectId}")" class="btn btn-outline-secondary">@Localizer["BackToProject"]</a>
+}
+else
+{
+    <h3>@Localizer["CheckInTitle"]</h3>
+    <p class="text-muted">@_project.Name — @Localizer["CheckInPeriodLabel", _period]</p>
+
+    <h4>@Localizer["CheckInMetricsTitle"]</h4>
+    @foreach (var entry in _metrics)
+    {
+        <div class="mb-3">
+            <label class="form-label">
+                @entry.Goal.Label <span class="text-muted">(@entry.Goal.Unit)</span>
+                @if (entry.Goal.MinValue is not null || entry.Goal.MaxValue is not null)
+                {
+                    <small class="text-muted">— @entry.Goal.MinValue … @entry.Goal.MaxValue</small>
+                }
+            </label>
+            <input type="number" step="any" class="form-control"
+                   min="@entry.Goal.MinValue" max="@entry.Goal.MaxValue"
+                   @bind="entry.Value" />
+        </div>
+    }
+
+    <h4>@Localizer["CheckInFeelingTitle"]</h4>
+    <div class="d-flex gap-2 mb-3" role="radiogroup" aria-label="@Localizer["CheckInFeelingTitle"]">
+        @foreach (var feeling in Feelings)
+        {
+            var current = feeling;
+            <button type="button"
+                    class="btn @(_feeling == current ? "btn-primary" : "btn-outline-secondary")"
+                    aria-pressed="@(_feeling == current)"
+                    title="@FeelingText(current)"
+                    @onclick="() => _feeling = current">
+                @((MarkupString)FaceSvg(current))
+            </button>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger" role="alert">@_error</div>
+    }
+
+    <div>
+        <button type="button" class="btn btn-primary" disabled="@_submitting" @onclick="HandleSubmit">
+            @(_submitting ? Localizer["Processing"] : Localizer["CheckInSubmitButton"])
+        </button>
+        <a href="@($"/projects/{ProjectId}")" class="btn btn-link">@Localizer["Cancel"]</a>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private static readonly Feeling[] Feelings =
+        [Feeling.VerySad, Feeling.Sad, Feeling.Neutral, Feeling.Happy, Feeling.VeryHappy];
+
+    private Project? _project;
+    private int _period;
+    private bool _available = true;
+    private bool _loading = true;
+    private bool _alreadySubmitted;
+    private bool _submitting;
+    private bool _success;
+    private string? _error;
+    private Feeling _feeling = Feeling.Neutral;
+    private readonly List<MetricEntry> _metrics = new();
+    private Guid _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns))
+        {
+            _available = false;
+            _loading = false;
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            var form = await CheckInService.GetCheckInFormAsync(ProjectId, _currentUserId);
+            if (form is null || form.PeriodNumber < 1)
+            {
+                _available = false;
+                return;
+            }
+
+            _project = form.Project;
+            _period = form.PeriodNumber;
+            _alreadySubmitted = form.AlreadySubmitted;
+            _metrics.AddRange(form.Project.Goals.Select(g => new MetricEntry(g)));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _available = false;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+
+        try
+        {
+            if (_metrics.Any(m => m.Value is null))
+            {
+                _error = Localizer["CheckInMissingValues"];
+                return;
+            }
+
+            var metrics = _metrics
+                .Select(m => new CheckInMetricInput(m.Goal.Id, m.Value!.Value))
+                .ToList();
+
+            await CheckInService.SubmitCheckInAsync(ProjectId, _currentUserId, _feeling, metrics);
+            _success = true;
+        }
+        catch (ArgumentException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to submit check-in for project {ProjectId}", ProjectId);
+            _error = Localizer["CheckInError"];
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private string FeelingText(Feeling feeling) => feeling switch
+    {
+        Feeling.VerySad => Localizer["FeelingVerySad"],
+        Feeling.Sad => Localizer["FeelingSad"],
+        Feeling.Neutral => Localizer["FeelingNeutral"],
+        Feeling.Happy => Localizer["FeelingHappy"],
+        Feeling.VeryHappy => Localizer["FeelingVeryHappy"],
+        _ => feeling.ToString()
+    };
+
+    // Minimal inline SVG faces (5-point sentiment scale). The mouth path is the
+    // only part that changes: a frown for sad feelings, a flat line for neutral,
+    // a smile for happy ones.
+    private static string FaceSvg(Feeling feeling)
+    {
+        var mouth = feeling switch
+        {
+            Feeling.VerySad => "M8 17 Q12 12 16 17",
+            Feeling.Sad => "M8 16 Q12 13 16 16",
+            Feeling.Neutral => "M8 15 L16 15",
+            Feeling.Happy => "M8 14 Q12 17 16 14",
+            Feeling.VeryHappy => "M8 13 Q12 19 16 13",
+            _ => "M8 15 L16 15"
+        };
+
+        return $"""
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="9" cy="10" r="1" fill="currentColor" />
+              <circle cx="15" cy="10" r="1" fill="currentColor" />
+              <path d="{mouth}" stroke-linecap="round" />
+            </svg>
+            """;
+    }
+
+    private sealed class MetricEntry
+    {
+        public MetricEntry(GoalField goal) => Goal = goal;
+        public GoalField Goal { get; }
+        public decimal? Value { get; set; }
+    }
+}

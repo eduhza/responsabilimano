@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ResponsabiliMano.Core.Services;
+using ResponsabiliMano.Infrastructure.Configuration;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.Services;
 
@@ -15,8 +16,18 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddScoped<IEmailService, LoggingEmailService>();
+        // Email: send over SMTP when a password is configured (production, via
+        // Secret Manager); otherwise fall back to logging (local dev sends nothing).
+        var emailSettings = configuration.GetSection(EmailSettings.SectionName).Get<EmailSettings>() ?? new EmailSettings();
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        if (emailSettings.IsConfigured)
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        else
+            services.AddScoped<IEmailService, LoggingEmailService>();
+
         services.AddScoped<IPasswordResetService, PasswordResetService>();
+        services.AddScoped<ICheckInService, CheckInService>();
+        services.AddScoped<ICheckInNotificationService, CheckInNotificationService>();
 
         return services;
     }

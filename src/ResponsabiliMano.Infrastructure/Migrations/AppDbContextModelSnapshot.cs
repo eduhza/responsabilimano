@@ -88,6 +88,43 @@ namespace ResponsabiliMano.Infrastructure.Migrations
                     b.ToTable("check_in_metrics", (string)null);
                 });
 
+            modelBuilder.Entity("ResponsabiliMano.Core.Entities.CheckInNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("PeriodNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("period_number");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ProjectId", "UserId", "PeriodNumber", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("check_in_notifications", (string)null);
+                });
+
             modelBuilder.Entity("ResponsabiliMano.Core.Entities.GoalField", b =>
                 {
                     b.Property<Guid>("Id")
@@ -381,6 +418,25 @@ namespace ResponsabiliMano.Infrastructure.Migrations
                     b.Navigation("CheckIn");
 
                     b.Navigation("GoalField");
+                });
+
+            modelBuilder.Entity("ResponsabiliMano.Core.Entities.CheckInNotification", b =>
+                {
+                    b.HasOne("ResponsabiliMano.Core.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ResponsabiliMano.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ResponsabiliMano.Core.Entities.GoalField", b =>

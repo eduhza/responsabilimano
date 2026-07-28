@@ -1,0 +1,74 @@
+asyncapi: 3.0.0
+info:
+  title: ResponsabiliMano Check-in Events
+  version: 0.1.0
+  description: >
+    Event contract (Tenet 6) for the scheduler-driven check-in notifications
+    (specs S3.3 and S3.4). The trigger is an external scheduler (GCP Cloud
+    Scheduler) invoking the protected HTTP endpoints documented in
+    responsabilimano-api.yaml (POST /api/cron/checkins/dispatch and
+    /api/cron/checkins/reminders). The application reacts by sending emails via
+    IEmailService. Both operations are idempotent within a period: at most one
+    notification of each kind per (project, user, period).
+
+servers:
+  scheduler:
+    host: cloud-scheduler
+    protocol: internal
+    description: GCP Cloud Scheduler jobs authenticated with the X-Cron-Secret header.
+
+channels:
+  checkinDispatch:
+    address: /api/cron/checkins/dispatch
+    description: Fires on each project's configured frequency (default Friday 08:00).
+    messages:
+      checkInRequested:
+        $ref: '#/components/messages/CheckInRequested'
+  checkinReminders:
+    address: /api/cron/checkins/reminders
+    description: Fires after the period deadline to nudge participants who did not check in.
+    messages:
+      checkInReminder:
+        $ref: '#/components/messages/CheckInReminder'
+
+operations:
+  triggerCheckInDispatch:
+    action: receive
+    channel:
+      $ref: '#/channels/checkinDispatch'
+    summary: Scheduler asks the app to email active-project participants for the current period.
+  triggerCheckInReminders:
+    action: receive
+    channel:
+      $ref: '#/channels/checkinReminders'
+    summary: Scheduler asks the app to remind participants who have not checked in yet.
+
+components:
+  messages:
+    CheckInRequested:
+      name: CheckInRequested
+      title: Check-in requested
+      summary: One email per participant of an eligible project for the current period.
+      payload:
+        $ref: '#/components/schemas/NotificationRecord'
+    CheckInReminder:
+      name: CheckInReminder
+      title: Check-in reminder
+      summary: One reminder per participant with no check-in for the current period.
+      payload:
+        $ref: '#/components/schemas/NotificationRecord'
+  schemas:
+    NotificationRecord:
+      type: object
+      description: >
+        The idempotency key persisted per delivery (entity CheckInNotification).
+        No PII (email) is logged — only these ids.
+      properties:
+        projectId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        periodNumber: { type: integer }
+        kind:
+          type: integer
+          description: '1=CheckInRequest, 2=Reminder'
+          enum: [1, 2]
+        sentAt: { type: string, format: date-time }
