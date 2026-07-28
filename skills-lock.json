@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "fluentui-blazor": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/fluentui-blazor/SKILL.md",
+      "computedHash": "54d30fd8565a8787fa7dfe6bc13e10c4c9139a3d32343a84b49bba6d5f547caf"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
+    },
+    "playwright-blazor-testing": {
+      "source": "aaronontheweb/dotnet-skills",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-blazor/SKILL.md",
+      "computedHash": "21a4dcbf28f49493636911148d4ec1e95d2c7881e9233bd6395c4596d532a08f"
+    }
+  }
+}

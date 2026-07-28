@@ -16,10 +16,10 @@ Seção `EmailSettings`. Sem `SmtpPassword` a aplicação usa o `LoggingEmailSer
 |----------|-----------|---------|
 | `EmailSettings__SmtpHost` | Host do servidor SMTP | `smtp.gmail.com` |
 | `EmailSettings__SmtpPort` | Porta do servidor SMTP (STARTTLS) | `587` |
-| `EmailSettings__SmtpUser` | Usuário SMTP (autenticação) | `eduardo.arruda@bomvoarturismo.com` |
+| `EmailSettings__SmtpUser` | Usuário SMTP (autenticação) | `naoresponda@bomvoarturismo.com` |
 | `EmailSettings__SmtpPassword` | Senha/app password — **só via Secret Manager** | `secret` |
 | `EmailSettings__FromName` | Nome do remetente | `Clube BomVoar` |
-| `EmailSettings__FromEmail` | Endereço do remetente | `no-reply@bomvoarturismo.com` |
+| `EmailSettings__FromEmail` | Endereço do remetente (= SmtpUser) | `naoresponda@bomvoarturismo.com` |
 
 ## GCP / Produção (secrets do GitHub Actions)
 
