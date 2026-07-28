@@ -6,7 +6,7 @@ priority: P0
 iteration: 1 (2-3 dias)
 contract: none
 tracking: gh-issue-#TBD
-status: draft
+status: done
 depends_on: []
 adr: [0003]
 ---
@@ -51,3 +51,15 @@ convidar, recuperar/redefinir senha) funcionem no navegador.
 ## Verification
 - Manual: cadastrar um usuário pela UI e criar um projeto ponta a ponta.
 - Automático: teste do fluxo de cadastro (bind + submit) passando.
+
+## Resultado (entregue)
+- `@rendermode InteractiveServer` aplicado **por página** (decisão registrada no
+  ADR-0003, agora `accepted`) em 7 telas: as 5 com `EditForm` do escopo original
+  **mais** `ProjectDetail` e `InvitationAccept`, que tinham a mesma causa-raiz
+  (`@onclick`/`@bind` sem render mode — aprovar/propor/aceitar não funcionavam).
+  `Login`/`Logout` e as telas de exibição (`Home`, `NavMenu`) seguem SSR estático.
+- Novo projeto `tests/ResponsabiliMano.Web.Tests` (bUnit): teste de comportamento do
+  `Register` (bind + submit chamam o serviço com os valores digitados; validação
+  bloqueia o submit) **e** um guard por reflexão que assevera que as páginas
+  interativas declaram `InteractiveServerRenderMode` e as estáticas não — protege
+  contra remoção futura do `@rendermode` (que o bUnit sozinho não pegaria).
