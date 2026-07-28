@@ -65,6 +65,11 @@ else
         <a href="@($"/projects/{_project.Id}/checkin")" class="btn btn-primary mb-3">@Localizer["CheckInButton"]</a>
     }
 
+    @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
+    {
+        <a href="@($"/projects/{_project.Id}/dashboard")" class="btn btn-info mb-3 ms-2">@Localizer["DashboardButton"]</a>
+    }
+
     <h4>@Localizer["GoalsSectionTitle"]</h4>
     <table class="table table-striped">
         <thead>
@@ -252,6 +257,7 @@ else
     private Guid _currentUserId;
     private bool _loading = true;
     private bool _checkInsEnabled;
+    private bool _dashboardEnabled;
     private bool _actionLoading;
     private string? _statusMessage;
     private string? _proposeError;
@@ -265,6 +271,7 @@ else
     {
         _loading = true;
         _checkInsEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns);
+        _dashboardEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard);
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 

@@ -411,4 +411,31 @@
   <data name="FeelingVeryHappy" xml:space="preserve">
     <value>Very happy</value>
   </data>
+  <data name="DashboardTitle" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="DashboardButton" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="DashboardGoalSelector" xml:space="preserve">
+    <value>Select goal</value>
+  </data>
+  <data name="DashboardFeelingCards" xml:space="preserve">
+    <value>Feeling</value>
+  </data>
+  <data name="DashboardAverages" xml:space="preserve">
+    <value>Averages</value>
+  </data>
+  <data name="DashboardNoCheckIns" xml:space="preserve">
+    <value>No check-ins yet</value>
+  </data>
+  <data name="DashboardError" xml:space="preserve">
+    <value>An error occurred while loading the dashboard. Please try again.</value>
+  </data>
+  <data name="DashboardPeriodAxis" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="DashboardValueAxis" xml:space="preserve">
+    <value>Value</value>
+  </data>
 </root>
