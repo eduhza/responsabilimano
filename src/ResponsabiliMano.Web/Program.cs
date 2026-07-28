@@ -84,7 +84,15 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
     .AddSupportedCultures("pt-BR")
     .AddSupportedUICultures("pt-BR"));
 
-app.UseAntiforgery();
+// Antiforgery guards the Blazor UI (server-rendered forms). The /api surface is
+// exempt: those endpoints authenticate via the auth cookie (SameSite=Lax already
+// mitigates cross-site POST) or the cron secret, and are never called by the Blazor
+// UI (which invokes the domain services directly). Scoping the middleware this way
+// makes the per-endpoint DisableAntiforgery intent (ADR-0004) effective for the whole
+// API surface — including the machine-to-machine cron endpoints (S3.3/S3.4).
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseAntiforgery());
 
 // Health endpoints (spec R8): "/health" is liveness (no dependencies checked);
 // "/health/ready" is readiness (database reachable). Both are anonymous.
