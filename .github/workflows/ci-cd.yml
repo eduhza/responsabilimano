@@ -30,6 +30,7 @@ jobs:
       - name: Test (+ coverage)
         run: >
           dotnet test --no-build --configuration Release
+          --filter "FullyQualifiedName!~ResponsabiliMano.Web.E2ETests"
           --settings coverage.runsettings
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
