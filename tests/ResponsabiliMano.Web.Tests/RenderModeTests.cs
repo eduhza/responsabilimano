@@ -15,7 +15,6 @@ public class RenderModeTests
     // Every page with EditForm / @onclick / @bind must be interactive.
     public static TheoryData<Type> InteractivePages() =>
     [
-        typeof(Register),
         typeof(CreateProject),
         typeof(InvitePartner),
         typeof(ForgotPassword),
@@ -28,6 +27,7 @@ public class RenderModeTests
     // Pages that must remain static SSR (see ADR-0003).
     public static TheoryData<Type> StaticPages() =>
     [
+        typeof(Register),
         typeof(Login),
         typeof(Home),
     ];

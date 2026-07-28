@@ -1,121 +1,175 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.DependencyInjection;
 using ResponsabiliMano.Infrastructure.Services;
 using ResponsabiliMano.Web.Components;
 using ResponsabiliMano.Web.Endpoints;
+using ResponsabiliMano.Web.Services;
 using Microsoft.FeatureManagement;
 using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+var app = await Program.CreateAppAsync(new WebApplicationOptions { Args = args });
+app.Run();
 
-// Structured logging (spec R8): configure Serilog from configuration.
-builder.Services.AddSerilog((services, lc) => lc
-    .ReadFrom.Configuration(builder.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext());
-
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services.AddLocalization();
-builder.Services.AddResponsabiliManoInfrastructure(builder.Configuration);
-
-// Feature flags (spec R7): deploy != release. Flags live in the FeatureManagement config section.
-builder.Services.AddFeatureManagement();
-
-// Health checks (spec R8): liveness is dependency-free; readiness verifies the database.
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "ResponsabiliMano.Auth";
-        options.LoginPath = "/login";
-        options.LogoutPath = "/api/auth/logout";
-        options.AccessDeniedPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    });
-builder.Services.AddAuthorization();
-builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
-builder.Services.AddScoped<IUserLoginService, UserLoginService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
-
-var app = builder.Build();
-
-// Apply migrations in every environment; seed demo data only in development.
-using (var scope = app.Services.CreateScope())
+public partial class Program
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-
-    if (app.Environment.IsDevelopment())
+    public static async Task<WebApplication> CreateAppAsync(
+        WebApplicationOptions? options = null,
+        Action<WebApplicationBuilder>? configure = null)
     {
-        await SeedData.SeedAsync(db);
+        var builder = WebApplication.CreateBuilder(options ?? new WebApplicationOptions());
+        var isE2E = builder.Environment.IsEnvironment("Testing") || builder.Configuration.GetValue<bool>("E2E");
+
+        // Structured logging (spec R8): configure Serilog from configuration.
+        builder.Services.AddSerilog((services, lc) => lc
+            .ReadFrom.Configuration(builder.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext());
+
+        // Add services to the container.
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+
+        builder.Services.AddLocalization();
+        builder.Services.AddResponsabiliManoInfrastructure(builder.Configuration);
+
+        // Feature flags (spec R7): deploy != release. Flags live in the FeatureManagement config section.
+        builder.Services.AddFeatureManagement();
+
+        // Health checks (spec R8): liveness is dependency-free; readiness verifies the database.
+        builder.Services.AddHealthChecks()
+            .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
+        builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.Cookie.Name = "ResponsabiliMano.Auth";
+                options.LoginPath = "/login";
+                options.LogoutPath = "/api/auth/logout";
+                options.AccessDeniedPath = "/login";
+                options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                options.SlidingExpiration = true;
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            });
+        builder.Services.AddAuthorization();
+        builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
+        builder.Services.AddScoped<IUserLoginService, UserLoginService>();
+        builder.Services.AddScoped<IProjectService, ProjectService>();
+
+        // In E2E mode capture outgoing emails so assertions can inspect them.
+        if (isE2E)
+        {
+            builder.Services.RemoveAll<IEmailService>();
+            builder.Services.AddSingleton<CapturedEmailService>();
+            builder.Services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<CapturedEmailService>());
+        }
+
+        // E2E tests can override connection strings, e-mail services, etc.
+        configure?.Invoke(builder);
+
+        var app = builder.Build();
+
+        // Apply migrations in every environment; seed demo data only in development.
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                await db.Database.EnsureCreatedAsync();
+            }
+            else
+            {
+                await db.Database.MigrateAsync();
+            }
+
+            if (app.Environment.IsDevelopment())
+            {
+                await SeedData.SeedAsync(db);
+            }
+        }
+
+        // Configure the HTTP request pipeline.
+        app.UseSerilogRequestLogging();
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error", createScopeForErrors: true);
+            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+            app.UseHsts();
+        }
+        // Re-execute error responses to the Blazor not-found page — for the UI only. The
+        // /api surface is excluded: re-executing an empty-body API error (e.g. 401 from
+        // Unauthorized(), 404 from a disabled feature gate) as a POST to the /not-found
+        // Razor component hits antiforgery and turns every such response into an empty 400.
+        // APIs must keep their real status codes.
+        app.UseWhen(
+            context => !context.Request.Path.StartsWithSegments("/api"),
+            branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
+        app.UseHttpsRedirection();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.UseRequestLocalization(new RequestLocalizationOptions()
+            .SetDefaultCulture("pt-BR")
+            .AddSupportedCultures("pt-BR")
+            .AddSupportedUICultures("pt-BR"));
+
+        // Antiforgery guards the Blazor UI (server-rendered forms). The /api surface is
+        // exempt: those endpoints authenticate via the auth cookie (SameSite=Lax already
+        // mitigates cross-site POST) or the cron secret, and are never called by the Blazor
+        // UI (which invokes the domain services directly). Also exempt Blazor's SignalR
+        // circuit and framework scripts so InteractiveServer can connect and run forms.
+        app.UseWhen(
+            context => !context.Request.Path.StartsWithSegments("/api")
+                && !context.Request.Path.StartsWithSegments("/_"),
+            branch => branch.UseAntiforgery());
+
+        // Health endpoints (spec R8): "/health" is liveness (no dependencies checked);
+        // "/health/ready" is readiness (database reachable). Both are anonymous.
+        app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+
+        // HTTP endpoints, grouped by area (spec R1). Program.cs only composes.
+        app.MapAuthEndpoints();
+        app.MapProjectEndpoints();
+        // Sprint 3 (specs S3.2–S3.4): check-in capture + scheduler jobs. Both groups are
+        // gated behind the CheckIns feature flag and ship dark until Gate 3.
+        app.MapCheckInEndpoints();
+        app.MapCronEndpoints();
+
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+
+        // Test-only endpoints used by the E2E suite.
+        if (isE2E)
+        {
+            app.MapPost("/api/_test/reset", async (AppDbContext db, CapturedEmailService emails) =>
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM check_in_metrics;" +
+                    "DELETE FROM check_ins;" +
+                    "DELETE FROM check_in_notifications;" +
+                    "DELETE FROM project_change_requests;" +
+                    "DELETE FROM project_invitations;" +
+                    "DELETE FROM goal_fields;" +
+                    "DELETE FROM password_reset_tokens;" +
+                    "DELETE FROM projects;" +
+                    "DELETE FROM users;");
+                emails.Clear();
+                return Results.Ok();
+            });
+
+            app.MapGet("/api/_test/emails", (CapturedEmailService emails) => Results.Ok(emails.GetEmails()));
+        }
+
+        return app;
     }
 }
-
-// Configure the HTTP request pipeline.
-app.UseSerilogRequestLogging();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-// Re-execute error responses to the Blazor not-found page — for the UI only. The
-// /api surface is excluded: re-executing an empty-body API error (e.g. 401 from
-// Unauthorized(), 404 from a disabled feature gate) as a POST to the /not-found
-// Razor component hits antiforgery and turns every such response into an empty 400.
-// APIs must keep their real status codes.
-app.UseWhen(
-    context => !context.Request.Path.StartsWithSegments("/api"),
-    branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.UseRequestLocalization(new RequestLocalizationOptions()
-    .SetDefaultCulture("pt-BR")
-    .AddSupportedCultures("pt-BR")
-    .AddSupportedUICultures("pt-BR"));
-
-// Antiforgery guards the Blazor UI (server-rendered forms). The /api surface is
-// exempt: those endpoints authenticate via the auth cookie (SameSite=Lax already
-// mitigates cross-site POST) or the cron secret, and are never called by the Blazor
-// UI (which invokes the domain services directly). Scoping the middleware this way
-// makes the per-endpoint DisableAntiforgery intent (ADR-0004) effective for the whole
-// API surface — including the machine-to-machine cron endpoints (S3.3/S3.4).
-app.UseWhen(
-    context => !context.Request.Path.StartsWithSegments("/api"),
-    branch => branch.UseAntiforgery());
-
-// Health endpoints (spec R8): "/health" is liveness (no dependencies checked);
-// "/health/ready" is readiness (database reachable). Both are anonymous.
-app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
-app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
-
-// HTTP endpoints, grouped by area (spec R1). Program.cs only composes.
-app.MapAuthEndpoints();
-app.MapProjectEndpoints();
-// Sprint 3 (specs S3.2–S3.4): check-in capture + scheduler jobs. Both groups are
-// gated behind the CheckIns feature flag and ship dark until Gate 3.
-app.MapCheckInEndpoints();
-app.MapCronEndpoints();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();

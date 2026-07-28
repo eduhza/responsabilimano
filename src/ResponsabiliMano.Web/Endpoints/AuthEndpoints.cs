@@ -20,6 +20,7 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/auth");
 
         group.MapPost("/register", RegisterAsync);
+        group.MapPost("/register-and-login", RegisterAndLoginAsync).DisableAntiforgery();
         group.MapPost("/login", LoginAsync).DisableAntiforgery();
         // Cast to Delegate: this handler's only parameter is HttpContext, which
         // would otherwise bind as a RequestDelegate and discard the redirect (ASP0016).
@@ -58,6 +59,48 @@ public static class AuthEndpoints
         catch (InvalidOperationException ex)
         {
             return Results.Conflict(new { error = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> RegisterAndLoginAsync(
+        [FromForm] RegisterRequest request,
+        IUserRegistrationService service,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name)
+            || !EmailAddress.IsValid(request.Email)
+            || string.IsNullOrWhiteSpace(request.Password)
+            || request.Password.Length < 8
+            || request.Password != request.ConfirmPassword)
+        {
+            return Results.Redirect("/register?error=Validation");
+        }
+
+        try
+        {
+            var user = await service.RegisterAsync(request.Name, request.Email, request.Password, cancellationToken);
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.Name, user.Name),
+                new(ClaimTypes.Email, user.Email)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            };
+
+            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+            return Results.Redirect("/");
+        }
+        catch (InvalidOperationException)
+        {
+            return Results.Redirect("/register?error=Conflict");
         }
     }
 

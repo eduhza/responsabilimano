@@ -1,80 +1,35 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using ResponsabiliMano.Core.Entities;
-using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Web;
 using ResponsabiliMano.Web.Components.Pages;
 
 namespace ResponsabiliMano.Web.Tests.Pages;
 
-// Behavior guard for spec X1: with the Interactive Server render mode, the EditForm
-// fields bind and the submit handler runs with the typed values. bUnit renders the
-// component interactively, exercising the same bind/submit path the browser uses once
-// the circuit is live. (Presence of @rendermode itself is covered by RenderModeTests.)
+// Behavior guard for the refactored Register page: it is a static SSR plain HTML
+// form posted to the combined register-and-login endpoint. No Blazor interactivity
+// or IUserRegistrationService is used on this page anymore.
 public class RegisterTests : TestContext
 {
     public RegisterTests()
     {
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassthroughLocalizer());
-        Services.AddSingleton<ILogger<Register>>(NullLogger<Register>.Instance);
     }
 
     [Fact]
-    public void Valid_submit_registers_user_with_the_typed_values()
+    public void Renders_plain_html_form_posting_to_register_and_login_endpoint()
     {
-        var registration = new SpyRegistrationService();
-        Services.AddSingleton<IUserRegistrationService>(registration);
-
         var cut = RenderComponent<Register>();
 
-        cut.Find("#name").Change("Ana Tester");
-        cut.Find("#email").Change("ana@example.com");
-        cut.Find("#password").Change("supersecret");
-        cut.Find("#confirmPassword").Change("supersecret");
-        cut.Find("form").Submit();
+        var form = cut.Find("form");
+        Assert.Equal("post", form.GetAttribute("method"));
+        Assert.Equal("/api/auth/register-and-login", form.GetAttribute("action"));
 
-        Assert.Equal(1, registration.CallCount);
-        Assert.Equal("Ana Tester", registration.LastName);
-        Assert.Equal("ana@example.com", registration.LastEmail);
-        Assert.Equal("supersecret", registration.LastPassword);
-    }
-
-    [Fact]
-    public void Mismatched_passwords_block_submit()
-    {
-        var registration = new SpyRegistrationService();
-        Services.AddSingleton<IUserRegistrationService>(registration);
-
-        var cut = RenderComponent<Register>();
-
-        cut.Find("#name").Change("Ana Tester");
-        cut.Find("#email").Change("ana@example.com");
-        cut.Find("#password").Change("supersecret");
-        cut.Find("#confirmPassword").Change("does-not-match");
-        cut.Find("form").Submit();
-
-        Assert.Equal(0, registration.CallCount);
-        Assert.Contains("Passwords do not match.", cut.Markup);
-    }
-
-    private sealed class SpyRegistrationService : IUserRegistrationService
-    {
-        public int CallCount { get; private set; }
-        public string? LastName { get; private set; }
-        public string? LastEmail { get; private set; }
-        public string? LastPassword { get; private set; }
-
-        public Task<User> RegisterAsync(string name, string email, string password, CancellationToken cancellationToken = default)
-        {
-            CallCount++;
-            LastName = name;
-            LastEmail = email;
-            LastPassword = password;
-            return Task.FromResult(new User { Id = Guid.NewGuid(), Name = name, Email = email, PasswordHash = "hash" });
-        }
+        Assert.NotNull(cut.Find("input#name[name='Name']"));
+        Assert.NotNull(cut.Find("input#email[name='Email']"));
+        Assert.NotNull(cut.Find("input#password[name='Password']"));
+        Assert.NotNull(cut.Find("input#confirmPassword[name='ConfirmPassword']"));
+        Assert.Equal("RegisterButton", cut.Find("button[type='submit']").TextContent.Trim());
     }
 
     // Returns the key as its own value so assertions read against stable strings.
