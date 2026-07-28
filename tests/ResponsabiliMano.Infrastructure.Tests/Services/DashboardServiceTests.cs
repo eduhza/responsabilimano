@@ -148,25 +148,24 @@ public class DashboardServiceTests : IDisposable
         Assert.Equal(4, series.Series.Count);
 
         var ordered = series.Series.OrderBy(e => e.PeriodNumber).ThenBy(e => e.UserId).ToList();
-        Assert.Equal(1, ordered[0].PeriodNumber);
-        Assert.Equal(80m, ordered[0].Value);
-        Assert.Equal(creator.Id, ordered[0].UserId);
-        Assert.Equal(79m, ordered[0].AverageValue);
+        Assert.Equal(2, ordered.Count(e => e.PeriodNumber == 1));
+        Assert.Equal(2, ordered.Count(e => e.PeriodNumber == 2));
 
-        Assert.Equal(1, ordered[1].PeriodNumber);
-        Assert.Equal(75m, ordered[1].Value);
-        Assert.Equal(partner.Id, ordered[1].UserId);
-        Assert.Equal(74m, ordered[1].AverageValue);
+        var creatorPeriod1 = series.Series.Single(e => e.UserId == creator.Id && e.PeriodNumber == 1);
+        Assert.Equal(80m, creatorPeriod1.Value);
+        Assert.Equal(79m, creatorPeriod1.AverageValue);
 
-        Assert.Equal(2, ordered[2].PeriodNumber);
-        Assert.Equal(78m, ordered[2].Value);
-        Assert.Equal(creator.Id, ordered[2].UserId);
-        Assert.Equal(79m, ordered[2].AverageValue);
+        var partnerPeriod1 = series.Series.Single(e => e.UserId == partner.Id && e.PeriodNumber == 1);
+        Assert.Equal(75m, partnerPeriod1.Value);
+        Assert.Equal(74m, partnerPeriod1.AverageValue);
 
-        Assert.Equal(2, ordered[3].PeriodNumber);
-        Assert.Equal(73m, ordered[3].Value);
-        Assert.Equal(partner.Id, ordered[3].UserId);
-        Assert.Equal(74m, ordered[3].AverageValue);
+        var creatorPeriod2 = series.Series.Single(e => e.UserId == creator.Id && e.PeriodNumber == 2);
+        Assert.Equal(78m, creatorPeriod2.Value);
+        Assert.Equal(79m, creatorPeriod2.AverageValue);
+
+        var partnerPeriod2 = series.Series.Single(e => e.UserId == partner.Id && e.PeriodNumber == 2);
+        Assert.Equal(73m, partnerPeriod2.Value);
+        Assert.Equal(74m, partnerPeriod2.AverageValue);
     }
 
     [Fact]
