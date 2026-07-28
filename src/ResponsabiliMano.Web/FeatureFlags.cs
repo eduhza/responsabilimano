@@ -9,4 +9,7 @@ public static class FeatureFlags
 {
     /// <summary>Check-in capture and reminders (Sprint 3). Off until the feature is accepted.</summary>
     public const string CheckIns = "CheckIns";
+
+    /// <summary>Dashboard data API (Sprint 4, spec S4.1). Off until the feature is accepted.</summary>
+    public const string Dashboard = "Dashboard";
 }
