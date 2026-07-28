@@ -239,11 +239,15 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] CI estendido (cobertura, CodeQL/SAST, SCA, stage de spec/contract)
     *   [ ] MCP do GitHub + GitHub Issues como tracker (requer OAuth do usuário)
 *   [ ] **Fase P1 — Higiene de engenharia (dogfooding)** → specs `R1`, `R3`, `R4`, `R5`, `R7`, `R8`, `R9`, `X1`
-*   [ ] **Fase P2 — Retomar o produto no novo processo**
-    *   [x] Sprint 3 — Check-in e Notificações → specs `S3.1`–`S3.4` implementadas, testadas e aceitas no Gate 2 (`done`). Atrás da flag `CheckIns` (release = Gate 3).
+*   [~] **Fase P2 — Retomar o produto no novo processo**
+    *   [x] Sprint 3 — Check-in e Notificações → specs `S3.1`–`S3.5` implementadas, testadas e **liberadas em produção** (Gate 3: flag `CheckIns` ligada em 2026-07-28).
         *   [x] S3.1 — Modelo de dados (testes de unicidade/cascade) + migration `AddCheckInNotifications`
-        *   [x] S3.2 — Página de check-in + `POST /api/projects/{id}/checkins` + `ICheckInService`
-        *   [x] S3.3 — `POST /api/cron/checkins/dispatch` + `ICheckInNotificationService` (idempotente, `docs/adr/0005`)
-        *   [x] S3.4 — `POST /api/cron/checkins/reminders` (lembra só pendentes, idempotente)
+        *   [x] S3.2 — Página de check-in (`@rendermode InteractiveServer`) + `POST /api/projects/{id}/checkins` + `ICheckInService`
+        *   [x] S3.3 — `POST /api/cron/checkins/dispatch` + `ICheckInNotificationService` (idempotente, `docs/adr/0005`); Cloud Scheduler diário 08:00
+        *   [x] S3.4 — `POST /api/cron/checkins/reminders` (lembra só pendentes, idempotente); Cloud Scheduler diário 20:00
+        *   [x] S3.5 — Envio real de e-mail (SMTP/MailKit via `naoresponda@bomvoarturismo.com`) + correção do link de recuperação de senha (baseUrl do request)
+    *   [x] **Deploy/Gate 3 (produção, GCP Cloud Run):** secrets `cron-secret` e `email-smtp-password` no Secret Manager; flag `CheckIns=true` no Cloud Run; jobs `checkin-dispatch`/`checkin-reminders` no Cloud Scheduler (`America/Sao_Paulo`). Validado: cron 401/200 + idempotência, e-mail entregue, UI. Rollback = `FeatureManagement__CheckIns=false`.
+    *   [x] Correções de produção descobertas no loop: `/api` mantém status reais (fora de `UseStatusCodePagesWithReExecute`/antiforgery — adendo em `docs/adr/0004`); secret do cron regerado sem `\r` (CRLF).
+    *   [ ] **X1 (draft, pré-requisito de UX)** — aplicar `@rendermode InteractiveServer` nas demais telas com `EditForm` (Register, CreateProject, InvitePartner, Forgot/ResetPassword). Sem isso, o fluxo de UI para *criar/configurar* projeto (necessário antes do check-in) ainda não funciona no navegador.
     *   [ ] Sprint 4 — Dashboard → specs a escrever (S4.1–S4.3) quando iniciar a iteração
     *   [ ] Sprint 5 — Polimento/Produção → specs a escrever (S5.1–S5.3) quando iniciar a iteração
