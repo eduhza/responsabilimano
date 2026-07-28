@@ -44,8 +44,8 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | S3.4 | Lembretes de check-in não respondido | done |
 | S3.5 | Envio real de e-mail (SMTP) + base URL nos links | done |
 | S4.1 | Dashboard Data API | done |
-| S4.2 | Dashboard UI — Gráfico de Evolução e Cards de Sentimento | in-progress |
-| S5.1 | Cobertura de Testes — Endpoints e Regras de Negócio | approved |
+| S4.2 | Dashboard UI — Gráfico de Evolução e Cards de Sentimento | done |
+| S5.1 | Cobertura de Testes — Endpoints e Regras de Negócio | in-progress |
 | S5.2 | UX, Mensagens e i18n — Polimento do MVP | approved |
 | S5.3 | Produção — Domínio, Deploy Manual e Backup do Banco | approved |
 
