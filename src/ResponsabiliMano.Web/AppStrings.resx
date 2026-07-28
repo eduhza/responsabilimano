@@ -363,4 +363,52 @@
   <data name="MyProjectsTitle" xml:space="preserve">
     <value>My Projects</value>
   </data>
+  <data name="CheckInTitle" xml:space="preserve">
+    <value>Check-in</value>
+  </data>
+  <data name="CheckInButton" xml:space="preserve">
+    <value>Do check-in</value>
+  </data>
+  <data name="BackToProject" xml:space="preserve">
+    <value>Back to Project</value>
+  </data>
+  <data name="CheckInPeriodLabel" xml:space="preserve">
+    <value>Period {0}</value>
+  </data>
+  <data name="CheckInMetricsTitle" xml:space="preserve">
+    <value>Metrics</value>
+  </data>
+  <data name="CheckInFeelingTitle" xml:space="preserve">
+    <value>How are you feeling?</value>
+  </data>
+  <data name="CheckInSubmitButton" xml:space="preserve">
+    <value>Submit check-in</value>
+  </data>
+  <data name="CheckInSuccess" xml:space="preserve">
+    <value>Check-in recorded successfully!</value>
+  </data>
+  <data name="CheckInAlreadyDone" xml:space="preserve">
+    <value>You have already submitted your check-in for this period.</value>
+  </data>
+  <data name="CheckInError" xml:space="preserve">
+    <value>An error occurred while recording the check-in. Please try again.</value>
+  </data>
+  <data name="CheckInMissingValues" xml:space="preserve">
+    <value>Please provide a value for each metric.</value>
+  </data>
+  <data name="FeelingVerySad" xml:space="preserve">
+    <value>Very sad</value>
+  </data>
+  <data name="FeelingSad" xml:space="preserve">
+    <value>Sad</value>
+  </data>
+  <data name="FeelingNeutral" xml:space="preserve">
+    <value>Neutral</value>
+  </data>
+  <data name="FeelingHappy" xml:space="preserve">
+    <value>Happy</value>
+  </data>
+  <data name="FeelingVeryHappy" xml:space="preserve">
+    <value>Very happy</value>
+  </data>
 </root>

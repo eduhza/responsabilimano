@@ -17,6 +17,13 @@ tags:
     description: Authentication and account recovery (/api/auth)
   - name: Projects
     description: Project lifecycle and change requests (/api/projects)
+  - name: CheckIns
+    description: >
+      Check-in capture and scheduler-driven notifications (Sprint 3, specs
+      S3.2–S3.4). These routes are gated behind the CheckIns feature flag and
+      respond 404 while the flag is off (spec R7).
+  - name: Cron
+    description: Scheduler-only jobs (/api/cron), authenticated by a shared secret header.
 
 paths:
   /api/auth/register:
@@ -251,6 +258,70 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /api/projects/{id}/checkins:
+    post:
+      tags: [CheckIns]
+      summary: >
+        Submit the caller's check-in for the current period (antiforgery disabled).
+        Behind the CheckIns feature flag: 404 while off.
+      operationId: submitCheckIn
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmitCheckInRequest' }
+      responses:
+        '201':
+          description: Check-in recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckInCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: 'Project not found, or the CheckIns feature is disabled' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/cron/checkins/dispatch:
+    post:
+      tags: [Cron]
+      summary: >
+        Send the period's check-in emails to participants of eligible projects
+        (spec S3.3). Scheduler-only; idempotent within a period.
+      operationId: dispatchCheckInEmails
+      security:
+        - cronSecret: []
+      responses:
+        '200':
+          description: Number of emails sent on this run
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CronDispatchResult' }
+        '401': { description: Missing or invalid X-Cron-Secret header }
+        '404': { description: The CheckIns feature is disabled }
+
+  /api/cron/checkins/reminders:
+    post:
+      tags: [Cron]
+      summary: >
+        Send reminders to participants who have not checked in this period
+        (spec S3.4). Scheduler-only; idempotent within a period.
+      operationId: dispatchCheckInReminders
+      security:
+        - cronSecret: []
+      responses:
+        '200':
+          description: Number of reminders sent on this run
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CronDispatchResult' }
+        '401': { description: Missing or invalid X-Cron-Secret header }
+        '404': { description: The CheckIns feature is disabled }
+
 components:
   securitySchemes:
     cookieAuth:
@@ -258,6 +329,11 @@ components:
       in: cookie
       name: ResponsabiliMano.Auth
       description: Cookie authentication issued by /api/auth/login.
+    cronSecret:
+      type: apiKey
+      in: header
+      name: X-Cron-Secret
+      description: Shared secret for scheduler-only cron endpoints (see ADR-0005).
 
   parameters:
     ProjectId:
@@ -308,6 +384,10 @@ components:
       type: integer
       description: '0=Pending, 1=Approved, 2=Rejected'
       enum: [0, 1, 2]
+    Feeling:
+      type: integer
+      description: '1=VerySad, 2=Sad, 3=Neutral, 4=Happy, 5=VeryHappy'
+      enum: [1, 2, 3, 4, 5]
 
     RegisterRequest:
       type: object
@@ -432,6 +512,32 @@ components:
               status: { $ref: '#/components/schemas/ChangeRequestStatus' }
               createdAt: { type: string, format: date-time }
               requestedByUserId: { type: string, format: uuid }
+
+    SubmitCheckInRequest:
+      type: object
+      required: [feeling, metrics]
+      properties:
+        feeling: { $ref: '#/components/schemas/Feeling' }
+        metrics:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/CheckInMetricValue' }
+    CheckInMetricValue:
+      type: object
+      required: [goalFieldId, value]
+      properties:
+        goalFieldId: { type: string, format: uuid }
+        value: { type: number }
+    CheckInCreated:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        periodNumber: { type: integer }
+        feeling: { $ref: '#/components/schemas/Feeling' }
+    CronDispatchResult:
+      type: object
+      properties:
+        sent: { type: integer, description: Number of messages sent on this run }
 
     MessageResponse:
       type: object

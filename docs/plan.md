@@ -239,6 +239,11 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] CI estendido (cobertura, CodeQL/SAST, SCA, stage de spec/contract)
     *   [ ] MCP do GitHub + GitHub Issues como tracker (requer OAuth do usuário)
 *   [ ] **Fase P1 — Higiene de engenharia (dogfooding)** → specs `R1`, `R3`, `R4`, `R5`, `R7`, `R8`, `R9`, `X1`
-*   [ ] Sprint 3 — Check-in e Notificações → specs `S3.1`–`S3.4` (`draft`, aguardando Gate 1)
-*   [ ] Sprint 4 — Dashboard → specs a escrever (S4.1–S4.3) quando iniciar a iteração
-*   [ ] Sprint 5 — Polimento/Produção → specs a escrever (S5.1–S5.3) quando iniciar a iteração
+*   [ ] **Fase P2 — Retomar o produto no novo processo**
+    *   [x] Sprint 3 — Check-in e Notificações → specs `S3.1`–`S3.4` implementadas, testadas e aceitas no Gate 2 (`done`). Atrás da flag `CheckIns` (release = Gate 3).
+        *   [x] S3.1 — Modelo de dados (testes de unicidade/cascade) + migration `AddCheckInNotifications`
+        *   [x] S3.2 — Página de check-in + `POST /api/projects/{id}/checkins` + `ICheckInService`
+        *   [x] S3.3 — `POST /api/cron/checkins/dispatch` + `ICheckInNotificationService` (idempotente, `docs/adr/0005`)
+        *   [x] S3.4 — `POST /api/cron/checkins/reminders` (lembra só pendentes, idempotente)
+    *   [ ] Sprint 4 — Dashboard → specs a escrever (S4.1–S4.3) quando iniciar a iteração
+    *   [ ] Sprint 5 — Polimento/Produção → specs a escrever (S5.1–S5.3) quando iniciar a iteração
