@@ -31,33 +31,26 @@ public class CreateProjectTests : TestContext
     }
 
     [Fact]
-    public void Renders_loading_state_on_submit_button_while_creating()
+    public async Task Renders_loading_state_on_submit_button_while_creating()
     {
-        // The fake service never completes, so _isLoading stays true after submit.
         _projectService.CreateTask = new TaskCompletionSource<Project>();
 
         var cut = RenderComponent<CreateProject>();
 
-        // Fill in required fields so the EditForm validates.
-        cut.Find("input#name").Change("Test Project");
-        cut.Find("input#startDate").Change(DateTime.Today.ToString("yyyy-MM-dd"));
-        cut.Find("input#endDate").Change(DateTime.Today.AddDays(30).ToString("yyyy-MM-dd"));
+        await cut.InvokeAsync(() =>
+        {
+            cut.Find("input#name").Change("Test Project");
+            cut.Find("input#startDate").Change(DateTime.Today.ToString("yyyy-MM-dd"));
+            cut.Find("input#endDate").Change(DateTime.Today.AddDays(30).ToString("yyyy-MM-dd"));
+            cut.Find(".card .col-md-6 input.form-control").Change("Weight");
+            cut.Find(".card .col-md-3 input.form-control").Change("kg");
+            cut.Find("form").Submit();
+        });
 
-        // Fill in the first goal's required fields.
-        var goalLabelInput = cut.FindAll("input.form-control")[2];
-        goalLabelInput.Change("Weight");
-        var goalUnitInput = cut.FindAll("input.form-control")[3];
-        goalUnitInput.Change("kg");
-
-        // Submit the form — triggers HandleSubmit which sets _isLoading = true.
-        cut.Find("form").Submit();
-
-        // While the service task is pending, the button should show the loading text.
         var submitButton = cut.Find("button[type='submit']");
         Assert.True(submitButton.HasAttribute("disabled"));
         Assert.Contains("Creating", submitButton.TextContent);
 
-        // Complete the task and verify the success state renders.
         _projectService.CreateTask!.SetResult(new Project
         {
             Id = Guid.NewGuid(),
