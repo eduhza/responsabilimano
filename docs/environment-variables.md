@@ -53,3 +53,39 @@ Usados pelo workflow `.github/workflows/ci-cd.yml` no deploy para Cloud Run via 
 | `Cron__Secret` | Segredo do header `X-Cron-Secret` dos endpoints de cron (S3.3/S3.4, ver `docs/adr/0005`) — **só via Secret Manager** |
 | `FeatureManagement__CheckIns` | Liga/desliga a feature de check-in (deploy ≠ release; `true` libera aos usuários) |
 | `ALLOWED_ORIGINS` | Origens permitidas para CORS, separadas por vírgula (futuro) |
+
+## Internacionalização (i18n)
+
+A aplicação usa `IStringLocalizer<AppStrings>` com arquivos `.resx` em
+`src/ResponsabiliMano.Web/`. O arquivo `AppStrings.resx` é o fallback (en) e
+`AppStrings.pt-BR.resx` é a cultura padrão (pt-BR).
+
+### Como adicionar um novo idioma
+
+1. **Criar o arquivo `.resx`**: copie `AppStrings.resx` para
+   `AppStrings.<culture>.resx` (ex: `AppStrings.es.resx` para espanhol) e
+   traduza os `<value>` de cada `<data>`. As chaves (`name=`) devem ser
+   idênticas em todos os arquivos.
+
+2. **Registrar a cultura**: em `Program.cs`, adicione a cultura à lista de
+   culturas suportadas em `RequestLocalizationOptions`:
+
+   ```csharp
+   var supportedCultures = new[]
+   {
+       new CultureInfo("pt-BR"),
+       new CultureInfo("en"),
+       new CultureInfo("es") // novo idioma
+   };
+   ```
+
+3. **Definir cultura padrão** (opcional): se o novo idioma deve ser o padrão,
+   ajuste `DefaultRequestCulture` no mesmo bloco.
+
+4. **Sincronizar chaves**: garanta que `AppStrings.resx` (fallback en) e o novo
+   arquivo tenham exatamente as mesmas chaves (`data name=`). O CI verifica isso
+   indiretamente — chaves faltantes resultam em texto não traduzido em runtime.
+
+5. **Testar**: rode `dotnet build` e `dotnet test` para garantir que nada quebra.
+   Testes E2E usam seletores por texto em pt-BR; se mudar a cultura padrão,
+   atualize os seletores.

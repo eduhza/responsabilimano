@@ -14,11 +14,7 @@ public sealed class LoggingEmailService : IEmailService
 
     public Task SendEmailAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation(
-            "=== EMAIL (Dev) ===\nTo: {To}\nSubject: {Subject}\nBody:\n{Body}\n====================",
-            to,
-            subject,
-            htmlBody);
+        _logger.LogInformation("Email sent (Dev): RecipientLength={ToHash}", to.Length);
         return Task.CompletedTask;
     }
 }

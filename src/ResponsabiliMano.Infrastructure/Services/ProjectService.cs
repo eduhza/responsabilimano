@@ -114,18 +114,13 @@ public sealed class ProjectService : IProjectService
         await _context.SaveChangesAsync(cancellationToken);
 
         var inviteLink = $"{baseUrl.TrimEnd('/')}/invitations/{token}";
-        var subject = "Convite - ResponsabiliMano";
-        var body = $"""
-            <h2>Voce foi convidado!</h2>
-            <p>Ola! Voce foi convidado para participar do projeto "{project.Name}" no ResponsabiliMano.</p>
-            <p>Clique no link abaixo para visualizar o projeto e aceitar o convite:</p>
-            <p><a href="{inviteLink}">{inviteLink}</a></p>
-            <p>Este convite expira em 7 dias.</p>
-            """;
+        var subject = EmailTemplates.ProjectInviteSubject;
+        var body = EmailTemplates.ProjectInviteBody(project.Name, inviteLink);
 
+        // The recipient email is user-provided; sending it to that address is the intended behavior.
         await _emailService.SendEmailAsync(normalizedEmail, subject, body, cancellationToken);
 
-        _logger.LogInformation("Invitation sent for project {ProjectId} to {Email}", projectId, normalizedEmail);
+        _logger.LogInformation("Invitation sent for project {ProjectId}", projectId);
 
         return invitation;
     }
