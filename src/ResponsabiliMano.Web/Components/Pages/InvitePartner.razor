@@ -13,32 +13,39 @@
 
 @if (_success)
 {
-    <div class="alert alert-success" role="alert">@Localizer["InvitePartnerSuccess"]</div>
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["InvitePartnerSuccess"]" AllowDismiss="false" />
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
+        @Localizer["BackToHome"]
+    </FluentButton>
 }
 else
 {
     <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="invitePartnerForm">
         <DataAnnotationsValidator />
-        <ValidationSummary />
+        <FluentValidationSummary />
 
-        <div class="mb-3">
-            <label for="partnerEmail" class="form-label">@Localizer["PartnerEmailLabel"]</label>
-            <InputText id="partnerEmail" type="email" class="form-control" @bind-Value="_model.PartnerEmail" />
-            <ValidationMessage For="@(() => _model.PartnerEmail)" />
-        </div>
+        <FluentTextField Id="partnerEmail"
+                         Label="@Localizer["PartnerEmailLabel"]"
+                         Appearance="FluentInputAppearance.Outline"
+                         TextFieldType="TextFieldType.Email"
+                         @bind-Value="_model.PartnerEmail"
+                         Required
+                         Style="width: 100%; max-width: 400px;" />
+        <FluentValidationMessage For="@(() => _model.PartnerEmail)" />
 
         @if (!string.IsNullOrEmpty(_error))
         {
-            <div class="alert alert-danger" role="alert">@_error</div>
+            <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" Class="mt-3" />
         }
 
-        <div>
-            <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
+            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@_isLoading" Loading="@_isLoading">
                 @(_isLoading ? Localizer["Sending"] : Localizer["InvitePartnerButton"])
-            </button>
-            <a href="/" class="btn btn-link">@Localizer["Cancel"]</a>
-        </div>
+            </FluentButton>
+            <FluentAnchor Href="/" Appearance="Appearance.Neutral">
+                @Localizer["Cancel"]
+            </FluentAnchor>
+        </FluentStack>
     </EditForm>
 }
 

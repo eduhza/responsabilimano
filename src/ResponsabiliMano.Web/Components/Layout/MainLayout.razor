@@ -1,20 +1,30 @@
 ﻿@inherits LayoutComponentBase
 @inject IStringLocalizer<AppStrings> Localizer
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<FluentDesignTheme Mode="DesignThemeModes.System" CustomColor="#E85D4E" StorageName="rm-theme" />
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+<div class="page">
+    <FluentLayout>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="0" Class="page-inner" Style="min-height: 100vh; width: 100%;">
+            <aside class="sidebar">
+                <NavMenu />
+            </aside>
+
+            <FluentBodyContent Class="main-content">
+                <div class="main-content-inner">
+                    @Body
+                </div>
+            </FluentBodyContent>
+        </FluentStack>
+    </FluentLayout>
 </div>
+
+<BottomNav />
 
 <div id="blazor-error-ui" data-nosnippet>
     @Localizer["BlazorErrorMessage"]
     <a href="." class="reload">@Localizer["Reload"]</a>
     <span class="dismiss">🗙</span>
 </div>
+
+<InteractiveProviders />

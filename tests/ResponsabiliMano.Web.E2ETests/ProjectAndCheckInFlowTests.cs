@@ -37,9 +37,9 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
         // 3. Creator invites partner.
         await creatorPage.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}{inviteHref}");
         await creatorPage.WaitForSelectorAsync("h3:has-text('Convidar Parceiro')");
-        await creatorPage.Locator("#partnerEmail").FillAsync("partner@test.com");
+        await creatorPage.Locator("#partnerEmail").FillFluentInputAsync("partner@test.com");
         await creatorPage.GetByRole(AriaRole.Button, new() { Name = "Convidar Parceiro" }).ClickAsync();
-        await creatorPage.WaitForSelectorAsync("div.alert-success:has-text('Convite enviado')");
+        await creatorPage.WaitForSelectorAsync("div.fluent-messagebar:has-text('Convite enviado')");
 
         var inviteEmail = await _app.GetLastEmailForAsync("partner@test.com");
         Assert.NotNull(inviteEmail);
@@ -51,20 +51,27 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
         await partnerPage.GotoAndWaitForBlazorAsync(invitationLink);
         await partnerPage.WaitForSelectorAsync("h4:has-text('Convite')");
         await partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aceitar Convite" }).ClickAsync();
-        await partnerPage.WaitForSelectorAsync("button:has-text('Aprovar')");
-        await partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aprovar" }).ClickAsync();
-        await partnerPage.WaitForSelectorAsync("div.alert-info:has-text('aprovado')");
+
+        var aprovarButton = partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aprovar" });
+        await aprovarButton.WaitForAsync();
+        await aprovarButton.ClickAsync();
+
+        var dialogAprovar = partnerPage.Locator("fluent-dialog").GetByRole(AriaRole.Button, new() { Name = "Aprovar" });
+        await dialogAprovar.WaitForAsync();
+        await dialogAprovar.ClickAsync();
+
+        await partnerPage.WaitForSelectorAsync("div.fluent-messagebar:has-text('aprovado')");
 
         // 5. Partner fills the check-in.
         await partnerPage.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}/projects/{projectId}/checkin");
         await partnerPage.WaitForSelectorAsync("h3:has-text('Check-in')");
 
-        var metricInputs = partnerPage.Locator("input[type='number']");
-        await metricInputs.First.FillAsync("72");
+        var metricInputs = partnerPage.Locator("fluent-number-field");
+        await metricInputs.First.FillFluentInputAsync("72");
 
         await partnerPage.Locator("button[title='Bem']").ClickAsync();
         await partnerPage.GetByRole(AriaRole.Button, new() { Name = "Enviar check-in" }).ClickAsync();
-        await partnerPage.WaitForSelectorAsync("div.alert-success:has-text('Check-in registrado')");
+        await partnerPage.WaitForSelectorAsync("div.fluent-messagebar:has-text('Check-in registrado')");
 
         await partnerPage.AssertNoBlazorErrorsAsync();
     }
@@ -81,11 +88,11 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
         await page.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}/projects/{projectId}/checkin");
         await page.WaitForSelectorAsync("h3:has-text('Check-in')");
 
-        await page.Locator("input[type='number']").First.FillAsync("9999");
+        await page.Locator("fluent-number-field").First.FillFluentInputAsync("9999");
         await page.Locator("button[title='Bem']").ClickAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Enviar check-in" }).ClickAsync();
 
-        var error = page.Locator("div.alert-danger");
+        var error = page.Locator("div.fluent-messagebar");
         var text = await error.TextContentAsync();
         Assert.Contains("maximum", text, StringComparison.OrdinalIgnoreCase);
 
@@ -104,13 +111,13 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
         await page.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}/projects/{projectId}/checkin");
         await page.WaitForSelectorAsync("h3:has-text('Check-in')");
 
-        await page.Locator("input[type='number']").First.FillAsync("70");
+        await page.Locator("fluent-number-field").First.FillFluentInputAsync("70");
         await page.Locator("button[title='Bem']").ClickAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Enviar check-in" }).ClickAsync();
-        await page.WaitForSelectorAsync("div.alert-success:has-text('Check-in registrado')");
+        await page.WaitForSelectorAsync("div.fluent-messagebar:has-text('Check-in registrado')");
 
         await page.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}/projects/{projectId}/checkin");
-        var alert = page.Locator("div.alert-success");
+        var alert = page.Locator("div.fluent-messagebar");
         var text = await alert.TextContentAsync();
         Assert.Contains("já registrou", text, StringComparison.OrdinalIgnoreCase);
 
@@ -138,9 +145,9 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
         var projectId = ExtractProjectId(inviteHref);
 
         await creatorPage.GotoAndWaitForBlazorAsync($"{_app.BaseUrl}{inviteHref}");
-        await creatorPage.Locator("#partnerEmail").FillAsync("partner@test.com");
+        await creatorPage.Locator("#partnerEmail").FillFluentInputAsync("partner@test.com");
         await creatorPage.GetByRole(AriaRole.Button, new() { Name = "Convidar Parceiro" }).ClickAsync();
-        await creatorPage.WaitForSelectorAsync("div.alert-success");
+        await creatorPage.WaitForSelectorAsync("div.fluent-messagebar");
 
         var inviteEmail = await _app.GetLastEmailForAsync("partner@test.com");
         Assert.NotNull(inviteEmail);
@@ -150,8 +157,16 @@ public class ProjectAndCheckInFlowTests : IAsyncLifetime
 
         await partnerPage.GotoAndWaitForBlazorAsync(invitationLink);
         await partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aceitar Convite" }).ClickAsync();
-        await partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aprovar" }).ClickAsync();
-        await partnerPage.WaitForSelectorAsync("div.alert-info");
+
+        var aprovarButton = partnerPage.GetByRole(AriaRole.Button, new() { Name = "Aprovar" });
+        await aprovarButton.WaitForAsync();
+        await aprovarButton.ClickAsync();
+
+        var dialogAprovar = partnerPage.Locator("fluent-dialog").GetByRole(AriaRole.Button, new() { Name = "Aprovar" });
+        await dialogAprovar.WaitForAsync();
+        await dialogAprovar.ClickAsync();
+
+        await partnerPage.WaitForSelectorAsync("div.fluent-messagebar:has-text('aprovado')");
 
         return (projectId, "partner@test.com");
     }

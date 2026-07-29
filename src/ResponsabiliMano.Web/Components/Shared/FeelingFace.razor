@@ -1,0 +1,70 @@
+@using ResponsabiliMano.Core.Enums
+
+@code {
+    [Parameter] public Feeling Feeling { get; set; }
+    [Parameter] public int Size { get; set; } = 48;
+    [Parameter] public string? Class { get; set; }
+
+    private string Color => Feeling switch
+    {
+        Feeling.VerySad => "#E85D4E",
+        Feeling.Sad => "#F4A261",
+        Feeling.Neutral => "#B0B0B0",
+        Feeling.Happy => "#5B9279",
+        Feeling.VeryHappy => "#2D9D78",
+        _ => "#B0B0B0"
+    };
+
+    private string SvgContent => Feeling switch
+    {
+        Feeling.VerySad => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <path d="M7 11 Q9 13 11 11" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M13 11 Q15 13 17 11" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M8 17 Q12 13 16 17" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """,
+        Feeling.Sad => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <circle cx="9" cy="10" r="1.2" fill="{0}" />
+            <circle cx="15" cy="10" r="1.2" fill="{0}" />
+            <path d="M8 16 Q12 13 16 16" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """,
+        Feeling.Neutral => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <circle cx="9" cy="10" r="1.2" fill="{0}" />
+            <circle cx="15" cy="10" r="1.2" fill="{0}" />
+            <line x1="8" y1="15" x2="16" y2="15" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """,
+        Feeling.Happy => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <circle cx="9" cy="10" r="1.2" fill="{0}" />
+            <circle cx="15" cy="10" r="1.2" fill="{0}" />
+            <path d="M8 14 Q12 17 16 14" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """,
+        Feeling.VeryHappy => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <path d="M7 9 Q9 7 11 9" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M13 9 Q15 7 17 9" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M8 13 Q12 19 16 13" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """,
+        _ => """
+            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
+            <circle cx="9" cy="10" r="1.2" fill="{0}" />
+            <circle cx="15" cy="10" r="1.2" fill="{0}" />
+            <line x1="8" y1="15" x2="16" y2="15" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            """
+    };
+
+    private MarkupString RenderSvg()
+    {
+        var content = string.Format(SvgContent, Color);
+        var svg = $"""
+            <svg class="{Class}" width="{Size}" height="{Size}" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="display:block;">
+              {content}
+            </svg>
+            """;
+        return new MarkupString(svg);
+    }
+}
+
+@((MarkupString)RenderSvg())

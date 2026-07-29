@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IProjectService ProjectService
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
@@ -11,123 +12,93 @@
 
 @if (_loading)
 {
-    <p>@Localizer["Loading"]</p>
+    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 6rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 8rem;"></div>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
+        @Localizer["BackToHome"]
+    </FluentButton>
 }
 else if (_accepted && _project is not null)
 {
-    <div class="alert alert-success" role="alert">@Localizer["InvitationAccepted"]</div>
+    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["InvitationAccepted"]" AllowDismiss="false" />
 
     <h3>@_project.Name</h3>
 
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <strong>@Localizer["StatusLabel"]:</strong>
-            @GetStatusText(_project.Status)
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
-        </div>
-    </div>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1rem;" VerticalGap="8">
+        <span><strong>@Localizer["StatusLabel"]:</strong> @GetStatusText(_project.Status)</span>
+        <span><strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")</span>
+        <span><strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")</span>
+        <span><strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)</span>
+    </FluentStack>
 
     <h4>@Localizer["GoalsSectionTitle"]</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@Localizer["GoalFieldLabel"]</th>
-                <th>@Localizer["GoalDataTypeLabel"]</th>
-                <th>@Localizer["GoalUnitLabel"]</th>
-                <th>@Localizer["GoalMinValueLabel"]</th>
-                <th>@Localizer["GoalMaxValueLabel"]</th>
-                <th>@Localizer["GoalTargetValueLabel"]</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var goal in _project.Goals)
-            {
-                <tr>
-                    <td>@goal.Label</td>
-                    <td>@goal.DataType</td>
-                    <td>@goal.Unit</td>
-                    <td>@goal.MinValue</td>
-                    <td>@goal.MaxValue</td>
-                    <td>@goal.TargetValue</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <FluentDataGrid Items="@_project.Goals.AsQueryable()" TGridItem="GoalField" AutoFit="true" Style="margin-bottom: 1.5rem;">
+        <PropertyColumn Property="@((GoalField g) => g.Label)" Title="@Localizer["GoalFieldLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.DataType)" Title="@Localizer["GoalDataTypeLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.Unit)" Title="@Localizer["GoalUnitLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.MinValue)" Title="@Localizer["GoalMinValueLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.MaxValue)" Title="@Localizer["GoalMaxValueLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.TargetValue)" Title="@Localizer["GoalTargetValueLabel"]" />
+    </FluentDataGrid>
 
     @if (_project.Status == Core.Enums.ProjectStatus.Pending)
     {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@Localizer["ApproveProjectTitle"]</h5>
-                <p class="card-text">@Localizer["ApproveProjectDescription"]</p>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-success" disabled="@_actionLoading" @onclick="HandleApproveProject">
-                        @(_actionLoading ? Localizer["Processing"] : Localizer["ApproveButton"])
-                    </button>
-                    <a href="@($"/projects/{_project.Id}")" class="btn btn-outline-primary">
-                        @Localizer["ProposeChangeButton"]
-                    </a>
-                </div>
-            </div>
-        </div>
+        <FluentCard Class="mb-3">
+            <h5 style="margin-top: 0;">@Localizer["ApproveProjectTitle"]</h5>
+            <p>@Localizer["ApproveProjectDescription"]</p>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
+                <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleApproveProject">
+                    @Localizer["ApproveButton"]
+                </FluentButton>
+                <FluentAnchor Href="@($"/projects/{_project.Id}")" Appearance="Appearance.Outline">
+                    @Localizer["ProposeChangeButton"]
+                </FluentAnchor>
+            </FluentStack>
+        </FluentCard>
     }
 
     @if (!string.IsNullOrEmpty(_statusMessage))
     {
-        <div class="alert alert-info" role="alert">@_statusMessage</div>
+        <FluentMessageBar Intent="@_statusMessageIntent" Title="@_statusMessage" AllowDismiss="false" Class="mb-3" />
     }
 
-    <a href="@($"/projects/{_project.Id}")" class="btn btn-outline-secondary">@Localizer["ViewProjectDetails"]</a>
+    <FluentAnchor Href="@($"/projects/{_project.Id}")" Appearance="Appearance.Neutral">
+        @Localizer["ViewProjectDetails"]
+    </FluentAnchor>
 }
 else
 {
-    <div class="card">
-        <div class="card-body">
-            <h4>@Localizer["InvitationTitle"]</h4>
-            <p>@Localizer["InvitationPreviewText"]</p>
+    <FluentCard>
+        <h4 style="margin-top: 0;">@Localizer["InvitationTitle"]</h4>
+        <p>@Localizer["InvitationPreviewText"]</p>
 
-            @if (_project is not null)
-            {
-                <h5>@_project.Name</h5>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
-                    </div>
-                    <div class="col-md-4">
-                        <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
-                    </div>
-                    <div class="col-md-4">
-                        <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
-                    </div>
-                </div>
+        @if (_project is not null)
+        {
+            <h5>@_project.Name</h5>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1rem;" VerticalGap="8">
+                <span><strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")</span>
+                <span><strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")</span>
+                <span><strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)</span>
+            </FluentStack>
 
-                <h6>@Localizer["GoalsSectionTitle"]</h6>
-                <ul>
-                    @foreach (var goal in _project.Goals)
-                    {
-                        <li>@goal.Label (@goal.Unit) - @Localizer["GoalTargetValueLabel"]: @goal.TargetValue</li>
-                    }
-                </ul>
+            <h6 style="margin-bottom: 0.5rem;">@Localizer["GoalsSectionTitle"]</h6>
+            <ul style="margin-bottom: 1rem; padding-left: 1.25rem;">
+                @foreach (var goal in _project.Goals)
+                {
+                    <li>@goal.Label (@goal.Unit) - @Localizer["GoalTargetValueLabel"]: @goal.TargetValue</li>
+                }
+            </ul>
 
-                <button type="button" class="btn btn-primary" disabled="@_actionLoading" @onclick="HandleAcceptInvitation">
-                    @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
-                </button>
-            }
-        </div>
-    </div>
+            <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleAcceptInvitation">
+                @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
+            </FluentButton>
+        }
+    </FluentCard>
 }
 
 @code {
@@ -141,6 +112,7 @@ else
     private bool _actionLoading;
     private string? _error;
     private string? _statusMessage;
+    private MessageIntent _statusMessageIntent = MessageIntent.Info;
 
     protected override async Task OnInitializedAsync()
     {
@@ -218,6 +190,16 @@ else
 
     private async Task HandleApproveProject()
     {
+        var dialog = await DialogService.ShowConfirmationAsync(
+            @Localizer["ApproveProjectDescription"],
+            primaryText: @Localizer["ApproveButton"],
+            secondaryText: @Localizer["Cancel"],
+            title: @Localizer["ConfirmApproveTitle"]);
+
+        var result = await dialog.Result;
+        if (result.Cancelled)
+            return;
+
         _actionLoading = true;
         _statusMessage = null;
 
@@ -227,10 +209,12 @@ else
             await ProjectService.ApproveProjectAsync(_project.Id, _currentUserId);
             _project = await ProjectService.GetProjectAsync(_project.Id, _currentUserId);
             _statusMessage = Localizer["ProjectApprovedSuccess"];
+            _statusMessageIntent = MessageIntent.Success;
         }
         catch (Exception ex)
         {
             _statusMessage = ex.Message;
+            _statusMessageIntent = MessageIntent.Error;
         }
         finally
         {

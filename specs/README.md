@@ -45,9 +45,11 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | S3.5 | Envio real de e-mail (SMTP) + base URL nos links | done |
 | S4.1 | Dashboard Data API | done |
 | S4.2 | Dashboard UI — Gráfico de Evolução e Cards de Sentimento | done |
-| S5.1 | Cobertura de Testes — Endpoints e Regras de Negócio | in-progress |
+| S5.1 | Cobertura de Testes — Endpoints e Regras de Negócio | done |
 | S5.2 | UX, Mensagens e i18n — Polimento do MVP | done |
-| S5.3 | Produção — Domínio, Deploy Manual e Backup do Banco | approved |
+| S5.3 | Produção — Domínio, Deploy Manual e Backup do Banco | done |
+| D1 | Fundação: FluentUI + Tema + Layout | draft |
+| D2 | Telas Auth + Home com FluentUI | draft |
 
 > As specs de produto (`S*`/`X*`) nascem `draft`; o PM aprova (muda para
 > `approved`) no Gate 1, uma de cada vez, antes de implementar.

@@ -438,4 +438,28 @@
   <data name="DashboardValueAxis" xml:space="preserve">
     <value>Valor</value>
   </data>
+  <data name="StreakDays" xml:space="preserve">
+    <value>dias consecutivos</value>
+  </data>
+  <data name="StreakBest" xml:space="preserve">
+    <value>Recorde: {0}</value>
+  </data>
+  <data name="DashboardEmptyTitle" xml:space="preserve">
+    <value>Sem check-ins ainda</value>
+  </data>
+  <data name="DashboardEmptyDescription" xml:space="preserve">
+    <value>Complete seu primeiro check-in para ver gráficos de progresso e insights.</value>
+  </data>
+  <data name="ConfirmApproveTitle" xml:space="preserve">
+    <value>Confirmar Aprovação</value>
+  </data>
+  <data name="ConfirmApproveMessage" xml:space="preserve">
+    <value>Tem certeza que deseja aprovar esta solicitação de mudança?</value>
+  </data>
+  <data name="ConfirmRejectTitle" xml:space="preserve">
+    <value>Confirmar Rejeição</value>
+  </data>
+  <data name="ConfirmRejectMessage" xml:space="preserve">
+    <value>Tem certeza que deseja rejeitar esta solicitação de mudança?</value>
+  </data>
 </root>
