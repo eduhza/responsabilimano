@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 
@@ -67,6 +68,44 @@ public static class PlaywrightExtensions
     }
 
     /// <summary>
+    /// Fills a Fluent UI input component (fluent-text-field or fluent-number-field) by setting its value property and dispatching events.
+    /// </summary>
+    public static async Task FillFluentInputAsync(this ILocator locator, string value)
+    {
+        await locator.EvaluateAsync<string>("""
+            (el, value) => {
+                var tag = el.tagName.toLowerCase();
+                if (tag === 'fluent-number-field') {
+                    el.min = -1000000000;
+                    el.max = 1000000000;
+                }
+                el.value = value;
+                if ('currentValue' in el) {
+                    el.currentValue = value;
+                }
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                return value;
+            }
+            """, value);
+    }
+
+    /// <summary>
+    /// Selects a Fluent UI select option by value.
+    /// </summary>
+    public static async Task SelectFluentOptionAsync(this ILocator locator, string value)
+    {
+        await locator.EvaluateAsync<string>("""
+            (el, value) => {
+                el.value = value;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                return value;
+            }
+            """, value);
+    }
+
+    /// <summary>
     /// Creates a new project through the UI and returns the invite link href.
     /// </summary>
     public static async Task<string> CreateProjectAsync(this IPage page, string baseUrl, string name, string unit, decimal min, decimal max, decimal target)
@@ -74,24 +113,35 @@ public static class PlaywrightExtensions
         await page.GotoAndWaitForBlazorAsync($"{baseUrl}/projects/new");
         await page.WaitForSelectorAsync("h3:has-text('Criar Projeto')");
 
-        await page.Locator("#name").FillAsync(name);
-        await page.GetByLabel("Data de Início").FillAsync(DateTime.Today.ToString("yyyy-MM-dd"));
-        await page.GetByLabel("Data de Fim").FillAsync(DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd"));
+        var ptBr = new CultureInfo("pt-BR");
 
-        // Goal fields have no id/for attributes, so select by order in the card.
-        var goalFields = page.Locator(".card .form-control");
-        await goalFields.Nth(0).FillAsync(name);        // label
-        await goalFields.Nth(1).SelectOptionAsync("Decimal");
-        await goalFields.Nth(2).FillAsync(unit);        // unit
-        await goalFields.Nth(3).FillAsync(min.ToString());
-        await goalFields.Nth(4).FillAsync(max.ToString());
-        await goalFields.Nth(5).FillAsync(target.ToString());
+        await page.Locator("fluent-text-field#name").FillFluentInputAsync(name);
+        await page.GetByLabel("Data de Início").FillFluentInputAsync(DateTime.Today.ToString("d", ptBr));
+        await page.GetByLabel("Data de Fim").FillFluentInputAsync(DateTime.Today.AddMonths(1).ToString("d", ptBr));
+        await page.Locator("fluent-select#frequency").SelectFluentOptionAsync("Weekly");
+
+        // Goal fields within the goal card.
+        var goalTextFields = page.Locator(".goal-card fluent-text-field");
+        var goalSelects = page.Locator(".goal-card fluent-select");
+        var goalNumberFields = page.Locator(".goal-card fluent-number-field");
+
+        await goalTextFields.Nth(0).FillFluentInputAsync(name);        // label
+        await goalSelects.Nth(0).SelectFluentOptionAsync("Decimal");   // data type
+        await goalTextFields.Nth(1).FillFluentInputAsync(unit);        // unit
+        await goalNumberFields.Nth(0).FillFluentInputAsync(min.ToString(ptBr));   // min
+        await goalNumberFields.Nth(1).FillFluentInputAsync(max.ToString(ptBr));   // max
+        await goalNumberFields.Nth(2).FillFluentInputAsync(target.ToString(ptBr)); // target
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Criar Projeto" }).ClickAsync();
-        await page.WaitForSelectorAsync("div.alert-success");
 
-        var link = await page.Locator("a[href$='/invite']").First.GetAttributeAsync("href");
-        return link!;
+        var inviteLink = page.GetByRole(AriaRole.Link, new() { Name = "Convidar Parceiro" });
+        await inviteLink.WaitForAsync();
+        await inviteLink.ClickAsync();
+
+        var inviteUrlPattern = $"{Regex.Escape(baseUrl)}/projects/[0-9a-fA-F-]+/invite";
+        await page.WaitForURLAsync(new Regex($"^{inviteUrlPattern}$"));
+
+        return new Uri(page.Url).PathAndQuery;
     }
 
     /// <summary>

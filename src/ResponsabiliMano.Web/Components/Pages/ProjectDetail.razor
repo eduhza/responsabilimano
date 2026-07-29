@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IProjectService ProjectService
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
@@ -12,38 +13,37 @@
 
 @if (_loading)
 {
-    <p>@Localizer["Loading"]</p>
+    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 6rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 8rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 4rem;"></div>
 }
 else if (_project is null)
 {
-    <div class="alert alert-danger" role="alert">@Localizer["ProjectNotFound"]</div>
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentMessageBar Intent="MessageIntent.Error" Title="@Localizer["ProjectNotFound"]" AllowDismiss="false" />
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
+        @Localizer["BackToHome"]
+    </FluentButton>
 }
 else
 {
     <h3>@_project.Name</h3>
 
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <strong>@Localizer["StatusLabel"]:</strong>
-            @GetStatusText(_project.Status)
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")
-        </div>
-        <div class="col-md-3">
-            <strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)
-        </div>
-    </div>
+    @if (_project.Status == Core.Enums.ProjectStatus.Active)
+    {
+        <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
+    }
 
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <strong>@Localizer["CreatorLabel"]:</strong> @_project.Creator?.Name
-        </div>
-        <div class="col-md-6">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1rem;" VerticalGap="8">
+        <span><strong>@Localizer["StatusLabel"]:</strong> @GetStatusText(_project.Status)</span>
+        <span><strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")</span>
+        <span><strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")</span>
+        <span><strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)</span>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1.5rem;" VerticalGap="8">
+        <span><strong>@Localizer["CreatorLabel"]:</strong> @_project.Creator?.Name</span>
+        <span>
             <strong>@Localizer["PartnerLabel"]:</strong>
             @if (_project.Partner is not null)
             {
@@ -54,199 +54,212 @@ else
                 <span class="text-muted">@Localizer["NoPartnerYet"]</span>
                 @if (_project.CreatorId == _currentUserId)
                 {
-                    <a href="@($"/projects/{_project.Id}/invite")" class="btn btn-sm btn-outline-primary ms-2">@Localizer["InvitePartnerButton"]</a>
+                    <FluentAnchor Href="@($"/projects/{_project.Id}/invite")" Appearance="Appearance.Outline" Class="ms-2">
+                        @Localizer["InvitePartnerButton"]
+                    </FluentAnchor>
                 }
             }
-        </div>
-    </div>
+        </span>
+    </FluentStack>
 
-    @if (_project.Status == Core.Enums.ProjectStatus.Active && _checkInsEnabled)
-    {
-        <a href="@($"/projects/{_project.Id}/checkin")" class="btn btn-primary mb-3">@Localizer["CheckInButton"]</a>
-    }
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-bottom: 1.5rem;" VerticalGap="8">
+        @if (_project.Status == Core.Enums.ProjectStatus.Active && _checkInsEnabled)
+        {
+            <FluentAnchor Href="@($"/projects/{_project.Id}/checkin")" Appearance="Appearance.Accent">
+                @Localizer["CheckInButton"]
+            </FluentAnchor>
+        }
 
-    @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
-    {
-        <a href="@($"/projects/{_project.Id}/dashboard")" class="btn btn-info mb-3 ms-2">@Localizer["DashboardButton"]</a>
-    }
+        @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
+        {
+            <FluentAnchor Href="@($"/projects/{_project.Id}/dashboard")" Appearance="Appearance.Outline">
+                @Localizer["DashboardButton"]
+            </FluentAnchor>
+        }
+    </FluentStack>
 
     <h4>@Localizer["GoalsSectionTitle"]</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@Localizer["GoalFieldLabel"]</th>
-                <th>@Localizer["GoalDataTypeLabel"]</th>
-                <th>@Localizer["GoalUnitLabel"]</th>
-                <th>@Localizer["GoalMinValueLabel"]</th>
-                <th>@Localizer["GoalMaxValueLabel"]</th>
-                <th>@Localizer["GoalTargetValueLabel"]</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var goal in _project.Goals)
-            {
-                <tr>
-                    <td>@goal.Label</td>
-                    <td>@goal.DataType</td>
-                    <td>@goal.Unit</td>
-                    <td>@goal.MinValue</td>
-                    <td>@goal.MaxValue</td>
-                    <td>@goal.TargetValue</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <FluentDataGrid Items="@_project.Goals.AsQueryable()" TGridItem="GoalField" AutoFit="true" Style="margin-bottom: 1.5rem;">
+        <PropertyColumn Property="@((GoalField g) => g.Label)" Title="@Localizer["GoalFieldLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.DataType)" Title="@Localizer["GoalDataTypeLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.Unit)" Title="@Localizer["GoalUnitLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.MinValue)" Title="@Localizer["GoalMinValueLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.MaxValue)" Title="@Localizer["GoalMaxValueLabel"]" />
+        <PropertyColumn Property="@((GoalField g) => g.TargetValue)" Title="@Localizer["GoalTargetValueLabel"]" />
+    </FluentDataGrid>
 
     @if (_project.Status == Core.Enums.ProjectStatus.Pending && _project.PartnerId is not null)
     {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@Localizer["ApproveProjectTitle"]</h5>
-                <p class="card-text">@Localizer["ApproveProjectDescription"]</p>
-                <button type="button" class="btn btn-success" disabled="@_actionLoading" @onclick="HandleApproveProject">
-                    @(_actionLoading ? Localizer["Processing"] : Localizer["ApproveButton"])
-                </button>
-            </div>
-        </div>
+        <FluentCard Class="mb-3">
+            <h5 style="margin-top: 0;">@Localizer["ApproveProjectTitle"]</h5>
+            <p>@Localizer["ApproveProjectDescription"]</p>
+            <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleApproveProject">
+                @Localizer["ApproveButton"]
+            </FluentButton>
+        </FluentCard>
     }
 
     <h4>@Localizer["ChangeRequestsTitle"]</h4>
     @if (_project.ChangeRequests.Count == 0)
     {
-        <p class="text-muted">@Localizer["NoChangeRequests"]</p>
+        <div class="empty-state" style="padding: 1rem;">
+            <span class="text-muted">@Localizer["NoChangeRequests"]</span>
+        </div>
     }
     else
     {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>@Localizer["ChangeRequestTypeLabel"]</th>
-                    <th>@Localizer["ChangeRequestStatusLabel"]</th>
-                    <th>@Localizer["ChangeRequestDateLabel"]</th>
-                    <th>@Localizer["ChangeRequestedByLabel"]</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var cr in _project.ChangeRequests.OrderByDescending(c => c.CreatedAt))
+        <FluentDataGrid Items="@_project.ChangeRequests.OrderByDescending(c => c.CreatedAt).AsQueryable()" TGridItem="ProjectChangeRequest" AutoFit="true" Style="margin-bottom: 1.5rem;">
+            <PropertyColumn Property="@((ProjectChangeRequest cr) => GetChangeRequestTypeText(cr.Type))" Title="@Localizer["ChangeRequestTypeLabel"]" />
+            <PropertyColumn Property="@((ProjectChangeRequest cr) => GetChangeRequestStatusText(cr.Status))" Title="@Localizer["ChangeRequestStatusLabel"]" />
+            <PropertyColumn Property="@((ProjectChangeRequest cr) => cr.CreatedAt.ToString("yyyy-MM-dd HH:mm"))" Title="@Localizer["ChangeRequestDateLabel"]" />
+            <TemplateColumn Title="@Localizer["ChangeRequestedByLabel"]" Sortable="false">
+                @(context.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)
+            </TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                @if (context.Status == Core.Enums.ChangeRequestStatus.Pending && context.RequestedByUserId != _currentUserId)
                 {
-                    <tr>
-                        <td>@GetChangeRequestTypeText(cr.Type)</td>
-                        <td>@GetChangeRequestStatusText(cr.Status)</td>
-                        <td>@cr.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>@(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)</td>
-                        <td>
-                            @if (cr.Status == Core.Enums.ChangeRequestStatus.Pending && cr.RequestedByUserId != _currentUserId)
-                            {
-                                <button type="button" class="btn btn-sm btn-success me-1" disabled="@_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, true)">
-                                    @Localizer["ApproveButton"]
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger" disabled="@_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, false)">
-                                    @Localizer["RejectButton"]
-                                </button>
-                            }
-                        </td>
-                    </tr>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" OnClick="@(() => HandleRespondToChangeRequest(context.Id, true))">
+                            @Localizer["ApproveButton"]
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" Disabled="@_actionLoading" OnClick="@(() => HandleRespondToChangeRequest(context.Id, false))">
+                            @Localizer["RejectButton"]
+                        </FluentButton>
+                    </FluentStack>
                 }
-            </tbody>
-        </table>
+            </TemplateColumn>
+        </FluentDataGrid>
     }
 
     @if (_project.Status is Core.Enums.ProjectStatus.Pending or Core.Enums.ProjectStatus.Active)
     {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@Localizer["ProposeChangeTitle"]</h5>
+        <FluentCard Class="mb-3">
+            <h5 style="margin-top: 0;">@Localizer["ProposeChangeTitle"]</h5>
 
-                <div class="mb-2">
-                    <label class="form-label">@Localizer["ChangeTypeLabel"]</label>
-                    <select class="form-select" @bind="_proposeType">
-                        <option value="@Core.Enums.ChangeRequestType.EndDate">@Localizer["ChangeTypeEndDate"]</option>
-                        <option value="@Core.Enums.ChangeRequestType.Frequency">@Localizer["ChangeTypeFrequency"]</option>
-                        <option value="@Core.Enums.ChangeRequestType.Goals">@Localizer["ChangeTypeGoals"]</option>
-                    </select>
-                </div>
+            <FluentSelect TOption="string"
+                          Label="@Localizer["ChangeTypeLabel"]"
+                          Appearance="Appearance.Outline"
+                          Value="_proposeType.ToString()"
+                          ValueChanged="@(v => _proposeType = Enum.Parse<ChangeRequestType>(v ?? string.Empty))"
+                          Style="width: 100%; max-width: 300px; margin-bottom: 0.75rem;">
+                <FluentOption Value="@ChangeRequestType.EndDate.ToString()">@Localizer["ChangeTypeEndDate"]</FluentOption>
+                <FluentOption Value="@ChangeRequestType.Frequency.ToString()">@Localizer["ChangeTypeFrequency"]</FluentOption>
+                <FluentOption Value="@ChangeRequestType.Goals.ToString()">@Localizer["ChangeTypeGoals"]</FluentOption>
+            </FluentSelect>
 
-                @if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
+            @if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
+            {
+                <FluentDatePicker Label="@Localizer["NewEndDateLabel"]"
+                                  Value="_proposeEndDate"
+                                  ValueChanged="@(v => _proposeEndDate = v)"
+                                  Style="width: 100%; max-width: 300px;" />
+            }
+            else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
+            {
+                <FluentSelect TOption="string"
+                              Label="@Localizer["NewFrequencyLabel"]"
+                              Appearance="Appearance.Outline"
+                              Value="_proposeFrequency.ToString()"
+                              ValueChanged="@(v => _proposeFrequency = Enum.Parse<ProjectFrequency>(v ?? string.Empty))"
+                              Style="width: 100%; max-width: 300px;">
+                    <FluentOption Value="@ProjectFrequency.Daily.ToString()">@Localizer["FrequencyDaily"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Weekly.ToString()">@Localizer["FrequencyWeekly"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Biweekly.ToString()">@Localizer["FrequencyBiweekly"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Monthly.ToString()">@Localizer["FrequencyMonthly"]</FluentOption>
+                </FluentSelect>
+            }
+            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
+            {
+                @for (var i = 0; i < _proposeGoals.Count; i++)
                 {
-                    <div class="mb-2">
-                        <label class="form-label">@Localizer["NewEndDateLabel"]</label>
-                        <input type="date" class="form-control" @bind="_proposeEndDate" />
-                    </div>
-                }
-                else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
-                {
-                    <div class="mb-2">
-                        <label class="form-label">@Localizer["NewFrequencyLabel"]</label>
-                        <select class="form-select" @bind="_proposeFrequency">
-                            <option value="@Core.Enums.ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
-                            <option value="@Core.Enums.ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
-                            <option value="@Core.Enums.ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
-                            <option value="@Core.Enums.ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
-                        </select>
-                    </div>
-                }
-                else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
-                {
-                    @for (var i = 0; i < _proposeGoals.Count; i++)
-                    {
-                        var index = i;
-                        <div class="card mb-2">
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label">@Localizer["GoalFieldLabel"]</label>
-                                        <input class="form-control" @bind="_proposeGoals[index].Label" />
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">@Localizer["GoalDataTypeLabel"]</label>
-                                        <select class="form-select" @bind="_proposeGoals[index].DataType">
-                                            <option value="@Core.Enums.GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
-                                            <option value="@Core.Enums.GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
-                                            <option value="@Core.Enums.GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">@Localizer["GoalUnitLabel"]</label>
-                                        <input class="form-control" @bind="_proposeGoals[index].Unit" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">@Localizer["GoalMinValueLabel"]</label>
-                                        <input type="number" class="form-control" @bind="_proposeGoals[index].MinValue" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">@Localizer["GoalMaxValueLabel"]</label>
-                                        <input type="number" class="form-control" @bind="_proposeGoals[index].MaxValue" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">@Localizer["GoalTargetValueLabel"]</label>
-                                        <input type="number" class="form-control" @bind="_proposeGoals[index].TargetValue" />
-                                    </div>
-                                </div>
+                    var index = i;
+                    <FluentCard Class="mb-2 goal-card">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap; margin-bottom: 0.75rem;">
+                            <div style="flex: 2; min-width: 200px;">
+                                <FluentTextField Label="@Localizer["GoalFieldLabel"]"
+                                                 Appearance="FluentInputAppearance.Outline"
+                                                 @bind-Value="_proposeGoals[index].Label"
+                                                 Style="width: 100%;" />
                             </div>
-                        </div>
-                    }
-                    <button type="button" class="btn btn-outline-secondary btn-sm mb-2" @onclick="AddProposeGoal">@Localizer["AddGoalButton"]</button>
+                            <div style="flex: 1; min-width: 150px;">
+                                <FluentSelect TOption="string"
+                                              Label="@Localizer["GoalDataTypeLabel"]"
+                                              Appearance="Appearance.Outline"
+                                              Value="_proposeGoals[index].DataType.ToString()"
+                                              ValueChanged="@(v => _proposeGoals[index].DataType = Enum.Parse<GoalDataType>(v ?? string.Empty))"
+                                              Style="width: 100%;">
+                                    <FluentOption Value="@GoalDataType.Decimal.ToString()">@Localizer["DataTypeDecimal"]</FluentOption>
+                                    <FluentOption Value="@GoalDataType.Integer.ToString()">@Localizer["DataTypeInteger"]</FluentOption>
+                                    <FluentOption Value="@GoalDataType.Percent.ToString()">@Localizer["DataTypePercent"]</FluentOption>
+                                </FluentSelect>
+                            </div>
+                            <div style="flex: 1; min-width: 100px;">
+                                <FluentTextField Label="@Localizer["GoalUnitLabel"]"
+                                                 Appearance="FluentInputAppearance.Outline"
+                                                 @bind-Value="_proposeGoals[index].Unit"
+                                                 Style="width: 100%;" />
+                            </div>
+                        </FluentStack>
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 120px;">
+                                <FluentNumberField TValue="decimal?"
+                                                   Label="@Localizer["GoalMinValueLabel"]"
+                                                   Appearance="FluentInputAppearance.Outline"
+                                                   HideStep="true"
+                                                   @bind-Value="_proposeGoals[index].MinValue"
+                                                   Style="width: 100%;" />
+                            </div>
+                            <div style="flex: 1; min-width: 120px;">
+                                <FluentNumberField TValue="decimal?"
+                                                   Label="@Localizer["GoalMaxValueLabel"]"
+                                                   Appearance="FluentInputAppearance.Outline"
+                                                   HideStep="true"
+                                                   @bind-Value="_proposeGoals[index].MaxValue"
+                                                   Style="width: 100%;" />
+                            </div>
+                            <div style="flex: 1; min-width: 120px;">
+                                <FluentNumberField TValue="decimal?"
+                                                   Label="@Localizer["GoalTargetValueLabel"]"
+                                                   Appearance="FluentInputAppearance.Outline"
+                                                   HideStep="true"
+                                                   @bind-Value="_proposeGoals[index].TargetValue"
+                                                   Style="width: 100%;" />
+                            </div>
+                        </FluentStack>
+                    </FluentCard>
                 }
 
-                @if (!string.IsNullOrEmpty(_proposeError))
-                {
-                    <div class="alert alert-danger mt-2">@_proposeError</div>
-                }
+                <FluentButton Type="ButtonType.Button"
+                              Appearance="Appearance.Outline"
+                              IconStart="@(new Icons.Regular.Size20.Add())"
+                              OnClick="AddProposeGoal"
+                              Class="mb-2">
+                    @Localizer["AddGoalButton"]
+                </FluentButton>
+            }
 
-                <button type="button" class="btn btn-primary" disabled="@_actionLoading" @onclick="HandleProposeChange">
+            @if (!string.IsNullOrEmpty(_proposeError))
+            {
+                <FluentMessageBar Intent="MessageIntent.Error" Title="@_proposeError" AllowDismiss="false" Class="mt-2" />
+            }
+
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
+                <FluentButton Type="ButtonType.Button" Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleProposeChange">
                     @(_actionLoading ? Localizer["Processing"] : Localizer["ProposeChangeButton"])
-                </button>
-            </div>
-        </div>
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
     }
 
     @if (!string.IsNullOrEmpty(_statusMessage))
     {
-        <div class="alert alert-info" role="alert">@_statusMessage</div>
+        <FluentMessageBar Intent="@_statusMessageIntent" Title="@_statusMessage" AllowDismiss="false" Class="mb-3" />
     }
 
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))">
+        @Localizer["BackToHome"]
+    </FluentButton>
 }
 
 @code {
@@ -260,7 +273,9 @@ else
     private bool _dashboardEnabled;
     private bool _actionLoading;
     private string? _statusMessage;
+    private MessageIntent _statusMessageIntent = MessageIntent.Info;
     private string? _proposeError;
+    private (int Current, int Best) _streak;
 
     private Core.Enums.ChangeRequestType _proposeType = Core.Enums.ChangeRequestType.EndDate;
     private DateTime? _proposeEndDate;
@@ -297,6 +312,11 @@ else
                     MaxValue = g.MaxValue,
                     TargetValue = g.TargetValue
                 }).ToList();
+
+                if (_project.Status == Core.Enums.ProjectStatus.Active)
+                {
+                    _streak = await ProjectService.GetStreakAsync(ProjectId, _currentUserId);
+                }
             }
         }
         catch (UnauthorizedAccessException)
@@ -316,33 +336,34 @@ else
 
     private async Task HandleApproveProject()
     {
-        _actionLoading = true;
-        _statusMessage = null;
+        var dialog = await DialogService.ShowConfirmationAsync(
+            @Localizer["ApproveProjectDescription"],
+            primaryText: @Localizer["ApproveButton"],
+            secondaryText: @Localizer["Cancel"],
+            title: @Localizer["ConfirmApproveTitle"]);
 
-        try
+        var result = await dialog.Result;
+        if (result.Cancelled)
+            return;
+
+        await ExecuteAction(async () =>
         {
             await ProjectService.ApproveProjectAsync(ProjectId, _currentUserId);
             _statusMessage = Localizer["ProjectApprovedSuccess"];
+            _statusMessageIntent = MessageIntent.Success;
             _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
-        }
-        catch (Exception ex)
-        {
-            _statusMessage = ex.Message;
-        }
-        finally
-        {
-            _actionLoading = false;
-        }
+            if (_project is not null && _project.Status == Core.Enums.ProjectStatus.Active)
+            {
+                _streak = await ProjectService.GetStreakAsync(ProjectId, _currentUserId);
+            }
+        });
     }
 
     private async Task HandleProposeChange()
     {
-        _actionLoading = true;
-        _proposeError = null;
-        _statusMessage = null;
-
-        try
+        await ExecuteAction(async () =>
         {
+            _proposeError = null;
             var request = new ProposeChangeRequest { Type = _proposeType };
 
             if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
@@ -355,32 +376,46 @@ else
             var payloadJson = request.ToPayloadJson();
             await ProjectService.ProposeChangeAsync(ProjectId, _currentUserId, _proposeType, payloadJson);
             _statusMessage = Localizer["ChangeRequestCreatedSuccess"];
+            _statusMessageIntent = MessageIntent.Success;
             _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
-        }
-        catch (Exception ex)
-        {
-            _proposeError = ex.Message;
-        }
-        finally
-        {
-            _actionLoading = false;
-        }
+        }, ex => _proposeError = ex.Message);
     }
 
     private async Task HandleRespondToChangeRequest(Guid changeRequestId, bool approve)
+    {
+        var dialog = await DialogService.ShowConfirmationAsync(
+            approve ? @Localizer["ConfirmApproveMessage"] : @Localizer["ConfirmRejectMessage"],
+            primaryText: approve ? @Localizer["ApproveButton"] : @Localizer["RejectButton"],
+            secondaryText: @Localizer["Cancel"],
+            title: approve ? @Localizer["ConfirmApproveTitle"] : @Localizer["ConfirmRejectTitle"]);
+
+        var result = await dialog.Result;
+        if (result.Cancelled)
+            return;
+
+        await ExecuteAction(async () =>
+        {
+            await ProjectService.RespondToChangeRequestAsync(ProjectId, changeRequestId, _currentUserId, approve);
+            _statusMessage = approve ? Localizer["ChangeRequestApprovedSuccess"] : Localizer["ChangeRequestRejectedSuccess"];
+            _statusMessageIntent = MessageIntent.Success;
+            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+        });
+    }
+
+    private async Task ExecuteAction(Func<Task> action, Action<Exception>? onError = null)
     {
         _actionLoading = true;
         _statusMessage = null;
 
         try
         {
-            await ProjectService.RespondToChangeRequestAsync(ProjectId, changeRequestId, _currentUserId, approve);
-            _statusMessage = approve ? Localizer["ChangeRequestApprovedSuccess"] : Localizer["ChangeRequestRejectedSuccess"];
-            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
+            await action();
         }
         catch (Exception ex)
         {
             _statusMessage = ex.Message;
+            _statusMessageIntent = MessageIntent.Error;
+            onError?.Invoke(ex);
         }
         finally
         {

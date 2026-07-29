@@ -57,6 +57,11 @@ public interface IProjectService
         Guid userId,
         bool approve,
         CancellationToken cancellationToken = default);
+
+    Task<(int Current, int Best)> GetStreakAsync(
+        Guid projectId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record GoalFieldInput(

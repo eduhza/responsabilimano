@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IDashboardService DashboardService
+@inject IProjectService ProjectService
 @inject IFeatureManager FeatureManager
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
@@ -15,33 +16,56 @@
 
 @if (_loading)
 {
-    <p>@Localizer["Loading"]</p>
+    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 24rem; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="width: 100%; height: 6rem;"></div>
 }
 else if (!_available)
 {
-    <div class="alert alert-danger" role="alert">@Localizer["ProjectNotFound"]</div>
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentMessageBar Intent="MessageIntent.Error" Title="@Localizer["ProjectNotFound"]" AllowDismiss="false" />
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
+        @Localizer["BackToHome"]
+    </FluentButton>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <a href="@($"/projects/{ProjectId}")" class="btn btn-outline-secondary">@Localizer["BackToProject"]</a>
+    <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
+    <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral" Class="mt-3">
+        @Localizer["BackToProject"]
+    </FluentAnchor>
+}
+else if (_dashboard is not null && (!_dashboard.Metrics.Any() || !_dashboard.Participants.Any()))
+{
+    <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
+    <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
+    <div class="empty-state">
+        <h4 class="empty-state-title">@Localizer["DashboardEmptyTitle"]</h4>
+        <p>@Localizer["DashboardEmptyDescription"]</p>
+        <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral">
+            @Localizer["BackToProject"]
+        </FluentAnchor>
+    </div>
 }
 else if (_dashboard is not null)
 {
     <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
+    <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
 
     @if (_dashboard.Metrics.Count > 1)
     {
-        <div class="mb-3">
-            <label class="form-label">@Localizer["DashboardGoalSelector"]</label>
-            <select class="form-select" style="max-width: 300px;" @bind="_selectedGoalIndex" @bind:after="RenderChartAsync">
+        <div class="mb-3" style="max-width: 400px;">
+            <FluentSelect TOption="string"
+                          Label="@Localizer["DashboardGoalSelector"]"
+                          Appearance="Appearance.Outline"
+                          Value="_selectedGoalIndex.ToString()"
+                          ValueChanged="@OnGoalSelected"
+                          Style="width: 100%;">
                 @for (var i = 0; i < _dashboard.Metrics.Count; i++)
                 {
                     var idx = i;
-                    <option value="@idx">@_dashboard.Metrics[idx].Label (@_dashboard.Metrics[idx].Unit)</option>
+                    <FluentOption Value="@idx.ToString()">@_dashboard.Metrics[idx].Label (@_dashboard.Metrics[idx].Unit)</FluentOption>
                 }
-            </select>
+            </FluentSelect>
         </div>
     }
 
@@ -57,15 +81,15 @@ else if (_dashboard is not null)
         @foreach (var participant in _dashboard.Participants)
         {
             <div class="col-12 col-sm-6">
-                <div class="card">
-                    <div class="card-body d-flex align-items-center gap-3">
+                <FluentCard>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
                         @if (participant.LatestFeeling is not null)
                         {
-                            @((MarkupString)FaceSvg(participant.LatestFeeling.Value))
+                            <FeelingFace Feeling="participant.LatestFeeling.Value" Size="40" />
                         }
                         else
                         {
-                            <span class="text-muted fs-3">—</span>
+                            <span class="text-muted" style="font-size: 2rem; width: 40px; text-align: center;">—</span>
                         }
                         <div>
                             <strong>@participant.Name</strong>
@@ -79,8 +103,8 @@ else if (_dashboard is not null)
                                 <span class="text-muted">@Localizer["DashboardNoCheckIns"]</span>
                             }
                         </div>
-                    </div>
-                </div>
+                    </FluentStack>
+                </FluentCard>
             </div>
         }
     </div>
@@ -93,27 +117,27 @@ else if (_dashboard is not null)
             {
                 var avg = metric.Series.FirstOrDefault(s => s.UserId == participant.UserId)?.AverageValue;
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">@participant.Name — @metric.Label</h6>
-                            <p class="card-text fs-5">
-                                @if (avg is not null)
-                                {
-                                    <span>@avg @metric.Unit</span>
-                                }
-                                else
-                                {
-                                    <span>—</span>
-                                }
-                            </p>
-                        </div>
-                    </div>
+                    <FluentCard>
+                        <h6 style="margin: 0;">@participant.Name — @metric.Label</h6>
+                        <p class="card-text" style="font-size: 1.25rem; margin: 0.25rem 0 0 0;">
+                            @if (avg is not null)
+                            {
+                                <span>@avg @metric.Unit</span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </p>
+                    </FluentCard>
                 </div>
             }
         }
     </div>
 
-    <a href="@($"/projects/{ProjectId}")" class="btn btn-outline-secondary">@Localizer["BackToProject"]</a>
+    <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral">
+        @Localizer["BackToProject"]
+    </FluentAnchor>
 }
 
 @code {
@@ -126,6 +150,7 @@ else if (_dashboard is not null)
     private string? _error;
     private int _selectedGoalIndex;
     private Guid _currentUserId;
+    private (int Current, int Best) _streak;
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,6 +176,17 @@ else if (_dashboard is not null)
             {
                 _available = false;
             }
+            else
+            {
+                try
+                {
+                    _streak = await ProjectService.GetStreakAsync(ProjectId, _currentUserId);
+                }
+                catch
+                {
+                    _streak = (0, 0);
+                }
+            }
         }
         catch (UnauthorizedAccessException)
         {
@@ -175,6 +211,15 @@ else if (_dashboard is not null)
         }
     }
 
+    private async Task OnGoalSelected(string? value)
+    {
+        if (int.TryParse(value, out var index))
+        {
+            _selectedGoalIndex = index;
+            await RenderChartAsync();
+        }
+    }
+
     private async Task RenderChartAsync()
     {
         if (_dashboard is null || _dashboard.Metrics.Count == 0) return;
@@ -195,10 +240,10 @@ else if (_dashboard is not null)
         var datasets = new List<object>();
         var colors = new[]
         {
-            "rgb(54, 162, 235)",
-            "rgb(255, 99, 132)",
-            "rgb(75, 192, 192)",
-            "rgb(153, 102, 255)"
+            "rgb(232, 93, 78)",
+            "rgb(91, 146, 121)",
+            "rgb(45, 157, 120)",
+            "rgb(244, 162, 97)"
         };
 
         for (var i = 0; i < _dashboard.Participants.Count; i++)
@@ -255,28 +300,6 @@ else if (_dashboard is not null)
         Feeling.VeryHappy => Localizer["FeelingVeryHappy"],
         _ => feeling.ToString()
     };
-
-    private static string FaceSvg(Feeling feeling)
-    {
-        var mouth = feeling switch
-        {
-            Feeling.VerySad => "M8 17 Q12 12 16 17",
-            Feeling.Sad => "M8 16 Q12 13 16 16",
-            Feeling.Neutral => "M8 15 L16 15",
-            Feeling.Happy => "M8 14 Q12 17 16 14",
-            Feeling.VeryHappy => "M8 13 Q12 19 16 13",
-            _ => "M8 15 L16 15"
-        };
-
-        return $"""
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="9" cy="10" r="1" fill="currentColor" />
-              <circle cx="15" cy="10" r="1" fill="currentColor" />
-              <path d="{mouth}" stroke-linecap="round" />
-            </svg>
-            """;
-    }
 
     public async ValueTask DisposeAsync()
     {

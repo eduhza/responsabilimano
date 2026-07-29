@@ -4,11 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.JSInterop;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Web;
 using ResponsabiliMano.Web.Components.Pages;
+using ResponsabiliMano.Web.Models;
 
 namespace ResponsabiliMano.Web.Tests.Pages;
 
@@ -28,6 +31,9 @@ public class CreateProjectTests : TestContext
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassthroughLocalizer());
         Services.AddSingleton<ILogger<CreateProject>>(NullLogger<CreateProject>.Instance);
+        Services.AddSingleton(new LibraryConfiguration { CollocatedJavaScriptQueryString = null });
+        Services.AddSingleton<GlobalState>();
+        Services.AddSingleton<IJSRuntime>(new FakeJSRuntime());
     }
 
     [Fact]
@@ -39,16 +45,28 @@ public class CreateProjectTests : TestContext
 
         await cut.InvokeAsync(() =>
         {
-            cut.Find("input#name").Change("Test Project");
-            cut.Find("input#startDate").Change(DateTime.Today.ToString("yyyy-MM-dd"));
-            cut.Find("input#endDate").Change(DateTime.Today.AddDays(30).ToString("yyyy-MM-dd"));
-            cut.Find(".card .col-md-6 input.form-control").Change("Weight");
-            cut.Find(".card .col-md-3 input.form-control").Change("kg");
-            cut.Find("form").Submit();
+            var instance = cut.Instance;
+            var modelField = instance.GetType().GetField("_model", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var model = (CreateProjectRequest)modelField!.GetValue(instance)!;
+            model.Name = "Test Project";
+            model.StartDate = DateTime.Today;
+            model.EndDate = DateTime.Today.AddDays(30);
+            model.Frequency = ProjectFrequency.Weekly;
+            model.Goals.Clear();
+            model.Goals.Add(new GoalFieldRequest
+            {
+                Label = "Weight",
+                DataType = GoalDataType.Decimal,
+                Unit = "kg",
+                TargetValue = 70m
+            });
+
+            var form = cut.Find("form");
+            form.Submit();
         });
 
-        var submitButton = cut.Find("button[type='submit']");
-        Assert.True(submitButton.HasAttribute("disabled"));
+        var submitButton = cut.Find("fluent-button[appearance='accent']");
+        Assert.True(submitButton.HasAttribute("disabled") || submitButton.HasAttribute("loading"));
         Assert.Contains("Creating", submitButton.TextContent);
 
         _projectService.CreateTask!.SetResult(new Project
@@ -109,6 +127,9 @@ public class CreateProjectTests : TestContext
             Guid projectId, Guid changeRequestId, Guid userId, bool approve,
             CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
+
+        public Task<(int Current, int Best)> GetStreakAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+            => Task.FromResult((0, 0));
     }
 
     private sealed class FakeAuthStateProvider : AuthenticationStateProvider
@@ -122,6 +143,32 @@ public class CreateProjectTests : TestContext
                 "TestAuth");
             return Task.FromResult(new AuthenticationState(new System.Security.Claims.ClaimsPrincipal(identity)));
         }
+    }
+
+    private sealed class FakeJSRuntime : IJSRuntime
+    {
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
+        {
+            if (typeof(TValue) == typeof(IJSObjectReference))
+                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
+            return default;
+        }
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+        {
+            if (typeof(TValue) == typeof(IJSObjectReference))
+                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
+            return default;
+        }
+    }
+
+    private sealed class FakeJSModuleReference : IJSObjectReference
+    {
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => default;
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
+        public ValueTask InvokeVoidAsync(string identifier, object?[]? args) => default;
+        public ValueTask InvokeVoidAsync(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
+        public ValueTask DisposeAsync() => default;
     }
 
     private sealed class PassthroughLocalizer : IStringLocalizer<AppStrings>
