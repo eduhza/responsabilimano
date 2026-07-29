@@ -16,9 +16,9 @@
     <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["CreateProjectSuccess"]" AllowDismiss="false" />
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Navigation.NavigateTo($"/projects/{_createdProjectId}/invite"))">
+        <FluentAnchor Href="@($"/projects/{_createdProjectId}/invite")" Appearance="Appearance.Accent">
             @Localizer["InvitePartnerButton"]
-        </FluentButton>
+        </FluentAnchor>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))">
             @Localizer["BackToHome"]
         </FluentButton>

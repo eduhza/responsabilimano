@@ -134,9 +134,9 @@ public static class PlaywrightExtensions
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Criar Projeto" }).ClickAsync();
 
-        var inviteButton = page.GetByRole(AriaRole.Button, new() { Name = "Convidar Parceiro" });
-        await inviteButton.WaitForAsync();
-        await inviteButton.ClickAsync();
+        var inviteLink = page.GetByRole(AriaRole.Link, new() { Name = "Convidar Parceiro" });
+        await inviteLink.WaitForAsync();
+        await inviteLink.ClickAsync();
 
         var inviteUrlPattern = $"{Regex.Escape(baseUrl)}/projects/[0-9a-fA-F-]+/invite";
         await page.WaitForURLAsync(new Regex($"^{inviteUrlPattern}$"));
