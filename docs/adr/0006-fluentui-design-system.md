@@ -1,6 +1,6 @@
 # 0006 — FluentUI Blazor como Design System
 
-- **Status:** proposed
+- **Status:** accepted
 - **Data:** 2026-07-29
 - **Contexto:** A aplicação foi construída com o template Blazor default
   (Bootstrap 5 sem customização). A UI é funcional mas sem identidade visual.
