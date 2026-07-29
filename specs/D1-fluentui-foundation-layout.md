@@ -6,7 +6,7 @@ priority: P1
 iteration: 1 (2-3 dias)
 contract: none
 tracking: gh-issue-#TBD  <!-- criar manualmente: token do git credential manager não tem escopo repo para criar issues via API -->
-status: in-progress
+status: done
 depends_on: []
 adr: [0003, 0006]
 ---
