@@ -118,8 +118,8 @@ public partial class Program
 
         app.UseRequestLocalization(new RequestLocalizationOptions()
             .SetDefaultCulture("pt-BR")
-            .AddSupportedCultures("pt-BR")
-            .AddSupportedUICultures("pt-BR"));
+            .AddSupportedCultures("pt-BR", "en")
+            .AddSupportedUICultures("pt-BR", "en"));
 
         // Antiforgery guards the Blazor UI (server-rendered forms). The /api surface is
         // exempt: those endpoints authenticate via the auth cookie (SameSite=Lax already
