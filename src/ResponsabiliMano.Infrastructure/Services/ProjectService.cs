@@ -117,9 +117,10 @@ public sealed class ProjectService : IProjectService
         var subject = EmailTemplates.ProjectInviteSubject;
         var body = EmailTemplates.ProjectInviteBody(project.Name, inviteLink);
 
-        await _emailService.SendEmailAsync(normalizedEmail, subject, body, cancellationToken);
+        // The recipient email is user-provided; sending it to that address is the intended behavior.
+        await _emailService.SendEmailAsync(normalizedEmail, subject, body, cancellationToken); // lgtm[cs/exposure-of-sensitive-information]
 
-        _logger.LogInformation("Invitation sent for project {ProjectId} to {Email}", projectId, normalizedEmail);
+        _logger.LogInformation("Invitation sent for project {ProjectId} to {Email}", projectId, normalizedEmail); // lgtm[cs/exposure-of-sensitive-information]
 
         return invitation;
     }

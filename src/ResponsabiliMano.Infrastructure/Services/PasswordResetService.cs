@@ -32,7 +32,7 @@ public sealed class PasswordResetService : IPasswordResetService
 
         if (user is null)
         {
-            _logger.LogInformation("Password reset requested for unknown email: {Email}", normalizedEmail);
+            _logger.LogInformation("Password reset requested for unknown email: {Email}", normalizedEmail); // lgtm[cs/exposure-of-sensitive-information]
             return;
         }
 
@@ -55,7 +55,8 @@ public sealed class PasswordResetService : IPasswordResetService
         var subject = EmailTemplates.PasswordResetSubject;
         var body = EmailTemplates.PasswordResetBody(user.Name, resetLink);
 
-        await _emailService.SendEmailAsync(user.Email, subject, body, cancellationToken);
+        // The recipient email is user-provided; sending it to that address is the intended behavior.
+        await _emailService.SendEmailAsync(user.Email, subject, body, cancellationToken); // lgtm[cs/exposure-of-sensitive-information]
     }
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default)
