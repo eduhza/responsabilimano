@@ -52,15 +52,8 @@ public sealed class PasswordResetService : IPasswordResetService
         await _context.SaveChangesAsync(cancellationToken);
 
         var resetLink = $"{baseUrl.TrimEnd('/')}/reset-password?token={rawToken}";
-        var subject = "Recuperacao de Senha - ResponsabiliMano";
-        var body = $"""
-            <h2>Recuperacao de Senha</h2>
-            <p>Ola, {user.Name}!</p>
-            <p>Voce solicitou a redefinicao de sua senha. Clique no link abaixo para definir uma nova senha:</p>
-            <p><a href="{resetLink}">{resetLink}</a></p>
-            <p>Este link expira em 1 hora.</p>
-            <p>Se voce nao solicitou esta redefinicao, ignore este e-mail.</p>
-            """;
+        var subject = EmailTemplates.PasswordResetSubject;
+        var body = EmailTemplates.PasswordResetBody(user.Name, resetLink);
 
         await _emailService.SendEmailAsync(user.Email, subject, body, cancellationToken);
     }

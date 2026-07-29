@@ -124,26 +124,16 @@ public sealed class CheckInNotificationService : ICheckInNotificationService
     private Task SendCheckInRequestEmailAsync(User user, Project project, string baseUrl, CancellationToken cancellationToken)
     {
         var link = CheckInLink(baseUrl, project.Id);
-        var subject = "Hora do check-in - ResponsabiliMano";
-        var body = $"""
-            <h2>Hora do check-in!</h2>
-            <p>Ola, {user.Name}. Chegou a hora de registrar seu check-in do projeto "{project.Name}".</p>
-            <p>Clique no link abaixo para preencher:</p>
-            <p><a href="{link}">{link}</a></p>
-            """;
+        var subject = EmailTemplates.CheckInRequestSubject;
+        var body = EmailTemplates.CheckInRequestBody(user.Name, project.Name, link);
         return _emailService.SendEmailAsync(user.Email, subject, body, cancellationToken);
     }
 
     private Task SendReminderEmailAsync(User user, Project project, string baseUrl, CancellationToken cancellationToken)
     {
         var link = CheckInLink(baseUrl, project.Id);
-        var subject = "Lembrete de check-in - ResponsabiliMano";
-        var body = $"""
-            <h2>Voce ainda nao fez seu check-in</h2>
-            <p>Ola, {user.Name}. Este e um lembrete para registrar seu check-in do projeto "{project.Name}".</p>
-            <p>Clique no link abaixo para preencher:</p>
-            <p><a href="{link}">{link}</a></p>
-            """;
+        var subject = EmailTemplates.CheckInReminderSubject;
+        var body = EmailTemplates.CheckInReminderBody(user.Name, project.Name, link);
         return _emailService.SendEmailAsync(user.Email, subject, body, cancellationToken);
     }
 
