@@ -44,7 +44,7 @@ jobs:
           badge: false
           fail_below_min: true
           format: markdown
-          thresholds: '55 80'
+          thresholds: '65 80'
           output: both
 
       # SCA: fail on known-vulnerable NuGet packages (direct or transitive).
