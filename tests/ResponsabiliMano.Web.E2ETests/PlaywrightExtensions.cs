@@ -90,7 +90,7 @@ public static class PlaywrightExtensions
         await page.GetByRole(AriaRole.Button, new() { Name = "Criar Projeto" }).ClickAsync();
         await page.WaitForSelectorAsync("div.alert-success");
 
-        var link = await page.Locator("a[href^='/projects/']").First.GetAttributeAsync("href");
+        var link = await page.Locator("a[href$='/invite']").First.GetAttributeAsync("href");
         return link!;
     }
 
