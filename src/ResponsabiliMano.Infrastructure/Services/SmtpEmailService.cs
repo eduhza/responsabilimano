@@ -34,8 +34,7 @@ public sealed class SmtpEmailService : IEmailService
         await client.SendAsync(message, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
 
-        // No PII in logs: recipient is not logged (rule security.md).
-        _logger.LogInformation("Email sent: subject {Subject}", subject);
+        _logger.LogInformation("Email sent via SMTP.");
     }
 
     /// <summary>
