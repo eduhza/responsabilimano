@@ -160,6 +160,17 @@ public class ProjectEndpointsTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ApproveProject_AlreadyActive_ReturnsOk()
+    {
+        var (creator, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
+        var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
+        var client = _fixture.AuthenticatedClient(cookie);
+
+        var response = await client.PostAsync($"/api/projects/{project.Id}/approve", null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     // ---------- POST /api/projects/{id}/change-requests ----------
 
     [Fact]
