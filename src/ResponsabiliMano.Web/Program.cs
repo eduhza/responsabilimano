@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.FluentUI.AspNetCore.Components;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.DependencyInjection;
@@ -33,6 +34,8 @@ public partial class Program
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+
+        builder.Services.AddFluentUIComponents();
 
         builder.Services.AddLocalization();
         builder.Services.AddResponsabiliManoInfrastructure(builder.Configuration);

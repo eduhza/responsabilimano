@@ -1,0 +1,40 @@
+@inject IStringLocalizer<AppStrings> Localizer
+
+<nav class="bottom-nav">
+    <AuthorizeView>
+        <Authorized>
+            <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Home())" />
+                <span>@Localizer["NavHome"]</span>
+            </NavLink>
+
+            <NavLink href="/projects/new" class="bottom-nav-item">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
+                <span>@Localizer["NavCreateProject"]</span>
+            </NavLink>
+
+            <form method="post" action="api/auth/logout" class="bottom-nav-form">
+                <button type="submit" class="bottom-nav-item">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
+                    <span>@Localizer["LogoutButton"]</span>
+                </button>
+            </form>
+        </Authorized>
+        <NotAuthorized>
+            <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Home())" />
+                <span>@Localizer["NavHome"]</span>
+            </NavLink>
+
+            <NavLink href="/login" class="bottom-nav-item">
+                <FluentIcon Value="@(new Icons.Regular.Size20.ArrowEnter())" />
+                <span>@Localizer["LoginButton"]</span>
+            </NavLink>
+
+            <NavLink href="/register" class="bottom-nav-item">
+                <FluentIcon Value="@(new Icons.Regular.Size20.PersonAdd())" />
+                <span>@Localizer["RegisterButton"]</span>
+            </NavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</nav>
