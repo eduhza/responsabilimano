@@ -99,3 +99,154 @@ h1:focus {
         font-size: 1.5rem;
     }
 }
+
+/* Skeleton loading */
+.skeleton {
+    background-color: var(--rm-text-muted);
+    border-radius: 0.25rem;
+    opacity: 0.2;
+    animation: pulse 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--rm-text-muted);
+    gap: 0.75rem;
+}
+
+.empty-state-title {
+    font-family: var(--rm-font-display);
+    font-size: 1.25rem;
+    color: var(--rm-text);
+    margin: 0;
+}
+
+/* Feeling faces */
+.feeling-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.feeling-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.feeling-button:hover {
+    opacity: 1;
+}
+
+.feeling-button.selected {
+    opacity: 1;
+    border-color: var(--rm-primary);
+    box-shadow: 0 0 0 2px var(--rm-primary);
+}
+
+.feeling-button:disabled {
+    cursor: not-allowed;
+}
+
+.feeling-label {
+    font-size: 0.75rem;
+    color: var(--rm-text);
+}
+
+/* Streak */
+.streak-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--rm-surface);
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.streak-flame {
+    color: var(--rm-accent);
+    flex-shrink: 0;
+}
+
+.streak-flame.inactive {
+    opacity: 0.3;
+}
+
+.streak-number {
+    font-family: var(--rm-font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--rm-accent);
+    line-height: 1;
+}
+
+.streak-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.streak-label {
+    font-size: 0.875rem;
+    color: var(--rm-text);
+}
+
+.streak-best {
+    font-size: 0.75rem;
+    color: var(--rm-text-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .streak-flame.active {
+        animation: flicker 2s infinite;
+    }
+}
+
+@keyframes flicker {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.85;
+    }
+}
+
+/* Muted text helper */
+.text-muted {
+    color: var(--rm-text-muted);
+}

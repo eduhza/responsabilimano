@@ -13,111 +13,160 @@
 
 @if (_success)
 {
-    <div class="alert alert-success" role="alert">@Localizer["CreateProjectSuccess"]</div>
-    <a href="@($"/projects/{_createdProjectId}/invite")" class="btn btn-primary">@Localizer["InvitePartnerButton"]</a>
-    <a href="/" class="btn btn-outline-secondary">@Localizer["BackToHome"]</a>
+    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["CreateProjectSuccess"]" AllowDismiss="false" />
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Navigation.NavigateTo($"/projects/{_createdProjectId}/invite"))">
+            @Localizer["InvitePartnerButton"]
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))">
+            @Localizer["BackToHome"]
+        </FluentButton>
+    </FluentStack>
 }
 else
 {
     <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="createProjectForm">
         <DataAnnotationsValidator />
-        <ValidationSummary />
+        <FluentValidationSummary />
 
-        <div class="mb-3">
-            <label for="name" class="form-label">@Localizer["ProjectNameLabel"]</label>
-            <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-            <ValidationMessage For="@(() => _model.Name)" />
-        </div>
+        <FluentTextField Id="name"
+                         Label="@Localizer["ProjectNameLabel"]"
+                         Appearance="FluentInputAppearance.Outline"
+                         @bind-Value="_model.Name"
+                         Required
+                         Style="width: 100%;" />
+        <FluentValidationMessage For="@(() => _model.Name)" />
 
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label for="startDate" class="form-label">@Localizer["StartDateLabel"]</label>
-                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
-                <ValidationMessage For="@(() => _model.StartDate)" />
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 1rem; flex-wrap: wrap;">
+            <div>
+                <FluentDatePicker Label="@Localizer["StartDateLabel"]"
+                                  Value="_model.StartDate"
+                                  ValueChanged="@(v => _model.StartDate = v ?? DateTime.Today)"
+                                  Style="width: 100%;" />
+                <FluentValidationMessage For="@(() => _model.StartDate)" />
             </div>
-            <div class="col-md-4">
-                <label for="endDate" class="form-label">@Localizer["EndDateLabel"]</label>
-                <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
-                <ValidationMessage For="@(() => _model.EndDate)" />
+            <div>
+                <FluentDatePicker Label="@Localizer["EndDateLabel"]"
+                                  Value="_model.EndDate"
+                                  ValueChanged="@(v => _model.EndDate = v ?? DateTime.Today)"
+                                  Style="width: 100%;" />
+                <FluentValidationMessage For="@(() => _model.EndDate)" />
             </div>
-            <div class="col-md-4">
-                <label for="frequency" class="form-label">@Localizer["FrequencyLabel"]</label>
-                <InputSelect id="frequency" class="form-control" @bind-Value="_model.Frequency">
-                    <option value="@ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
-                    <option value="@ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
-                    <option value="@ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
-                    <option value="@ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
-                </InputSelect>
-                <ValidationMessage For="@(() => _model.Frequency)" />
+            <div style="min-width: 200px;">
+                <FluentSelect TOption="string"
+                              Id="frequency"
+                              Label="@Localizer["FrequencyLabel"]"
+                              Appearance="Appearance.Outline"
+                              Value="_model.Frequency.ToString()"
+                              ValueChanged="@(v => _model.Frequency = Enum.Parse<ProjectFrequency>(v ?? string.Empty))"
+                              Style="width: 100%;">
+                    <FluentOption Value="@ProjectFrequency.Daily.ToString()">@Localizer["FrequencyDaily"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Weekly.ToString()">@Localizer["FrequencyWeekly"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Biweekly.ToString()">@Localizer["FrequencyBiweekly"]</FluentOption>
+                    <FluentOption Value="@ProjectFrequency.Monthly.ToString()">@Localizer["FrequencyMonthly"]</FluentOption>
+                </FluentSelect>
+                <FluentValidationMessage For="@(() => _model.Frequency)" />
             </div>
-        </div>
+        </FluentStack>
 
-        <h4>@Localizer["GoalsSectionTitle"]</h4>
+        <h4 style="margin-top: 1.5rem;">@Localizer["GoalsSectionTitle"]</h4>
 
         @for (var i = 0; i < _model.Goals.Count; i++)
         {
             var index = i;
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="card-title mb-0">@Localizer["GoalLabel", index + 1]</h5>
-                        @if (_model.Goals.Count > 1)
-                        {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveGoal(index)">
-                                @Localizer["RemoveGoalButton"]
-                            </button>
-                        }
-                    </div>
+            <FluentCard Class="mb-3 goal-card">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h5 style="margin: 0;">@Localizer["GoalLabel", index + 1]</h5>
+                    @if (_model.Goals.Count > 1)
+                    {
+                        <FluentButton Type="ButtonType.Button"
+                                      Appearance="Appearance.Outline"
+                                      IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      IconColor="Color.Error"
+                                      OnClick="@(() => RemoveGoal(index))">
+                            @Localizer["RemoveGoalButton"]
+                        </FluentButton>
+                    }
+                </FluentStack>
 
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label">@Localizer["GoalFieldLabel"]</label>
-                            <InputText class="form-control" @bind-Value="_model.Goals[index].Label" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">@Localizer["GoalDataTypeLabel"]</label>
-                            <InputSelect class="form-control" @bind-Value="_model.Goals[index].DataType">
-                                <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
-                                <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
-                                <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
-                            </InputSelect>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">@Localizer["GoalUnitLabel"]</label>
-                            <InputText class="form-control" @bind-Value="_model.Goals[index].Unit" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">@Localizer["GoalMinValueLabel"]</label>
-                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].MinValue" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">@Localizer["GoalMaxValueLabel"]</label>
-                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].MaxValue" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">@Localizer["GoalTargetValueLabel"]</label>
-                            <InputNumber class="form-control" @bind-Value="_model.Goals[index].TargetValue" />
-                        </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap;">
+                    <div style="flex: 2; min-width: 200px;">
+                        <FluentTextField Label="@Localizer["GoalFieldLabel"]"
+                                         Appearance="FluentInputAppearance.Outline"
+                                         @bind-Value="_model.Goals[index].Label"
+                                         Style="width: 100%;" />
                     </div>
-                </div>
-            </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <FluentSelect TOption="string"
+                                      Label="@Localizer["GoalDataTypeLabel"]"
+                                      Appearance="Appearance.Outline"
+                                      Value="_model.Goals[index].DataType.ToString()"
+                                      ValueChanged="@(v => _model.Goals[index].DataType = Enum.Parse<GoalDataType>(v ?? string.Empty))"
+                                      Style="width: 100%;">
+                            <FluentOption Value="@GoalDataType.Decimal.ToString()">@Localizer["DataTypeDecimal"]</FluentOption>
+                            <FluentOption Value="@GoalDataType.Integer.ToString()">@Localizer["DataTypeInteger"]</FluentOption>
+                            <FluentOption Value="@GoalDataType.Percent.ToString()">@Localizer["DataTypePercent"]</FluentOption>
+                        </FluentSelect>
+                    </div>
+                    <div style="flex: 1; min-width: 100px;">
+                        <FluentTextField Label="@Localizer["GoalUnitLabel"]"
+                                         Appearance="FluentInputAppearance.Outline"
+                                         @bind-Value="_model.Goals[index].Unit"
+                                         Style="width: 100%;" />
+                    </div>
+                </FluentStack>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap; margin-top: 0.75rem;">
+                    <div style="flex: 1; min-width: 120px;">
+                        <FluentNumberField TValue="decimal?"
+                                           Label="@Localizer["GoalMinValueLabel"]"
+                                           Appearance="FluentInputAppearance.Outline"
+                                           HideStep="true"
+                                           @bind-Value="_model.Goals[index].MinValue"
+                                           Style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <FluentNumberField TValue="decimal?"
+                                           Label="@Localizer["GoalMaxValueLabel"]"
+                                           Appearance="FluentInputAppearance.Outline"
+                                           HideStep="true"
+                                           @bind-Value="_model.Goals[index].MaxValue"
+                                           Style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <FluentNumberField TValue="decimal?"
+                                           Label="@Localizer["GoalTargetValueLabel"]"
+                                           Appearance="FluentInputAppearance.Outline"
+                                           HideStep="true"
+                                           @bind-Value="_model.Goals[index].TargetValue"
+                                           Style="width: 100%;" />
+                    </div>
+                </FluentStack>
+            </FluentCard>
         }
 
-        <button type="button" class="btn btn-outline-secondary mb-3" @onclick="AddGoal">
+        <FluentButton Type="ButtonType.Button"
+                      Appearance="Appearance.Outline"
+                      IconStart="@(new Icons.Regular.Size20.Add())"
+                      OnClick="AddGoal"
+                      Class="mb-3">
             @Localizer["AddGoalButton"]
-        </button>
+        </FluentButton>
 
         @if (!string.IsNullOrEmpty(_error))
         {
-            <div class="alert alert-danger" role="alert">@_error</div>
+            <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
         }
 
-        <div>
-            <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
+            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@_isLoading" Loading="@_isLoading">
                 @(_isLoading ? Localizer["Creating"] : Localizer["CreateProjectButton"])
-            </button>
-            <a href="/" class="btn btn-link">@Localizer["Cancel"]</a>
-        </div>
+            </FluentButton>
+            <FluentAnchor Href="/" Appearance="Appearance.Neutral">
+                @Localizer["Cancel"]
+            </FluentAnchor>
+        </FluentStack>
     </EditForm>
 }
 

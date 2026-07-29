@@ -6,7 +6,7 @@ priority: P1
 iteration: 1 (2-3 dias)
 contract: none
 tracking: gh-issue-#TBD
-status: approved
+status: done
 depends_on: [D1, D2]
 adr: [0003, 0006]
 ---

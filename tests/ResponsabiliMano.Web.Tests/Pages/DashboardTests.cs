@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.FeatureManagement;
+using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Web;
@@ -21,17 +23,21 @@ public class DashboardTests : TestContext
 {
     private readonly FakeFeatureManager _featureManager = new();
     private readonly FakeDashboardService _dashboardService = new();
+    private readonly FakeProjectService _projectService = new();
     private readonly FakeAuthStateProvider _authStateProvider = new();
     private readonly FakeJSRuntime _jsRuntime = new();
 
     public DashboardTests()
     {
         Services.AddSingleton<IDashboardService>(_dashboardService);
+        Services.AddSingleton<IProjectService>(_projectService);
         Services.AddSingleton<IFeatureManager>(_featureManager);
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassthroughLocalizer());
         Services.AddSingleton<IJSRuntime>(_jsRuntime);
         Services.AddSingleton<ILogger<Dashboard>>(NullLogger<Dashboard>.Instance);
+        Services.AddSingleton(new LibraryConfiguration { CollocatedJavaScriptQueryString = null });
+        Services.AddSingleton<GlobalState>();
     }
 
     [Fact]
@@ -42,7 +48,7 @@ public class DashboardTests : TestContext
 
         var cut = RenderComponent<Dashboard>(p => p.Add(x => x.ProjectId, Guid.NewGuid()));
 
-        Assert.Contains("Loading", cut.Markup);
+        Assert.Contains("skeleton", cut.Markup);
     }
 
     [Fact]
@@ -148,11 +154,53 @@ public class DashboardTests : TestContext
         var cut = RenderComponent<Dashboard>(p => p.Add(x => x.ProjectId, projectId));
 
         Assert.Contains("DashboardGoalSelector", cut.Markup);
-        Assert.NotNull(cut.Find("select"));
-        Assert.Equal(2, cut.FindAll("option").Count);
+        Assert.NotNull(cut.Find("fluent-select"));
+        Assert.Equal(2, cut.FindAll("fluent-option").Count);
     }
 
     // --- Fakes ---
+
+    private sealed class FakeProjectService : IProjectService
+    {
+        public Task<(int Current, int Best)> GetStreakAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+            => Task.FromResult((0, 0));
+
+        public Task<Project> CreateProjectAsync(
+            Guid creatorId, string name, DateTime startDate, DateTime endDate,
+            ProjectFrequency frequency, IEnumerable<GoalFieldInput> goals,
+            CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<ProjectInvitation> InvitePartnerAsync(
+            Guid projectId, Guid inviterUserId, string partnerEmail, string baseUrl,
+            CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<Project?> AcceptInvitationAsync(string token, Guid userId, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<Project?> GetInvitationProjectAsync(string token, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<Project?> GetProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<List<Project>> GetUserProjectsAsync(Guid userId, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task ApproveProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<ProjectChangeRequest> ProposeChangeAsync(
+            Guid projectId, Guid userId, ChangeRequestType type, string payloadJson,
+            CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task RespondToChangeRequestAsync(
+            Guid projectId, Guid changeRequestId, Guid userId, bool approve,
+            CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+    }
 
     private sealed class FakeFeatureManager : IFeatureManager
     {
@@ -191,9 +239,27 @@ public class DashboardTests : TestContext
     private sealed class FakeJSRuntime : IJSRuntime
     {
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
-            => default;
+        {
+            if (typeof(TValue) == typeof(IJSObjectReference))
+                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
+            return default;
+        }
+
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
-            => default;
+        {
+            if (typeof(TValue) == typeof(IJSObjectReference))
+                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
+            return default;
+        }
+    }
+
+    private sealed class FakeJSModuleReference : IJSObjectReference
+    {
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => default;
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
+        public ValueTask InvokeVoidAsync(string identifier, object?[]? args) => default;
+        public ValueTask InvokeVoidAsync(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
+        public ValueTask DisposeAsync() => default;
     }
 
     private sealed class PassthroughLocalizer : IStringLocalizer<AppStrings>
