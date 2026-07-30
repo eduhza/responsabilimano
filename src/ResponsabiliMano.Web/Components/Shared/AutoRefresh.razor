@@ -1,0 +1,81 @@
+@implements IAsyncDisposable
+
+@* Renders nothing. Polls on the interactive circuit and invokes OnRefresh on the
+   renderer's synchronization context so the parent can safely update state and call
+   StateHasChanged. Live updates between partners (spec RT2). *@
+
+@code {
+    /// <summary>Seconds between refreshes. Clamped to a 1s minimum.</summary>
+    [Parameter]
+    public int IntervalSeconds { get; set; } = 5;
+
+    /// <summary>Invoked on each tick. The parent decides whether anything changed.</summary>
+    [Parameter]
+    public Func<Task>? OnRefresh { get; set; }
+
+    private PeriodicTimer? _timer;
+    private Task? _loop;
+    private bool _busy;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // The timer only starts once, and only on the interactive circuit (OnAfterRender
+        // never runs during static prerender), so polling never touches the server render.
+        if (firstRender && _timer is null && OnRefresh is not null)
+        {
+            _timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Max(1, IntervalSeconds)));
+            _loop = RunLoopAsync();
+        }
+    }
+
+    private async Task RunLoopAsync()
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync())
+            {
+                if (_busy)
+                    continue; // don't stack refreshes if one is still running
+
+                _busy = true;
+                try
+                {
+                    await InvokeAsync(async () =>
+                    {
+                        if (OnRefresh is not null)
+                            await OnRefresh();
+                    });
+                }
+                catch (ObjectDisposedException)
+                {
+                    break; // circuit tearing down
+                }
+                finally
+                {
+                    _busy = false;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timer disposed — normal shutdown.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _timer?.Dispose();
+
+        if (_loop is not null)
+        {
+            try
+            {
+                await _loop;
+            }
+            catch
+            {
+                // Loop already faulted/cancelled during teardown — nothing to do.
+            }
+        }
+    }
+}

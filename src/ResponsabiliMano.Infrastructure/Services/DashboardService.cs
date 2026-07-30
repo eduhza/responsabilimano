@@ -23,7 +23,10 @@ public sealed class DashboardService : IDashboardService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        // AsNoTracking: the dashboard is display-only and polled on a long-lived
+        // Blazor circuit (spec RT2); avoid EF's identity map returning stale state.
         var project = await _context.Projects
+            .AsNoTracking()
             .Include(p => p.Goals)
             .Include(p => p.Creator)
             .Include(p => p.Partner)
