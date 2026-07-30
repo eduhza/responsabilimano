@@ -23,3 +23,14 @@
 - **Alternativas consideradas:** Converter os forms para POST HTML puro (como
   Login) — funciona sem circuito, mas perde a experiência interativa; adotar
   render mode Auto/WebAssembly — fora de escopo do MVP (PRD define Blazor Server).
+
+- **Adendo (spec RT1, 2026-07-29):** `Home` passou a `@rendermode InteractiveServer`.
+  Motivo: como página estática, a Home não re-consultava ao navegar — depois de
+  aceitar um convite (que seta `Project.PartnerId`), o projeto só aparecia após
+  reload manual (Bug A). A Home apenas **lê** o estado de autenticação (via
+  `CascadingAuthenticationState`); nunca seta o cookie — logo a restrição acima
+  (cookie sobre circuito) não se aplica a ela. Login/Register **continuam
+  estáticos**. Consequência: a Home agora abre um circuito e re-executa
+  `OnInitializedAsync` a cada navegação, sempre com dado fresco (a leitura usa
+  `AsNoTracking`, evitando o identity map do `DbContext` de vida longa do circuito).
+  Isso também habilita a atualização ao vivo por polling (spec RT2).

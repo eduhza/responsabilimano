@@ -4,29 +4,40 @@
 
 <PageTitle>@Localizer["LoginTitle"]</PageTitle>
 
-<h3>@Localizer["LoginTitle"]</h3>
-
-<form method="post" action="/api/auth/login" class="mb-3">
-    @if (!string.IsNullOrEmpty(Error))
-    {
-        <div class="alert alert-danger" role="alert">@Localizer[$"Login{Error}"]</div>
-    }
-
-    <div class="mb-3">
-        <label for="email" class="form-label">@Localizer["EmailLabel"]</label>
-        <input id="email" name="email" type="email" class="form-control" required />
+<div class="rm-auth">
+    <div class="rm-auth-brand">
+        <div class="rm-auth-wordmark">Responsabili<span class="accent">Mano</span></div>
+        <div class="rm-auth-tagline">@Localizer["AuthTagline"]</div>
     </div>
 
-    <div class="mb-3">
-        <label for="password" class="form-label">@Localizer["PasswordLabel"]</label>
-        <input id="password" name="password" type="password" class="form-control" required minlength="8" />
+    <div class="rm-auth-card">
+        <h3>@Localizer["LoginTitle"]</h3>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert-danger" role="alert">@Localizer[$"Login{Error}"]</div>
+        }
+
+        <form method="post" action="/api/auth/login">
+            <div class="rm-field">
+                <label for="email" class="rm-label">@Localizer["EmailLabel"]</label>
+                <input id="email" name="email" type="email" class="rm-input" required autocomplete="email" />
+            </div>
+
+            <div class="rm-field">
+                <label for="password" class="rm-label">@Localizer["PasswordLabel"]</label>
+                <input id="password" name="password" type="password" class="rm-input" required minlength="8" autocomplete="current-password" />
+            </div>
+
+            <button type="submit" class="rm-btn">@Localizer["LoginButton"]</button>
+        </form>
     </div>
 
-    <button type="submit" class="btn btn-primary">@Localizer["LoginButton"]</button>
-</form>
-
-<p><a href="/forgot-password">@Localizer["ForgotPasswordLink"]</a></p>
-<p>@Localizer["NoAccount"] <a href="/register">@Localizer["RegisterButton"]</a></p>
+    <div class="rm-auth-links">
+        <p><a href="/forgot-password">@Localizer["ForgotPasswordLink"]</a></p>
+        <p>@Localizer["NoAccount"] <a href="/register">@Localizer["RegisterButton"]</a></p>
+    </div>
+</div>
 
 @code {
     [SupplyParameterFromQuery]

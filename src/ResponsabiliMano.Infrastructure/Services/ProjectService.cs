@@ -168,7 +168,11 @@ public sealed class ProjectService : IProjectService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        // AsNoTracking: this read feeds display-only pages that poll on a long-lived
+        // Blazor circuit (spec RT2). Without it, EF's identity map would return the
+        // stale tracked instance instead of the current database state.
         var project = await _context.Projects
+            .AsNoTracking()
             .Include(p => p.Goals)
             .Include(p => p.ChangeRequests)
             .Include(p => p.Creator)
@@ -189,6 +193,7 @@ public sealed class ProjectService : IProjectService
         CancellationToken cancellationToken = default)
     {
         return await _context.Projects
+            .AsNoTracking()
             .Where(p => p.CreatorId == userId || p.PartnerId == userId)
             .OrderByDescending(p => p.StartDate)
             .ToListAsync(cancellationToken);
@@ -355,6 +360,7 @@ public sealed class ProjectService : IProjectService
             throw new UnauthorizedAccessException("You are not a participant of this project.");
 
         var periods = await _context.CheckIns
+            .AsNoTracking()
             .Where(c => c.ProjectId == projectId && c.UserId == userId)
             .OrderByDescending(c => c.PeriodNumber)
             .Select(c => c.PeriodNumber)

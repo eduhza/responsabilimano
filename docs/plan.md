@@ -251,7 +251,13 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] **X1 — render mode interativo (pré-requisito de UX destravado)** — `@rendermode InteractiveServer` aplicado por página em 7 telas (Register, CreateProject, InvitePartner, Forgot/ResetPassword **+** ProjectDetail e InvitationAccept, mesma causa-raiz). O fluxo de UI criar→convidar→aceitar→aprovar→check-in passou a funcionar no navegador. Decisão no `docs/adr/0003` (`accepted`); novo projeto de teste `tests/ResponsabiliMano.Web.Tests` (bUnit + guard de render mode por reflexão).
     *   [x] Sprint 4 — Dashboard → specs a escrever (S4.1–S4.3) quando iniciar a iteração
     *   [x] Sprint 5 — Polimento/Produção → specs a escrever (S5.1–S5.3) quando iniciar a iteração
-*   [ ] **Redesign UI — FluentUI Blazor + Design System** (ver `docs/design-brief.md`)
-    *   [ ] D1 — Fundação: FluentUI + Tema + Layout (sidebar/bottom-nav + dark mode + tokens)
-    *   [ ] D2 — Telas Auth + Home (FluentTextField, FluentButton, skeleton, empty states, toasts)
-    *   [ ] D3 — Telas Projeto + CheckIn + Dashboard (streak, faces coloridas, dialogs, cards)
+*   [x] **Redesign UI — FluentUI Blazor + Design System** (ver `docs/design-brief.md`)
+    *   [x] D1 — Fundação: FluentUI + Tema + Layout (sidebar/bottom-nav + dark mode + tokens)
+    *   [~] D2 — Telas Auth + Home → **superseded por D4**
+    *   [x] D3 — Telas Projeto + CheckIn + Dashboard (streak, faces, dialogs, cards)
+*   [x] **Reatividade + Redesign v2** (feedback de produção — telas feias/inconsistentes + dados que não atualizavam sozinhos)
+    *   [x] RT1 — Home interativa + dado fresco (`AsNoTracking`) → corrige "projeto só aparecia após reload" (Bug A). `specs/RT1-home-interactive-freshness.md`
+    *   [x] D4 — Redesign Auth + Home (camada quente sobre FluentUI, supersede D2). `specs/D4-auth-home-redesign.md`
+    *   [x] RT2 — Atualização ao vivo entre parceiros via polling (`AutoRefresh` ~5s) → corrige "aceite do parceiro não atualizava" (Bug B). `specs/RT2-live-updates-polling.md`
+    *   [x] D5 — Elevação visual das telas de produto (cards no lugar de DataGrid, faces coloridas, grid do dashboard consertado, dark mode legível). `specs/D5-product-screens-elevation.md`
+    *   Verificado: build + 176 testes (Infra 111, Web 20, Integração 35, E2E 10) + captura visual (light/dark, desktop/mobile).

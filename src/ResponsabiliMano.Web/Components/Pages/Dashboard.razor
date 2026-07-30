@@ -36,6 +36,7 @@ else if (_error is not null)
 }
 else if (_dashboard is not null && (!_dashboard.Metrics.Any() || !_dashboard.Participants.Any()))
 {
+    <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
     <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
     <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
     <div class="empty-state">
@@ -48,6 +49,7 @@ else if (_dashboard is not null && (!_dashboard.Metrics.Any() || !_dashboard.Par
 }
 else if (_dashboard is not null)
 {
+    <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
     <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
     <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
 
@@ -71,65 +73,59 @@ else if (_dashboard is not null)
 
     @if (_dashboard.Metrics.Count > 0)
     {
-        <div class="mb-4" style="max-width: 100%;">
+        <div class="chart-wrap">
             <canvas id="dashboardChart" style="max-height: 400px;"></canvas>
         </div>
     }
 
-    <h4>@Localizer["DashboardFeelingCards"]</h4>
-    <div class="row g-3 mb-4">
+    <h4 class="rm-section-title">@Localizer["DashboardFeelingCards"]</h4>
+    <div class="dash-cards">
         @foreach (var participant in _dashboard.Participants)
         {
-            <div class="col-12 col-sm-6">
-                <FluentCard>
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                        @if (participant.LatestFeeling is not null)
-                        {
-                            <FeelingFace Feeling="participant.LatestFeeling.Value" Size="40" />
-                        }
-                        else
-                        {
-                            <span class="text-muted" style="font-size: 2rem; width: 40px; text-align: center;">—</span>
-                        }
-                        <div>
-                            <strong>@participant.Name</strong>
-                            <br />
-                            @if (participant.LatestFeeling is not null)
-                            {
-                                <span class="text-muted">@FeelingText(participant.LatestFeeling.Value)</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">@Localizer["DashboardNoCheckIns"]</span>
-                            }
-                        </div>
-                    </FluentStack>
-                </FluentCard>
+            <div class="stat-card feeling-card">
+                @if (participant.LatestFeeling is not null)
+                {
+                    <FeelingFace Feeling="participant.LatestFeeling.Value" Size="44" />
+                }
+                else
+                {
+                    <span class="text-muted" style="font-size: 2rem; width: 44px; text-align: center;">—</span>
+                }
+                <div>
+                    <div class="feeling-card-name">@participant.Name</div>
+                    @if (participant.LatestFeeling is not null)
+                    {
+                        <div class="feeling-card-mood">@FeelingText(participant.LatestFeeling.Value)</div>
+                    }
+                    else
+                    {
+                        <div class="feeling-card-mood">@Localizer["DashboardNoCheckIns"]</div>
+                    }
+                </div>
             </div>
         }
     </div>
 
-    <h4>@Localizer["DashboardAverages"]</h4>
-    <div class="row g-3 mb-4">
+    <h4 class="rm-section-title">@Localizer["DashboardAverages"]</h4>
+    <div class="dash-cards">
         @foreach (var metric in _dashboard.Metrics)
         {
             @foreach (var participant in _dashboard.Participants)
             {
                 var avg = metric.Series.FirstOrDefault(s => s.UserId == participant.UserId)?.AverageValue;
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <FluentCard>
-                        <h6 style="margin: 0;">@participant.Name — @metric.Label</h6>
-                        <p class="card-text" style="font-size: 1.25rem; margin: 0.25rem 0 0 0;">
-                            @if (avg is not null)
-                            {
-                                <span>@avg @metric.Unit</span>
-                            }
-                            else
-                            {
-                                <span>—</span>
-                            }
-                        </p>
-                    </FluentCard>
+                <div class="stat-card">
+                    <span class="stat-card-label">@participant.Name — @metric.Label</span>
+                    <span class="stat-card-value">
+                        @if (avg is not null)
+                        {
+                            @avg
+                            <span class="unit" style="font-size:0.85rem;font-weight:400;color:var(--rm-text-muted);">@metric.Unit</span>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </span>
                 </div>
             }
         }
@@ -151,6 +147,7 @@ else if (_dashboard is not null)
     private int _selectedGoalIndex;
     private Guid _currentUserId;
     private (int Current, int Best) _streak;
+    private bool _pendingChartRender;
 
     protected override async Task OnInitializedAsync()
     {
@@ -209,7 +206,61 @@ else if (_dashboard is not null)
         {
             await RenderChartAsync();
         }
+        else if (_pendingChartRender)
+        {
+            _pendingChartRender = false;
+            await RenderChartAsync();
+        }
     }
+
+    // Live updates (spec RT2): re-query on a timer and refresh only when the check-in
+    // data or feelings changed, re-rendering the chart on the next render cycle so a
+    // partner's new check-in appears without a manual reload.
+    private async Task RefreshAsync()
+    {
+        if (!_available || _loading)
+            return;
+
+        try
+        {
+            var latest = await DashboardService.GetDashboardAsync(ProjectId, _currentUserId);
+            if (latest is null)
+                return;
+
+            if (_dashboard is not null && DashboardSignature(latest) == DashboardSignature(_dashboard))
+                return;
+
+            _dashboard = latest;
+
+            try
+            {
+                _streak = await ProjectService.GetStreakAsync(ProjectId, _currentUserId);
+            }
+            catch
+            {
+                _streak = (0, 0);
+            }
+
+            if (_selectedGoalIndex >= _dashboard.Metrics.Count)
+                _selectedGoalIndex = 0;
+
+            _pendingChartRender = _dashboard.Metrics.Any() && _dashboard.Participants.Any();
+            StateHasChanged();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Participation changed; ignore on a background poll.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh dashboard for project {ProjectId}", ProjectId);
+        }
+    }
+
+    private static string DashboardSignature(DashboardResponse d) =>
+        string.Join("|", d.Participants.Select(p => $"{p.UserId}:{p.LatestFeeling}")) + "||" +
+        string.Join("|", d.Metrics.Select(m =>
+            $"{m.GoalFieldId}:{string.Join(",", m.Series.Select(s => $"{s.UserId}/{s.PeriodNumber}/{s.Value}"))}"));
 
     private async Task OnGoalSelected(string? value)
     {

@@ -4,38 +4,49 @@
 
 <PageTitle>@Localizer["RegisterTitle"]</PageTitle>
 
-<h3>@Localizer["RegisterTitle"]</h3>
-
-@if (!string.IsNullOrEmpty(Error))
-{
-    <div class="alert alert-danger" role="alert">@Localizer["RegisterError"]</div>
-}
-
-<form method="post" action="/api/auth/register-and-login" class="mb-3">
-    <div class="mb-3">
-        <label for="name" class="form-label">@Localizer["NameLabel"]</label>
-        <input id="name" name="Name" class="form-control" required maxlength="200" />
+<div class="rm-auth">
+    <div class="rm-auth-brand">
+        <div class="rm-auth-wordmark">Responsabili<span class="accent">Mano</span></div>
+        <div class="rm-auth-tagline">@Localizer["AuthTagline"]</div>
     </div>
 
-    <div class="mb-3">
-        <label for="email" class="form-label">@Localizer["EmailLabel"]</label>
-        <input id="email" name="Email" type="email" class="form-control" required />
+    <div class="rm-auth-card">
+        <h3>@Localizer["RegisterTitle"]</h3>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert-danger" role="alert">@Localizer["RegisterError"]</div>
+        }
+
+        <form method="post" action="/api/auth/register-and-login">
+            <div class="rm-field">
+                <label for="name" class="rm-label">@Localizer["NameLabel"]</label>
+                <input id="name" name="Name" class="rm-input" required maxlength="200" autocomplete="name" />
+            </div>
+
+            <div class="rm-field">
+                <label for="email" class="rm-label">@Localizer["EmailLabel"]</label>
+                <input id="email" name="Email" type="email" class="rm-input" required autocomplete="email" />
+            </div>
+
+            <div class="rm-field">
+                <label for="password" class="rm-label">@Localizer["PasswordLabel"]</label>
+                <input id="password" name="Password" type="password" class="rm-input" required minlength="8" autocomplete="new-password" />
+            </div>
+
+            <div class="rm-field">
+                <label for="confirmPassword" class="rm-label">@Localizer["ConfirmPasswordLabel"]</label>
+                <input id="confirmPassword" name="ConfirmPassword" type="password" class="rm-input" required minlength="8" autocomplete="new-password" />
+            </div>
+
+            <button type="submit" class="rm-btn">@Localizer["RegisterButton"]</button>
+        </form>
     </div>
 
-    <div class="mb-3">
-        <label for="password" class="form-label">@Localizer["PasswordLabel"]</label>
-        <input id="password" name="Password" type="password" class="form-control" required minlength="8" />
+    <div class="rm-auth-links">
+        <p>@Localizer["AlreadyHaveAccount"] <a href="/login">@Localizer["LoginButton"]</a></p>
     </div>
-
-    <div class="mb-3">
-        <label for="confirmPassword" class="form-label">@Localizer["ConfirmPasswordLabel"]</label>
-        <input id="confirmPassword" name="ConfirmPassword" type="password" class="form-control" required minlength="8" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">@Localizer["RegisterButton"]</button>
-</form>
-
-<p>@Localizer["AlreadyHaveAccount"] <a href="/login">@Localizer["LoginButton"]</a></p>
+</div>
 
 @code {
     [Parameter]
