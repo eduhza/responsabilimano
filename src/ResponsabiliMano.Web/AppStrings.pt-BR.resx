@@ -462,4 +462,19 @@
   <data name="ConfirmRejectMessage" xml:space="preserve">
     <value>Tem certeza que deseja rejeitar esta solicitação de mudança?</value>
   </data>
+  <data name="AuthTagline" xml:space="preserve">
+    <value>Metas em dupla, resultados de verdade.</value>
+  </data>
+  <data name="HomeSubtitle" xml:space="preserve">
+    <value>Acompanhe seus projetos e a evolução da sua dupla.</value>
+  </data>
+  <data name="HomeEmptyTitle" xml:space="preserve">
+    <value>Nenhum projeto ainda</value>
+  </data>
+  <data name="HomeEmptyDescription" xml:space="preserve">
+    <value>Crie seu primeiro projeto e convide um parceiro para começarem a jornada juntos.</value>
+  </data>
+  <data name="HomeEmptyButton" xml:space="preserve">
+    <value>Criar projeto</value>
+  </data>
 </root>

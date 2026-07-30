@@ -15,43 +15,45 @@
         _ => "#B0B0B0"
     };
 
+    // A filled circle in the feeling's color with white features — bold, friendly,
+    // and legible at small sizes (design-brief "faces coloridas"). {0} = fill color.
     private string SvgContent => Feeling switch
     {
         Feeling.VerySad => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <path d="M7 11 Q9 13 11 11" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
-            <path d="M13 11 Q15 13 17 11" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
-            <path d="M8 17 Q12 13 16 17" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <path d="M7 10 L10 11.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M17 10 L14 11.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M8 17 Q12 13 16 17" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """,
         Feeling.Sad => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <circle cx="9" cy="10" r="1.2" fill="{0}" />
-            <circle cx="15" cy="10" r="1.2" fill="{0}" />
-            <path d="M8 16 Q12 13 16 16" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <circle cx="9" cy="10.5" r="1.3" fill="#fff" />
+            <circle cx="15" cy="10.5" r="1.3" fill="#fff" />
+            <path d="M8 16.5 Q12 13.5 16 16.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """,
         Feeling.Neutral => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <circle cx="9" cy="10" r="1.2" fill="{0}" />
-            <circle cx="15" cy="10" r="1.2" fill="{0}" />
-            <line x1="8" y1="15" x2="16" y2="15" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <circle cx="9" cy="10.5" r="1.3" fill="#fff" />
+            <circle cx="15" cy="10.5" r="1.3" fill="#fff" />
+            <line x1="8.5" y1="15.5" x2="15.5" y2="15.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """,
         Feeling.Happy => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <circle cx="9" cy="10" r="1.2" fill="{0}" />
-            <circle cx="15" cy="10" r="1.2" fill="{0}" />
-            <path d="M8 14 Q12 17 16 14" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <circle cx="9" cy="10.5" r="1.3" fill="#fff" />
+            <circle cx="15" cy="10.5" r="1.3" fill="#fff" />
+            <path d="M8 14.5 Q12 17.5 16 14.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """,
         Feeling.VeryHappy => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <path d="M7 9 Q9 7 11 9" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
-            <path d="M13 9 Q15 7 17 9" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
-            <path d="M8 13 Q12 19 16 13" fill="none" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <path d="M7 10.5 Q9 9 11 10.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M13 10.5 Q15 9 17 10.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M7.5 13.5 Q12 18.5 16.5 13.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """,
         _ => """
-            <circle cx="12" cy="12" r="10" fill="none" stroke="{0}" stroke-width="1.5" />
-            <circle cx="9" cy="10" r="1.2" fill="{0}" />
-            <circle cx="15" cy="10" r="1.2" fill="{0}" />
-            <line x1="8" y1="15" x2="16" y2="15" stroke="{0}" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="11" fill="{0}" />
+            <circle cx="9" cy="10.5" r="1.3" fill="#fff" />
+            <circle cx="15" cy="10.5" r="1.3" fill="#fff" />
+            <line x1="8.5" y1="15.5" x2="15.5" y2="15.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
             """
     };
 

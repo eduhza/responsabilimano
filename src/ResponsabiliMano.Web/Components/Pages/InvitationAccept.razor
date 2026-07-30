@@ -27,24 +27,42 @@ else if (_accepted && _project is not null)
 {
     <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["InvitationAccepted"]" AllowDismiss="false" />
 
-    <h3>@_project.Name</h3>
+    <div class="detail-head">
+        <h1 class="detail-title">@_project.Name</h1>
+        <span class="status-pill" style="--status-color: @StatusColor(_project.Status);">@GetStatusText(_project.Status)</span>
+    </div>
 
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1rem;" VerticalGap="8">
-        <span><strong>@Localizer["StatusLabel"]:</strong> @GetStatusText(_project.Status)</span>
-        <span><strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")</span>
-        <span><strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")</span>
-        <span><strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)</span>
-    </FluentStack>
+    <div class="rm-meta">
+        <div class="rm-meta-item">
+            <span class="rm-meta-label">@Localizer["StartDateLabel"]</span>
+            <span class="rm-meta-value">@_project.StartDate.ToString("dd/MM/yyyy")</span>
+        </div>
+        <div class="rm-meta-item">
+            <span class="rm-meta-label">@Localizer["EndDateLabel"]</span>
+            <span class="rm-meta-value">@_project.EndDate.ToString("dd/MM/yyyy")</span>
+        </div>
+        <div class="rm-meta-item">
+            <span class="rm-meta-label">@Localizer["FrequencyLabel"]</span>
+            <span class="rm-meta-value">@GetFrequencyText(_project.Frequency)</span>
+        </div>
+    </div>
 
-    <h4>@Localizer["GoalsSectionTitle"]</h4>
-    <FluentDataGrid Items="@_project.Goals.AsQueryable()" TGridItem="GoalField" AutoFit="true" Style="margin-bottom: 1.5rem;">
-        <PropertyColumn Property="@((GoalField g) => g.Label)" Title="@Localizer["GoalFieldLabel"]" />
-        <PropertyColumn Property="@((GoalField g) => g.DataType)" Title="@Localizer["GoalDataTypeLabel"]" />
-        <PropertyColumn Property="@((GoalField g) => g.Unit)" Title="@Localizer["GoalUnitLabel"]" />
-        <PropertyColumn Property="@((GoalField g) => g.MinValue)" Title="@Localizer["GoalMinValueLabel"]" />
-        <PropertyColumn Property="@((GoalField g) => g.MaxValue)" Title="@Localizer["GoalMaxValueLabel"]" />
-        <PropertyColumn Property="@((GoalField g) => g.TargetValue)" Title="@Localizer["GoalTargetValueLabel"]" />
-    </FluentDataGrid>
+    <h4 class="rm-section-title">@Localizer["GoalsSectionTitle"]</h4>
+    <div class="goal-list">
+        @foreach (var goal in _project.Goals)
+        {
+            <div class="goal-tile">
+                <p class="goal-tile-label">@goal.Label</p>
+                <div class="goal-tile-target">
+                    @(goal.TargetValue?.ToString() ?? "—")<span class="unit"> @goal.Unit</span>
+                </div>
+                @if (goal.MinValue is not null || goal.MaxValue is not null)
+                {
+                    <div class="goal-tile-range">@goal.MinValue … @goal.MaxValue @goal.Unit</div>
+                }
+            </div>
+        }
+    </div>
 
     @if (_project.Status == Core.Enums.ProjectStatus.Pending)
     {
@@ -79,20 +97,34 @@ else
 
         @if (_project is not null)
         {
-            <h5>@_project.Name</h5>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="flex-wrap: wrap; margin-bottom: 1rem;" VerticalGap="8">
-                <span><strong>@Localizer["StartDateLabel"]:</strong> @_project.StartDate.ToString("yyyy-MM-dd")</span>
-                <span><strong>@Localizer["EndDateLabel"]:</strong> @_project.EndDate.ToString("yyyy-MM-dd")</span>
-                <span><strong>@Localizer["FrequencyLabel"]:</strong> @GetFrequencyText(_project.Frequency)</span>
-            </FluentStack>
+            <h5 class="detail-title" style="font-size: 1.3rem;">@_project.Name</h5>
+            <div class="rm-meta">
+                <div class="rm-meta-item">
+                    <span class="rm-meta-label">@Localizer["StartDateLabel"]</span>
+                    <span class="rm-meta-value">@_project.StartDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="rm-meta-item">
+                    <span class="rm-meta-label">@Localizer["EndDateLabel"]</span>
+                    <span class="rm-meta-value">@_project.EndDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="rm-meta-item">
+                    <span class="rm-meta-label">@Localizer["FrequencyLabel"]</span>
+                    <span class="rm-meta-value">@GetFrequencyText(_project.Frequency)</span>
+                </div>
+            </div>
 
-            <h6 style="margin-bottom: 0.5rem;">@Localizer["GoalsSectionTitle"]</h6>
-            <ul style="margin-bottom: 1rem; padding-left: 1.25rem;">
+            <h6 class="rm-section-title" style="font-size: 1rem; margin-top: 0.5rem;">@Localizer["GoalsSectionTitle"]</h6>
+            <div class="goal-list">
                 @foreach (var goal in _project.Goals)
                 {
-                    <li>@goal.Label (@goal.Unit) - @Localizer["GoalTargetValueLabel"]: @goal.TargetValue</li>
+                    <div class="goal-tile">
+                        <p class="goal-tile-label">@goal.Label</p>
+                        <div class="goal-tile-target">
+                            @(goal.TargetValue?.ToString() ?? "—")<span class="unit"> @goal.Unit</span>
+                        </div>
+                    </div>
                 }
-            </ul>
+            </div>
 
             <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleAcceptInvitation">
                 @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
@@ -221,6 +253,15 @@ else
             _actionLoading = false;
         }
     }
+
+    private static string StatusColor(Core.Enums.ProjectStatus status) => status switch
+    {
+        Core.Enums.ProjectStatus.Pending => "var(--rm-accent)",
+        Core.Enums.ProjectStatus.Active => "var(--rm-secondary)",
+        Core.Enums.ProjectStatus.Finished => "#5B9279",
+        Core.Enums.ProjectStatus.Cancelled => "var(--rm-primary)",
+        _ => "var(--rm-text-muted)"
+    };
 
     private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
     {
