@@ -6,10 +6,16 @@ priority: P1
 iteration: 1 (2-3 dias)
 contract: none
 tracking: gh-issue-#TBD
-status: approved
+status: superseded
+superseded_by: D4
 depends_on: [D1]
 adr: [0003, 0006]
 ---
+
+> **SUPERSEDED por D4** (`specs/D4-auth-home-redesign.md`). Esta spec nunca foi
+> implementada; a D4 entrega o mesmo escopo com uma camada de design quente sobre o
+> FluentUI e, diferentemente da AC10 abaixo, torna a **Home interativa** (spec RT1)
+> para reatividade. Mantida como referência histórica das ACs.
 
 # D2 — Telas Auth + Home com FluentUI
 
