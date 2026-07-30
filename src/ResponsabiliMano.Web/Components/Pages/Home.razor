@@ -1,4 +1,5 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
 @attribute [Authorize]
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IProjectService ProjectService
@@ -9,27 +10,48 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
-        <p>@Localizer["EmailLabel"]: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+        <div class="home-header">
+            <h1 class="home-greeting">@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
+            <p class="home-subtitle">@Localizer["HomeSubtitle"]</p>
+        </div>
 
         @if (!string.IsNullOrEmpty(_error))
         {
-            <div class="alert alert-danger" role="alert">@_error</div>
+            <div class="alert-danger" role="alert">@_error</div>
         }
 
-        @if (_projects.Count > 0)
+        @if (_loading)
         {
-            <h4 class="mt-4">@Localizer["MyProjectsTitle"]</h4>
-            <ul class="list-group">
+            <div class="project-grid">
+                <div class="skeleton project-skeleton"></div>
+                <div class="skeleton project-skeleton"></div>
+                <div class="skeleton project-skeleton"></div>
+            </div>
+        }
+        else if (_projects.Count == 0)
+        {
+            <div class="empty-state">
+                <FluentIcon Value="@(new Icons.Regular.Size48.Add())" Color="Color.Accent" />
+                <h4 class="empty-state-title">@Localizer["HomeEmptyTitle"]</h4>
+                <p>@Localizer["HomeEmptyDescription"]</p>
+                <a href="/projects/new" class="rm-btn rm-btn-inline">@Localizer["HomeEmptyButton"]</a>
+            </div>
+        }
+        else
+        {
+            <div class="project-grid">
                 @foreach (var project in _projects)
                 {
-                    <li class="list-group-item">
-                        <a href="@($"/projects/{project.Id}")">@project.Name</a>
-                        <span class="badge bg-secondary float-end">@GetStatusText(project.Status)</span>
-                    </li>
+                    <a class="project-card" href="@($"/projects/{project.Id}")" style="--status-color: @StatusColor(project.Status);">
+                        <span class="status-pill">@GetStatusText(project.Status)</span>
+                        <span class="project-card-title">@project.Name</span>
+                        <span class="project-card-meta">@project.StartDate.ToString("dd/MM/yyyy") — @project.EndDate.ToString("dd/MM/yyyy")</span>
+                    </a>
                 }
-            </ul>
+            </div>
         }
+
+        <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
     </Authorized>
 </AuthorizeView>
 
@@ -37,6 +59,7 @@
     private List<Core.Entities.Project> _projects = new();
     private Guid _currentUserId;
     private string? _error;
+    private bool _loading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,7 +78,44 @@
                 _error = Localizer["HomeLoadError"];
             }
         }
+
+        _loading = false;
     }
+
+    // Live updates (spec RT2): re-query on a timer and re-render only when the set of
+    // projects (id/status/name) actually changed, so a partner joining or a status
+    // flip shows up without a manual reload.
+    private async Task RefreshAsync()
+    {
+        if (_currentUserId == Guid.Empty)
+            return;
+
+        try
+        {
+            var latest = await ProjectService.GetUserProjectsAsync(_currentUserId);
+            if (ProjectsSignature(latest) != ProjectsSignature(_projects))
+            {
+                _projects = latest;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh projects for user {UserId}", _currentUserId);
+        }
+    }
+
+    private static string ProjectsSignature(IEnumerable<Core.Entities.Project> projects) =>
+        string.Join("|", projects.Select(p => $"{p.Id}:{p.Status}:{p.Name}"));
+
+    private static string StatusColor(Core.Enums.ProjectStatus status) => status switch
+    {
+        Core.Enums.ProjectStatus.Pending => "var(--rm-accent)",
+        Core.Enums.ProjectStatus.Active => "var(--rm-secondary)",
+        Core.Enums.ProjectStatus.Finished => "#5B9279",
+        Core.Enums.ProjectStatus.Cancelled => "var(--rm-primary)",
+        _ => "var(--rm-text-muted)"
+    };
 
     private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
     {

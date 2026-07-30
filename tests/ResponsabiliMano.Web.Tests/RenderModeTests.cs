@@ -23,14 +23,18 @@ public class RenderModeTests
         typeof(InvitationAccept),
         typeof(CheckIn),
         typeof(Dashboard),
+        // Home became interactive (spec RT1) so it re-queries on navigation and can
+        // receive live updates (spec RT2). It only reads auth state — never sets the
+        // cookie — so ADR-0003's static-page constraint does not apply to it.
+        typeof(Home),
     ];
 
-    // Pages that must remain static SSR (see ADR-0003).
+    // Pages that must remain static SSR (see ADR-0003): they POST the auth cookie over
+    // plain HTTP and cannot run over a SignalR circuit.
     public static TheoryData<Type> StaticPages() =>
     [
         typeof(Register),
         typeof(Login),
-        typeof(Home),
     ];
 
     [Theory]
