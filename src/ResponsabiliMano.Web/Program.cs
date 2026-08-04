@@ -9,7 +9,6 @@ using ResponsabiliMano.Infrastructure.DependencyInjection;
 using ResponsabiliMano.Infrastructure.Services;
 using ResponsabiliMano.Web.Components;
 using ResponsabiliMano.Web.Endpoints;
-using ResponsabiliMano.Web.Services;
 using Microsoft.FeatureManagement;
 using Serilog;
 
@@ -23,7 +22,6 @@ public partial class Program
         Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateBuilder(options ?? new WebApplicationOptions());
-        var isE2E = builder.Environment.IsEnvironment("Testing") || builder.Configuration.GetValue<bool>("E2E");
 
         // Structured logging (spec R8): configure Serilog from configuration.
         builder.Services.AddSerilog((services, lc) => lc
@@ -65,15 +63,7 @@ public partial class Program
         builder.Services.AddScoped<IUserLoginService, UserLoginService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
 
-        // In E2E mode capture outgoing emails so assertions can inspect them.
-        if (isE2E)
-        {
-            builder.Services.RemoveAll<IEmailService>();
-            builder.Services.AddSingleton<CapturedEmailService>();
-            builder.Services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<CapturedEmailService>());
-        }
-
-        // E2E tests can override connection strings, e-mail services, etc.
+        // Tests can override connection strings, e-mail services, etc.
         configure?.Invoke(builder);
 
         var app = builder.Build();
@@ -152,28 +142,6 @@ public partial class Program
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
-
-        // Test-only endpoints used by the E2E suite.
-        if (isE2E)
-        {
-            app.MapPost("/api/_test/reset", async (AppDbContext db, CapturedEmailService emails) =>
-            {
-                await db.Database.ExecuteSqlRawAsync(
-                    "DELETE FROM check_in_metrics;" +
-                    "DELETE FROM check_ins;" +
-                    "DELETE FROM check_in_notifications;" +
-                    "DELETE FROM project_change_requests;" +
-                    "DELETE FROM project_invitations;" +
-                    "DELETE FROM goal_fields;" +
-                    "DELETE FROM password_reset_tokens;" +
-                    "DELETE FROM projects;" +
-                    "DELETE FROM users;");
-                emails.Clear();
-                return Results.Ok();
-            });
-
-            app.MapGet("/api/_test/emails", (CapturedEmailService emails) => Results.Ok(emails.GetEmails()));
-        }
 
         return app;
     }

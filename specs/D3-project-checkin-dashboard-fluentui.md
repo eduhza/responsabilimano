@@ -248,7 +248,7 @@ none — esta spec não altera endpoints ou contratos. O cálculo de streak é f
 ### Build
 
 ```powershell
-dotnet build ResponsibiliMano.slnx
+dotnet build ResponsabiliMano.slnx
 ```
 
 ### Testes unitários (bUnit + RenderMode)
