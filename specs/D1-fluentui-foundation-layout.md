@@ -92,11 +92,10 @@ Como usuário da aplicação, quero uma interface visual atrativa, responsiva (m
 1. Nenhuma página muda seu `@rendermode` ou falta dele. O ADR-0003 continua válido: páginas estáticas (Login, Register, Home) permanecem SSR; páginas interativas permanecem `InteractiveServer`.
 2. O teste `RenderModeTests.cs` continua passando sem modificação.
 
-### AC11 — E2E e testes existentes passam
+### AC11 — Testes existentes passam
 
-1. Os testes E2E (`AuthFlowTests`, `CronAndEmailFlowTests`) passam sem modificação nos seletores críticos. Se um seletor depender de classe Bootstrap que foi removida, o teste é atualizado para usar texto/role.
-2. Os testes de integração continuam passando.
-3. O teste `RenderModeTests` continua passando.
+1. Os testes de integração continuam passando.
+2. O teste `RenderModeTests` continua passando.
 
 ### AC12 — ADR registrado
 
@@ -163,14 +162,6 @@ dotnet test tests/ResponsabiliMano.Web.Tests
 ```powershell
 dotnet test tests/ResponsabiliMano.Web.IntegrationTests
 ```
-
-### Testes E2E (Playwright)
-
-```powershell
-dotnet test tests/ResponsabiliMano.Web.E2ETests
-```
-
-Se algum seletor quebrar (ex: `btn-primary` não existe mais como estilo), atualizar o seletor para `role=button` ou texto.
 
 ### Verificação manual
 

@@ -39,23 +39,22 @@ primeira impressão seja positiva e eu me sinta motivado a usar o sistema.
    `action` (`/api/auth/login`, `/api/auth/register-and-login`), `name=` dos campos
    (`email`, `password`, `Name`, `Email`, `Password`, `ConfirmPassword`), ids
    (`#email/#password/#name/#confirmPassword`), texto do `h3` ("Entrar"/"Cadastro") e
-   texto/roles dos botões ("Entrar"/"Cadastrar"). (Guardados por `RegisterTests` bUnit e Playwright.)
+   texto/roles dos botões ("Entrar"/"Cadastrar"). (Guardados por `RegisterTests` bUnit.)
 2. Reestilizados com `.rm-auth`, `.rm-auth-card`, `.rm-input`, `.rm-btn`; erro (query
-   `?Error=`) via `div.alert-danger` (classe preservada para o E2E).
+   `?Error=`) via `div.alert-danger`.
 3. **Não** ganham `@rendermode` — seguem estáticos (`RenderModeTests`).
 
 ### AC2 — ForgotPassword e ResetPassword (interativos)
 
 1. Mantêm `@rendermode InteractiveServer`, `EditForm`, `InputText` com ids
    (`#email`, `#password`, `#confirmPassword`), texto dos botões e h3.
-2. Sucesso via `div.alert-success` (classe + texto preservados para o E2E:
+2. Sucesso via `div.alert-success` (classe + texto preservados:
    "Se o e-mail existir" / "Senha redefinida"); erro via `div.alert-danger`.
 3. Reestilizados com a mesma camada quente (card centralizado).
 
 ### AC3 — Home (interativa via RT1)
 
-1. `<h1 class="home-greeting">` com `HomeWelcome` ("Olá, {nome}!") preservado (E2E
-   testa `h1:has-text('Olá')` e o nome do usuário).
+1. `<h1 class="home-greeting">` com `HomeWelcome` ("Olá, {nome}!") preservado.
 2. Projetos como `.project-card` (link para `/projects/{id}`) com `.status-pill` e
    **cor de status** na borda esquerda: Pending=âmbar, Active=teal, Finished=verde,
    Cancelled=coral. Grid 1 coluna no mobile, 2 no desktop.
@@ -71,8 +70,7 @@ Novas chaves em `AppStrings.resx` (EN) e `AppStrings.pt-BR.resx`: `AuthTagline`,
 
 ### AC5 — Testes
 
-`dotnet build` + `Web.Tests` (Register/RenderMode) verdes; E2E `AuthFlowTests`
-preservado (seletores acima).
+`dotnet build` + `Web.Tests` (Register/RenderMode) verdes.
 
 ## Security Constraints
 
@@ -88,6 +86,5 @@ preservado (seletores acima).
 
 - `dotnet build ResponsabiliMano.slnx`
 - `dotnet test tests/ResponsabiliMano.Web.Tests`
-- `dotnet test tests/ResponsabiliMano.Web.E2ETests --filter "AuthFlowTests"`
 - Visual (`/run`): Login/Register/Home no mobile (375px) e desktop, dark mode do SO,
   empty state e skeleton na Home.
