@@ -639,6 +639,12 @@
   <data name="NavProfile" xml:space="preserve">
     <value>Profile</value>
   </data>
+  <data name="NavDashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="NavCheckIn" xml:space="preserve">
+    <value>Check-in</value>
+  </data>
   <data name="ProfileTitle" xml:space="preserve">
     <value>Profile</value>
   </data>

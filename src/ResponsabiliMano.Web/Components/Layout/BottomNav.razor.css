@@ -18,6 +18,9 @@
     padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* NavLink comes from a child component, hence ::deep; the placeholder span is
+   local markup. */
+.bottom-nav__inner ::deep .bottom-nav__item,
 .bottom-nav__item {
     display: flex;
     flex: 1;
@@ -35,13 +38,18 @@
     transition: color .15s ease;
 }
 
-.bottom-nav__item:hover {
+.bottom-nav__inner ::deep .bottom-nav__item:hover {
     text-decoration: none;
     color: var(--rm-fg);
 }
 
-.bottom-nav__item.active {
+.bottom-nav__inner ::deep .bottom-nav__item.active {
     color: var(--rm-primary);
+}
+
+.bottom-nav__item--disabled {
+    opacity: .5;
+    pointer-events: none;
 }
 
 /* The primary action sits above the bar rather than in it. */
