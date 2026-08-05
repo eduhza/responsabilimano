@@ -1,0 +1,27 @@
+@* Theme selector — works on static SSR pages (landing/auth) because all
+   interaction is delegated to rm.js via [data-theme-toggle]. The inline script
+   in App.razor sets data-resolved-theme before paint; rm.js keeps aria-pressed
+   in sync on DOMContentLoaded and on each click. No IJSRuntime needed. *@
+
+<div class="@($"rm-theme-toggle {Class}".Trim())" role="group" aria-label="@Label">
+    <button type="button" class="rm-theme-toggle__btn" data-theme-toggle="light"
+            aria-pressed="false" title="@LightLabel" aria-label="@LightLabel">
+        <RmIcon Name="sun" Size="1.125rem" />
+    </button>
+    <button type="button" class="rm-theme-toggle__btn" data-theme-toggle="system"
+            aria-pressed="true" title="@SystemLabel" aria-label="@SystemLabel">
+        <RmIcon Name="monitor" Size="1.125rem" />
+    </button>
+    <button type="button" class="rm-theme-toggle__btn" data-theme-toggle="dark"
+            aria-pressed="false" title="@DarkLabel" aria-label="@DarkLabel">
+        <RmIcon Name="moon" Size="1.125rem" />
+    </button>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Tema";
+    [Parameter] public string LightLabel { get; set; } = "Tema claro";
+    [Parameter] public string DarkLabel { get; set; } = "Tema escuro";
+    [Parameter] public string SystemLabel { get; set; } = "Tema do sistema";
+    [Parameter] public string? Class { get; set; }
+}

@@ -7,15 +7,25 @@
     <aside class="shell__sidebar">
         <a href="/projects" class="shell__brand"><RmLogo /></a>
         <NavMenu />
+        <RmThemeToggle Class="shell__theme" Label="@Localizer["ThemeLabel"]"
+                       LightLabel="@Localizer["ThemeLight"]"
+                       DarkLabel="@Localizer["ThemeDark"]"
+                       SystemLabel="@Localizer["ThemeSystem"]" />
     </aside>
 
     <header class="shell__topbar">
         <a href="/projects" class="shell__brand"><RmLogo /></a>
-        <AuthorizeView>
-            <Authorized>
-                <RmAvatar Name="@context.User.Identity?.Name" Tone="neutral" Size="sm" />
-            </Authorized>
-        </AuthorizeView>
+        <div class="shell__topbar-actions">
+            <RmThemeToggle Label="@Localizer["ThemeLabel"]"
+                           LightLabel="@Localizer["ThemeLight"]"
+                           DarkLabel="@Localizer["ThemeDark"]"
+                           SystemLabel="@Localizer["ThemeSystem"]" />
+            <AuthorizeView>
+                <Authorized>
+                    <RmAvatar Name="@context.User.Identity?.Name" Tone="neutral" Size="sm" />
+                </Authorized>
+            </AuthorizeView>
+        </div>
     </header>
 
     <main class="shell__main">

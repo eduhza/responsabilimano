@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <ResourcePreloader />
+    <script>
+        // Anti-FOUC: resolve the user's theme choice before the stylesheet paints.
+        // Runs synchronously in <head> so data-resolved-theme is set on <html>
+        // before the CSS in app.css (which keys off that attribute) applies.
+        (function () {
+            var choice = localStorage.getItem('rm-theme') || 'system';
+            var resolved = choice === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : choice;
+            var el = document.documentElement;
+            el.setAttribute('data-theme', choice);
+            el.setAttribute('data-resolved-theme', resolved);
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
