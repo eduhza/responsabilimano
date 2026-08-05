@@ -1,0 +1,33 @@
+<div class="rm-empty @Class">
+    @if (Icon is not null)
+    {
+        <RmIconTile Size="lg">
+            <RmIcon Name="@Icon" Size="1.5rem" />
+        </RmIconTile>
+    }
+    <h2 class="rm-empty__title">@Title</h2>
+    @if (Description is not null)
+    {
+        <p>@Description</p>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    /// <summary>RmIcon name shown above the title.</summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>Call to action rendered below the copy.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

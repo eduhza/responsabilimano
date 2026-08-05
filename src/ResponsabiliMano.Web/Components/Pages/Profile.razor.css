@@ -1,0 +1,44 @@
+.profile__heading {
+    font-size: 1.875rem;
+}
+
+.profile__subtitle {
+    margin-top: 0.5rem;
+    color: var(--rm-muted-fg);
+}
+
+.profile__identity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.profile__name {
+    font-family: var(--rm-font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.profile__email {
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.profile__row {
+    margin-top: 1rem;
+}
+
+.profile__row-title {
+    font-weight: 500;
+}
+
+.profile__row-text {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.profile__logout {
+    margin-top: 1.5rem;
+}

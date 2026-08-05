@@ -1,9 +1,12 @@
-﻿@page "/not-found"
+@page "/not-found"
 @attribute [AllowAnonymous]
 @layout MainLayout
 @inject IStringLocalizer<AppStrings> Localizer
 
 <PageTitle>@Localizer["NotFoundTitle"]</PageTitle>
 
-<h3>@Localizer["NotFoundTitle"]</h3>
-<p>@Localizer["NotFoundMessage"]</p>
+<RmEmptyState Icon="alert-circle"
+              Title="@Localizer["NotFoundTitle"].Value"
+              Description="@Localizer["NotFoundMessage"].Value">
+    <RmButton Href="/projects" Variant="outline">@Localizer["BackToHome"]</RmButton>
+</RmEmptyState>

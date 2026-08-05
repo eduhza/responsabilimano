@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IProjectService ProjectService
-@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
@@ -14,279 +13,297 @@
 
 @if (_loading)
 {
-    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 6rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 8rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 4rem;"></div>
+    <div class="skeleton detail__skeleton detail__skeleton--head"></div>
+    <div class="skeleton detail__skeleton detail__skeleton--actions"></div>
+    <div class="skeleton detail__skeleton detail__skeleton--body"></div>
 }
 else if (_project is null)
 {
-    <FluentMessageBar Intent="MessageIntent.Error" Title="@Localizer["ProjectNotFound"]" AllowDismiss="false" />
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
-        @Localizer["BackToHome"]
-    </FluentButton>
+    <RmAlert Tone="danger">@Localizer["ProjectNotFound"]</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
 }
 else
 {
     <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
 
-    <div class="detail-head">
-        <h1 class="detail-title">@_project.Name</h1>
-        <span class="status-pill" style="--status-color: @StatusColor(_project.Status);">@GetStatusText(_project.Status)</span>
-    </div>
+    <a href="/projects" class="rm-back-link">
+        <RmIcon Name="arrow-left" Size="0.875rem" />
+        @Localizer["MyProjectsTitle"]
+    </a>
+
+    @* Hero: identity, status and the pair, all above the fold. *@
+    <RmCard Class="detail__hero">
+        <div class="detail__identity">
+            <span class="rm-icon-tile rm-icon-tile--lg rm-icon-tile--accent detail__emoji">@(_project.Icon ?? "🎯")</span>
+            <div>
+                <RmBadge Tone="@StatusTone(_project.Status)" Dot="true">@GetStatusText(_project.Status)</RmBadge>
+                <h1 class="detail__title">@_project.Name</h1>
+                <div class="detail__meta">
+                    <span>
+                        <RmIcon Name="calendar" Size="0.875rem" />
+                        @_project.StartDate.ToString("dd MMM yyyy") — @_project.EndDate.ToString("dd MMM yyyy")
+                    </span>
+                    <span>
+                        <RmIcon Name="repeat" Size="0.875rem" />
+                        @GetFrequencyText(_project.Frequency)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail__people">
+            <RmAvatarStack You="@_project.Creator?.Name" Partner="@_project.Partner?.Name" Soft="true" />
+            @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
+            {
+                <RmButton Href="@($"/projects/{_project.Id}/dashboard")" Variant="outline" Size="sm">
+                    @Localizer["DashboardButton"]
+                </RmButton>
+            }
+        </div>
+    </RmCard>
 
     @if (_project.Status == Core.Enums.ProjectStatus.Active)
     {
+        <div class="detail__quick">
+            @if (_checkInsEnabled)
+            {
+                <a class="rm-card rm-card--flat rm-card--interactive quick" href="@($"/projects/{_project.Id}/checkin")">
+                    <RmIconTile Size="sm">
+                        <RmIcon Name="clipboard-check" Size="1.125rem" />
+                    </RmIconTile>
+                    <div class="quick__text">
+                        <p class="quick__title">@Localizer["CheckInButton"]</p>
+                        <p class="quick__sub">@GetFrequencyText(_project.Frequency)</p>
+                    </div>
+                    <RmIcon Name="chevron-right" Class="quick__chevron" />
+                </a>
+            }
+
+            @if (_dashboardEnabled)
+            {
+                <a class="rm-card rm-card--flat rm-card--interactive quick" href="@($"/projects/{_project.Id}/dashboard")">
+                    <RmIconTile Tone="partner" Size="sm">
+                        <RmIcon Name="trending-up" Size="1.125rem" />
+                    </RmIconTile>
+                    <div class="quick__text">
+                        <p class="quick__title">@Localizer["DashboardCompareTitle"]</p>
+                        <p class="quick__sub">@Localizer["DashboardCompareText", _project.Partner?.Name ?? Localizer["NoPartnerYet"].Value]</p>
+                    </div>
+                    <RmIcon Name="chevron-right" Class="quick__chevron" />
+                </a>
+            }
+        </div>
+
         <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
     }
 
-    <div class="rm-meta">
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["StartDateLabel"]</span>
-            <span class="rm-meta-value">@_project.StartDate.ToString("dd/MM/yyyy")</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["EndDateLabel"]</span>
-            <span class="rm-meta-value">@_project.EndDate.ToString("dd/MM/yyyy")</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["FrequencyLabel"]</span>
-            <span class="rm-meta-value">@GetFrequencyText(_project.Frequency)</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["CreatorLabel"]</span>
-            <span class="rm-meta-value">@_project.Creator?.Name</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["PartnerLabel"]</span>
-            @if (_project.Partner is not null)
-            {
-                <span class="rm-meta-value">@_project.Partner.Name</span>
-            }
-            else
-            {
-                <span class="rm-meta-value text-muted">@Localizer["NoPartnerYet"]</span>
-            }
-        </div>
-    </div>
-
     @if (_project.Partner is null && _project.CreatorId == _currentUserId)
     {
-        <FluentAnchor Href="@($"/projects/{_project.Id}/invite")" Appearance="Appearance.Accent" Class="mb-3">
-            @Localizer["InvitePartnerButton"]
-        </FluentAnchor>
-    }
-
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-bottom: 1.5rem;" VerticalGap="8">
-        @if (_project.Status == Core.Enums.ProjectStatus.Active && _checkInsEnabled)
-        {
-            <FluentAnchor Href="@($"/projects/{_project.Id}/checkin")" Appearance="Appearance.Accent">
-                @Localizer["CheckInButton"]
-            </FluentAnchor>
-        }
-
-        @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
-        {
-            <FluentAnchor Href="@($"/projects/{_project.Id}/dashboard")" Appearance="Appearance.Outline">
-                @Localizer["DashboardButton"]
-            </FluentAnchor>
-        }
-    </FluentStack>
-
-    <h4 class="rm-section-title">@Localizer["GoalsSectionTitle"]</h4>
-    <div class="goal-list">
-        @foreach (var goal in _project.Goals)
-        {
-            <div class="goal-tile">
-                <p class="goal-tile-label">@goal.Label</p>
-                <div class="goal-tile-target">
-                    @(goal.TargetValue?.ToString() ?? "—")<span class="unit"> @goal.Unit</span>
-                </div>
-                @if (goal.MinValue is not null || goal.MaxValue is not null)
-                {
-                    <div class="goal-tile-range">@goal.MinValue … @goal.MaxValue @goal.Unit</div>
-                }
+        <RmCard Class="detail__invite">
+            <div>
+                <p class="detail__invite-title">@Localizer["NoPartnerYet"]</p>
+                <p class="detail__invite-text">@Localizer["CreateProjectInviteHint"]</p>
             </div>
-        }
-    </div>
-
-    @if (_project.Status == Core.Enums.ProjectStatus.Pending && _project.PartnerId is not null)
-    {
-        <FluentCard Class="mb-3">
-            <h5 style="margin-top: 0;">@Localizer["ApproveProjectTitle"]</h5>
-            <p>@Localizer["ApproveProjectDescription"]</p>
-            <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleApproveProject">
-                @Localizer["ApproveButton"]
-            </FluentButton>
-        </FluentCard>
-    }
-
-    <h4 class="rm-section-title">@Localizer["ChangeRequestsTitle"]</h4>
-    @if (_project.ChangeRequests.Count == 0)
-    {
-        <div class="empty-state" style="padding: 1rem;">
-            <span class="text-muted">@Localizer["NoChangeRequests"]</span>
-        </div>
-    }
-    else
-    {
-        <div class="cr-list">
-            @foreach (var cr in _project.ChangeRequests.OrderByDescending(c => c.CreatedAt))
-            {
-                <div class="cr-card">
-                    <div class="cr-card-main">
-                        <span class="cr-card-type">@GetChangeRequestTypeText(cr.Type)</span>
-                        <span class="cr-card-meta">
-                            @(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)
-                            · @cr.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                        </span>
-                    </div>
-                    <span class="cr-badge @CrBadgeClass(cr.Status)">@GetChangeRequestStatusText(cr.Status)</span>
-                    @if (cr.Status == Core.Enums.ChangeRequestStatus.Pending && cr.RequestedByUserId != _currentUserId)
-                    {
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                            <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" OnClick="@(() => HandleRespondToChangeRequest(cr.Id, true))">
-                                @Localizer["ApproveButton"]
-                            </FluentButton>
-                            <FluentButton Appearance="Appearance.Outline" Disabled="@_actionLoading" OnClick="@(() => HandleRespondToChangeRequest(cr.Id, false))">
-                                @Localizer["RejectButton"]
-                            </FluentButton>
-                        </FluentStack>
-                    }
-                </div>
-            }
-        </div>
-    }
-
-    @if (_project.Status is Core.Enums.ProjectStatus.Pending or Core.Enums.ProjectStatus.Active)
-    {
-        <FluentCard Class="mb-3">
-            <h5 style="margin-top: 0;">@Localizer["ProposeChangeTitle"]</h5>
-
-            <FluentSelect TOption="string"
-                          Label="@Localizer["ChangeTypeLabel"]"
-                          Appearance="Appearance.Outline"
-                          Value="_proposeType.ToString()"
-                          ValueChanged="@(v => _proposeType = Enum.Parse<ChangeRequestType>(v ?? string.Empty))"
-                          Style="width: 100%; max-width: 300px; margin-bottom: 0.75rem;">
-                <FluentOption Value="@ChangeRequestType.EndDate.ToString()">@Localizer["ChangeTypeEndDate"]</FluentOption>
-                <FluentOption Value="@ChangeRequestType.Frequency.ToString()">@Localizer["ChangeTypeFrequency"]</FluentOption>
-                <FluentOption Value="@ChangeRequestType.Goals.ToString()">@Localizer["ChangeTypeGoals"]</FluentOption>
-            </FluentSelect>
-
-            @if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
-            {
-                <FluentDatePicker Label="@Localizer["NewEndDateLabel"]"
-                                  Value="_proposeEndDate"
-                                  ValueChanged="@(v => _proposeEndDate = v)"
-                                  Style="width: 100%; max-width: 300px;" />
-            }
-            else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
-            {
-                <FluentSelect TOption="string"
-                              Label="@Localizer["NewFrequencyLabel"]"
-                              Appearance="Appearance.Outline"
-                              Value="_proposeFrequency.ToString()"
-                              ValueChanged="@(v => _proposeFrequency = Enum.Parse<ProjectFrequency>(v ?? string.Empty))"
-                              Style="width: 100%; max-width: 300px;">
-                    <FluentOption Value="@ProjectFrequency.Daily.ToString()">@Localizer["FrequencyDaily"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Weekly.ToString()">@Localizer["FrequencyWeekly"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Biweekly.ToString()">@Localizer["FrequencyBiweekly"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Monthly.ToString()">@Localizer["FrequencyMonthly"]</FluentOption>
-                </FluentSelect>
-            }
-            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
-            {
-                @for (var i = 0; i < _proposeGoals.Count; i++)
-                {
-                    var index = i;
-                    <FluentCard Class="mb-2 goal-card">
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap; margin-bottom: 0.75rem;">
-                            <div style="flex: 2; min-width: 200px;">
-                                <FluentTextField Label="@Localizer["GoalFieldLabel"]"
-                                                 Appearance="FluentInputAppearance.Outline"
-                                                 @bind-Value="_proposeGoals[index].Label"
-                                                 Style="width: 100%;" />
-                            </div>
-                            <div style="flex: 1; min-width: 150px;">
-                                <FluentSelect TOption="string"
-                                              Label="@Localizer["GoalDataTypeLabel"]"
-                                              Appearance="Appearance.Outline"
-                                              Value="_proposeGoals[index].DataType.ToString()"
-                                              ValueChanged="@(v => _proposeGoals[index].DataType = Enum.Parse<GoalDataType>(v ?? string.Empty))"
-                                              Style="width: 100%;">
-                                    <FluentOption Value="@GoalDataType.Decimal.ToString()">@Localizer["DataTypeDecimal"]</FluentOption>
-                                    <FluentOption Value="@GoalDataType.Integer.ToString()">@Localizer["DataTypeInteger"]</FluentOption>
-                                    <FluentOption Value="@GoalDataType.Percent.ToString()">@Localizer["DataTypePercent"]</FluentOption>
-                                </FluentSelect>
-                            </div>
-                            <div style="flex: 1; min-width: 100px;">
-                                <FluentTextField Label="@Localizer["GoalUnitLabel"]"
-                                                 Appearance="FluentInputAppearance.Outline"
-                                                 @bind-Value="_proposeGoals[index].Unit"
-                                                 Style="width: 100%;" />
-                            </div>
-                        </FluentStack>
-
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 120px;">
-                                <FluentNumberField TValue="decimal?"
-                                                   Label="@Localizer["GoalMinValueLabel"]"
-                                                   Appearance="FluentInputAppearance.Outline"
-                                                   HideStep="true"
-                                                   @bind-Value="_proposeGoals[index].MinValue"
-                                                   Style="width: 100%;" />
-                            </div>
-                            <div style="flex: 1; min-width: 120px;">
-                                <FluentNumberField TValue="decimal?"
-                                                   Label="@Localizer["GoalMaxValueLabel"]"
-                                                   Appearance="FluentInputAppearance.Outline"
-                                                   HideStep="true"
-                                                   @bind-Value="_proposeGoals[index].MaxValue"
-                                                   Style="width: 100%;" />
-                            </div>
-                            <div style="flex: 1; min-width: 120px;">
-                                <FluentNumberField TValue="decimal?"
-                                                   Label="@Localizer["GoalTargetValueLabel"]"
-                                                   Appearance="FluentInputAppearance.Outline"
-                                                   HideStep="true"
-                                                   @bind-Value="_proposeGoals[index].TargetValue"
-                                                   Style="width: 100%;" />
-                            </div>
-                        </FluentStack>
-                    </FluentCard>
-                }
-
-                <FluentButton Type="ButtonType.Button"
-                              Appearance="Appearance.Outline"
-                              IconStart="@(new Icons.Regular.Size20.Add())"
-                              OnClick="AddProposeGoal"
-                              Class="mb-2">
-                    @Localizer["AddGoalButton"]
-                </FluentButton>
-            }
-
-            @if (!string.IsNullOrEmpty(_proposeError))
-            {
-                <FluentMessageBar Intent="MessageIntent.Error" Title="@_proposeError" AllowDismiss="false" Class="mt-2" />
-            }
-
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
-                <FluentButton Type="ButtonType.Button" Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleProposeChange">
-                    @(_actionLoading ? Localizer["Processing"] : Localizer["ProposeChangeButton"])
-                </FluentButton>
-            </FluentStack>
-        </FluentCard>
+            <RmButton Href="@($"/projects/{_project.Id}/invite")">@Localizer["InvitePartnerButton"]</RmButton>
+        </RmCard>
     }
 
     @if (!string.IsNullOrEmpty(_statusMessage))
     {
-        <FluentMessageBar Intent="@_statusMessageIntent" Title="@_statusMessage" AllowDismiss="false" Class="mb-3" />
+        <RmAlert Tone="@_statusTone" Class="mt-3">@_statusMessage</RmAlert>
     }
 
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))">
-        @Localizer["BackToHome"]
-    </FluentButton>
+    @if (_project.Status == Core.Enums.ProjectStatus.Pending && _project.PartnerId is not null)
+    {
+        <RmCard Class="detail__approve">
+            <div>
+                <h2 class="detail__approve-title">@Localizer["ApproveProjectTitle"]</h2>
+                <p class="detail__approve-text">@Localizer["ApproveProjectDescription"]</p>
+            </div>
+            <RmButton Disabled="_actionLoading" @onclick="HandleApproveProject">
+                <RmIcon Name="handshake" />
+                @Localizer["ApproveButton"]
+            </RmButton>
+        </RmCard>
+    }
+
+    <div class="tabs" role="tablist">
+        @foreach (var tab in Tabs)
+        {
+            <button type="button" role="tab"
+                    class="tabs__trigger @(_tab == tab.Index ? "is-active" : null)"
+                    aria-selected="@(_tab == tab.Index)"
+                    @onclick="() => _tab = tab.Index">
+                <RmIcon Name="@tab.Icon" Size="0.875rem" />
+                @tab.Label
+            </button>
+        }
+    </div>
+
+    @if (_tab == 0)
+    {
+        <div class="goals">
+            @foreach (var goal in _project.Goals)
+            {
+                <RmCard Flat="true" Class="goal-tile">
+                    <p class="goal-tile__label">@goal.Label</p>
+                    <p class="goal-tile__target rm-display rm-tabular">
+                        @(goal.TargetValue?.ToString("0.##") ?? "—")<span class="goal-tile__unit">@goal.Unit</span>
+                    </p>
+                    @if (goal.MinValue is not null || goal.MaxValue is not null)
+                    {
+                        <p class="goal-tile__range">@goal.MinValue?.ToString("0.##") … @goal.MaxValue?.ToString("0.##") @goal.Unit</p>
+                    }
+                </RmCard>
+            }
+        </div>
+    }
+    else if (_tab == 1)
+    {
+        @if (_project.ChangeRequests.Count == 0)
+        {
+            <RmEmptyState Icon="repeat" Title="@Localizer["NoChangeRequests"]" />
+        }
+        else
+        {
+            <div class="rm-stack">
+                @foreach (var cr in _project.ChangeRequests.OrderByDescending(c => c.CreatedAt))
+                {
+                    <RmCard Flat="true" Class="cr">
+                        <RmAvatar Name="@(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)"
+                                  Tone="@(cr.RequestedByUserId == _project.CreatorId ? "you-soft" : "partner-soft")" />
+                        <div class="cr__text">
+                            <p class="cr__type">@GetChangeRequestTypeText(cr.Type)</p>
+                            <p class="cr__meta">
+                                @(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)
+                                · @cr.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                        </div>
+
+                        <RmBadge Tone="@CrTone(cr.Status)">@GetChangeRequestStatusText(cr.Status)</RmBadge>
+
+                        @if (cr.Status == Core.Enums.ChangeRequestStatus.Pending && cr.RequestedByUserId != _currentUserId)
+                        {
+                            <div class="cr__actions">
+                                <RmButton Size="sm" Disabled="_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, true)">
+                                    <RmIcon Name="check" />
+                                    @Localizer["ApproveButton"]
+                                </RmButton>
+                                <RmButton Size="sm" Variant="outline" Disabled="_actionLoading" @onclick="() => HandleRespondToChangeRequest(cr.Id, false)">
+                                    <RmIcon Name="x" />
+                                    @Localizer["RejectButton"]
+                                </RmButton>
+                            </div>
+                        }
+                    </RmCard>
+                }
+            </div>
+        }
+    }
+    else if (_tab == 2 && _project.Status is Core.Enums.ProjectStatus.Pending or Core.Enums.ProjectStatus.Active)
+    {
+        <RmCard>
+            <h2 class="propose__title">@Localizer["ProposeChangeTitle"]</h2>
+
+            <RmField Label="@Localizer["ChangeTypeLabel"]" For="changeType" Class="mt-3">
+                <select id="changeType" class="rm-select propose__select"
+                        value="@_proposeType"
+                        @onchange="e => _proposeType = Enum.Parse<ChangeRequestType>(e.Value?.ToString() ?? string.Empty)">
+                    <option value="@ChangeRequestType.EndDate">@Localizer["ChangeTypeEndDate"]</option>
+                    <option value="@ChangeRequestType.Frequency">@Localizer["ChangeTypeFrequency"]</option>
+                    <option value="@ChangeRequestType.Goals">@Localizer["ChangeTypeGoals"]</option>
+                </select>
+            </RmField>
+
+            @if (_proposeType == Core.Enums.ChangeRequestType.EndDate)
+            {
+                <RmField Label="@Localizer["NewEndDateLabel"]" For="newEndDate" Class="mt-3">
+                    <input id="newEndDate" type="date" class="rm-input propose__select"
+                           value="@_proposeEndDate?.ToString("yyyy-MM-dd")"
+                           @onchange="e => _proposeEndDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
+                </RmField>
+            }
+            else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
+            {
+                <RmField Label="@Localizer["NewFrequencyLabel"]" For="newFrequency" Class="mt-3">
+                    <select id="newFrequency" class="rm-select propose__select"
+                            value="@_proposeFrequency"
+                            @onchange="e => _proposeFrequency = Enum.Parse<ProjectFrequency>(e.Value?.ToString() ?? string.Empty)">
+                        <option value="@ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
+                        <option value="@ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
+                        <option value="@ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
+                        <option value="@ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
+                    </select>
+                </RmField>
+            }
+            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
+            {
+                <div class="rm-stack mt-3">
+                    @for (var i = 0; i < _proposeGoals.Count; i++)
+                    {
+                        var index = i;
+                        <RmCard Flat="true">
+                            <div class="propose__goal-grid">
+                                <RmField Label="@Localizer["GoalFieldLabel"]" Class="propose__span-2">
+                                    <input class="rm-input" value="@_proposeGoals[index].Label"
+                                           @onchange="e => _proposeGoals[index].Label = e.Value?.ToString() ?? string.Empty" />
+                                </RmField>
+
+                                <RmField Label="@Localizer["GoalDataTypeLabel"]">
+                                    <select class="rm-select" value="@_proposeGoals[index].DataType"
+                                            @onchange="e => _proposeGoals[index].DataType = Enum.Parse<GoalDataType>(e.Value?.ToString() ?? string.Empty)">
+                                        <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
+                                        <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
+                                        <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
+                                    </select>
+                                </RmField>
+
+                                <RmField Label="@Localizer["GoalUnitLabel"]">
+                                    <input class="rm-input" value="@_proposeGoals[index].Unit"
+                                           @onchange="e => _proposeGoals[index].Unit = e.Value?.ToString() ?? string.Empty" />
+                                </RmField>
+
+                                <RmField Label="@Localizer["GoalMinValueLabel"]">
+                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].MinValue"
+                                           @onchange="e => _proposeGoals[index].MinValue = ParseDecimal(e.Value)" />
+                                </RmField>
+
+                                <RmField Label="@Localizer["GoalMaxValueLabel"]">
+                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].MaxValue"
+                                           @onchange="e => _proposeGoals[index].MaxValue = ParseDecimal(e.Value)" />
+                                </RmField>
+
+                                <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].TargetValue"
+                                           @onchange="e => _proposeGoals[index].TargetValue = ParseDecimal(e.Value)" />
+                                </RmField>
+                            </div>
+                        </RmCard>
+                    }
+
+                    <RmButton Variant="outline" @onclick="AddProposeGoal">
+                        <RmIcon Name="plus" />
+                        @Localizer["AddGoalButton"]
+                    </RmButton>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_proposeError))
+            {
+                <RmAlert Tone="danger" Class="mt-3">@_proposeError</RmAlert>
+            }
+
+            <RmButton Disabled="_actionLoading" @onclick="HandleProposeChange" Class="mt-3">
+                @(_actionLoading ? Localizer["Processing"] : Localizer["ProposeChangeButton"])
+            </RmButton>
+        </RmCard>
+    }
+
+    <RmConfirmDialog @ref="_confirmDialog"
+                     Title="@_confirmTitle"
+                     Message="@_confirmMessage"
+                     ConfirmText="@_confirmAction"
+                     CancelText="@Localizer["Cancel"]" />
 }
 
 @code {
@@ -299,15 +316,28 @@ else
     private bool _checkInsEnabled;
     private bool _dashboardEnabled;
     private bool _actionLoading;
+    private int _tab;
     private string? _statusMessage;
-    private MessageIntent _statusMessageIntent = MessageIntent.Info;
+    private string _statusTone = "info";
     private string? _proposeError;
     private (int Current, int Best) _streak;
+
+    private RmConfirmDialog? _confirmDialog;
+    private string? _confirmTitle;
+    private string? _confirmMessage;
+    private string? _confirmAction;
 
     private Core.Enums.ChangeRequestType _proposeType = Core.Enums.ChangeRequestType.EndDate;
     private DateTime? _proposeEndDate;
     private Core.Enums.ProjectFrequency _proposeFrequency = Core.Enums.ProjectFrequency.Weekly;
     private List<GoalFieldRequest> _proposeGoals = new();
+
+    private (int Index, string Icon, string Label)[] Tabs =>
+    [
+        (0, "target", Localizer["GoalsSectionTitle"]),
+        (1, "repeat", Localizer["ChangeRequestsTitle"]),
+        (2, "pencil", Localizer["ProposeChangeTitle"])
+    ];
 
     protected override async Task OnInitializedAsync()
     {
@@ -393,28 +423,42 @@ else
         string.Join(",", p.Goals.OrderBy(g => g.Id).Select(g => $"{g.Id}:{g.Label}:{g.TargetValue}")) + "|" +
         string.Join(",", p.ChangeRequests.OrderBy(c => c.Id).Select(c => $"{c.Id}:{c.Status}"));
 
+    private static decimal? ParseDecimal(object? value) =>
+        decimal.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+
     private void AddProposeGoal()
     {
         _proposeGoals.Add(new GoalFieldRequest());
     }
 
+    private async Task<bool> ConfirmAsync(string title, string message, string action)
+    {
+        if (_confirmDialog is null)
+            return false;
+
+        _confirmTitle = title;
+        _confirmMessage = message;
+        _confirmAction = action;
+        StateHasChanged();
+
+        return await _confirmDialog.ShowAsync();
+    }
+
     private async Task HandleApproveProject()
     {
-        var dialog = await DialogService.ShowConfirmationAsync(
-            @Localizer["ApproveProjectDescription"],
-            primaryText: @Localizer["ApproveButton"],
-            secondaryText: @Localizer["Cancel"],
-            title: @Localizer["ConfirmApproveTitle"]);
+        var confirmed = await ConfirmAsync(
+            Localizer["ConfirmApproveTitle"],
+            Localizer["ApproveProjectDescription"],
+            Localizer["ApproveButton"]);
 
-        var result = await dialog.Result;
-        if (result.Cancelled)
+        if (!confirmed)
             return;
 
         await ExecuteAction(async () =>
         {
             await ProjectService.ApproveProjectAsync(ProjectId, _currentUserId);
             _statusMessage = Localizer["ProjectApprovedSuccess"];
-            _statusMessageIntent = MessageIntent.Success;
+            _statusTone = "success";
             _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
             if (_project is not null && _project.Status == Core.Enums.ProjectStatus.Active)
             {
@@ -440,28 +484,26 @@ else
             var payloadJson = request.ToPayloadJson();
             await ProjectService.ProposeChangeAsync(ProjectId, _currentUserId, _proposeType, payloadJson);
             _statusMessage = Localizer["ChangeRequestCreatedSuccess"];
-            _statusMessageIntent = MessageIntent.Success;
+            _statusTone = "success";
             _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
         }, ex => _proposeError = ex.Message);
     }
 
     private async Task HandleRespondToChangeRequest(Guid changeRequestId, bool approve)
     {
-        var dialog = await DialogService.ShowConfirmationAsync(
-            approve ? @Localizer["ConfirmApproveMessage"] : @Localizer["ConfirmRejectMessage"],
-            primaryText: approve ? @Localizer["ApproveButton"] : @Localizer["RejectButton"],
-            secondaryText: @Localizer["Cancel"],
-            title: approve ? @Localizer["ConfirmApproveTitle"] : @Localizer["ConfirmRejectTitle"]);
+        var confirmed = await ConfirmAsync(
+            approve ? Localizer["ConfirmApproveTitle"] : Localizer["ConfirmRejectTitle"],
+            approve ? Localizer["ConfirmApproveMessage"] : Localizer["ConfirmRejectMessage"],
+            approve ? Localizer["ApproveButton"] : Localizer["RejectButton"]);
 
-        var result = await dialog.Result;
-        if (result.Cancelled)
+        if (!confirmed)
             return;
 
         await ExecuteAction(async () =>
         {
             await ProjectService.RespondToChangeRequestAsync(ProjectId, changeRequestId, _currentUserId, approve);
             _statusMessage = approve ? Localizer["ChangeRequestApprovedSuccess"] : Localizer["ChangeRequestRejectedSuccess"];
-            _statusMessageIntent = MessageIntent.Success;
+            _statusTone = "success";
             _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
         });
     }
@@ -478,7 +520,7 @@ else
         catch (Exception ex)
         {
             _statusMessage = ex.Message;
-            _statusMessageIntent = MessageIntent.Error;
+            _statusTone = "danger";
             onError?.Invoke(ex);
         }
         finally
@@ -487,20 +529,19 @@ else
         }
     }
 
-    private static string StatusColor(Core.Enums.ProjectStatus status) => status switch
+    private static string StatusTone(Core.Enums.ProjectStatus status) => status switch
     {
-        Core.Enums.ProjectStatus.Pending => "var(--rm-accent)",
-        Core.Enums.ProjectStatus.Active => "var(--rm-secondary)",
-        Core.Enums.ProjectStatus.Finished => "#5B9279",
-        Core.Enums.ProjectStatus.Cancelled => "var(--rm-primary)",
-        _ => "var(--rm-text-muted)"
+        Core.Enums.ProjectStatus.Active => "primary",
+        Core.Enums.ProjectStatus.Pending => "partner",
+        Core.Enums.ProjectStatus.Cancelled => "destructive",
+        _ => "muted"
     };
 
-    private static string CrBadgeClass(Core.Enums.ChangeRequestStatus status) => status switch
+    private static string CrTone(Core.Enums.ChangeRequestStatus status) => status switch
     {
-        Core.Enums.ChangeRequestStatus.Approved => "approved",
-        Core.Enums.ChangeRequestStatus.Rejected => "rejected",
-        _ => "pending"
+        Core.Enums.ChangeRequestStatus.Approved => "primary",
+        Core.Enums.ChangeRequestStatus.Rejected => "destructive",
+        _ => "muted"
     };
 
     private string GetStatusText(Core.Enums.ProjectStatus status) => status switch

@@ -14,81 +14,89 @@
 
 @if (_loading)
 {
-    <div class="skeleton" style="width: 50%; height: 2rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 4rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 6rem;"></div>
+    <div class="skeleton checkin__skeleton checkin__skeleton--head"></div>
+    <div class="skeleton checkin__skeleton checkin__skeleton--body"></div>
 }
 else if (!_available || _project is null)
 {
-    <FluentMessageBar Intent="MessageIntent.Error" Title="@Localizer["ProjectNotFound"]" AllowDismiss="false" />
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
-        @Localizer["BackToHome"]
-    </FluentButton>
+    <RmAlert Tone="danger">@Localizer["ProjectNotFound"]</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
 }
 else if (_success || _alreadySubmitted)
 {
-    <h3>@Localizer["CheckInTitle"]</h3>
-    <FluentMessageBar Intent="MessageIntent.Success" Title="@(_success ? Localizer["CheckInSuccess"] : Localizer["CheckInAlreadyDone"])" AllowDismiss="false" />
-    <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral" Class="mt-3">
-        @Localizer["BackToProject"]
-    </FluentAnchor>
+    <RmEmptyState Icon="check-circle"
+                  Title="@(_success ? Localizer["CheckInSuccess"].Value : Localizer["CheckInAlreadyDone"].Value)">
+        <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline">@Localizer["BackToProject"]</RmButton>
+    </RmEmptyState>
 }
 else
 {
-    <h3>@Localizer["CheckInTitle"]</h3>
-    <p class="text-muted">@_project.Name — @Localizer["CheckInPeriodLabel", _period]</p>
+    <a href="@($"/projects/{ProjectId}")" class="rm-back-link">
+        <RmIcon Name="arrow-left" Size="0.875rem" />
+        @_project.Name
+    </a>
 
-    <h4>@Localizer["CheckInMetricsTitle"]</h4>
-    @foreach (var entry in _metrics)
-    {
-        <div class="mb-3" style="max-width: 400px;">
-            <FluentNumberField TValue="decimal?"
-                               Label="@entry.Goal.Label"
-                               Appearance="FluentInputAppearance.Outline"
-                               HideStep="true"
-                               Min="@entry.Goal.MinValue?.ToString()"
-                               Max="@entry.Goal.MaxValue?.ToString()"
-                               @bind-Value="entry.Value"
-                               Style="width: 100%;" />
-            <span class="text-muted" style="font-size: 0.85rem;">
-                @entry.Goal.Unit
-                @if (entry.Goal.MinValue is not null || entry.Goal.MaxValue is not null)
-                {
-                    <span> — @entry.Goal.MinValue … @entry.Goal.MaxValue</span>
-                }
-            </span>
-        </div>
-    }
+    <h1 class="checkin__title">@Localizer["CheckInTitle"]</h1>
+    <p class="checkin__subtitle">@Localizer["CheckInPeriodLabel", _period]</p>
 
-    <h4>@Localizer["CheckInFeelingTitle"]</h4>
-    <div class="feeling-selector" role="radiogroup" aria-label="@Localizer["CheckInFeelingTitle"]">
-        @foreach (var feeling in Feelings)
+    <h2 class="checkin__section">@Localizer["CheckInMetricsTitle"]</h2>
+    <div class="checkin__metrics">
+        @foreach (var entry in _metrics)
         {
-            var current = feeling;
-            <button type="button"
-                    class="feeling-button @(_feeling == current ? "selected" : string.Empty)"
-                    aria-pressed="@(_feeling == current)"
-                    title="@FeelingText(current)"
-                    @onclick="() => _feeling = current">
-                <FeelingFace Feeling="current" Size="48" />
-                <span class="feeling-label">@FeelingText(current)</span>
-            </button>
+            <RmCard Flat="true" Class="metric">
+                <RmField Label="@entry.Goal.Label">
+                    <Hint>
+                        @entry.Goal.Unit
+                        @if (entry.Goal.MinValue is not null || entry.Goal.MaxValue is not null)
+                        {
+                            <text> · @entry.Goal.MinValue?.ToString("0.##") … @entry.Goal.MaxValue?.ToString("0.##")</text>
+                        }
+                        @if (entry.Goal.TargetValue is not null)
+                        {
+                            <text> · @Localizer["GoalTargetValueLabel"]: @entry.Goal.TargetValue?.ToString("0.##")</text>
+                        }
+                    </Hint>
+                    <ChildContent>
+                        <input type="number" step="any" class="rm-input rm-tabular"
+                               min="@entry.Goal.MinValue?.ToString("0.##")"
+                               max="@entry.Goal.MaxValue?.ToString("0.##")"
+                               value="@entry.Value"
+                               @onchange="e => entry.Value = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null" />
+                    </ChildContent>
+                </RmField>
+            </RmCard>
         }
     </div>
 
+    <h2 class="checkin__section">@Localizer["CheckInFeelingTitle"]</h2>
+    <RmCard Class="checkin__feelings">
+        <div class="feeling-selector" role="radiogroup" aria-label="@Localizer["CheckInFeelingTitle"]">
+            @foreach (var feeling in Feelings)
+            {
+                var current = feeling;
+                <button type="button"
+                        class="feeling-button @(_feeling == current ? "selected" : string.Empty)"
+                        aria-pressed="@(_feeling == current)"
+                        title="@FeelingText(current)"
+                        @onclick="() => _feeling = current">
+                    <FeelingFace Feeling="current" Size="44" />
+                    <span class="feeling-label">@FeelingText(current)</span>
+                </button>
+            }
+        </div>
+    </RmCard>
+
     @if (!string.IsNullOrEmpty(_error))
     {
-        <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" Class="mb-3" />
+        <RmAlert Tone="danger" Class="mt-3">@_error</RmAlert>
     }
 
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
-        <FluentButton Type="ButtonType.Button" Appearance="Appearance.Accent" Disabled="@_submitting" Loading="@_submitting" OnClick="HandleSubmit">
+    <div class="checkin__actions">
+        <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline">@Localizer["Cancel"]</RmButton>
+        <RmButton Disabled="_submitting" @onclick="HandleSubmit">
             @(_submitting ? Localizer["Processing"] : Localizer["CheckInSubmitButton"])
-        </FluentButton>
-        <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral">
-            @Localizer["Cancel"]
-        </FluentAnchor>
-    </FluentStack>
+        </RmButton>
+    </div>
 }
 
 @code {

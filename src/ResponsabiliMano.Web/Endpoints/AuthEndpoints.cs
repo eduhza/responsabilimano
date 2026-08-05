@@ -96,7 +96,7 @@ public static class AuthEndpoints
             };
 
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
-            return Results.Redirect("/");
+            return Results.Redirect("/projects");
         }
         catch (InvalidOperationException)
         {
@@ -129,7 +129,7 @@ public static class AuthEndpoints
         };
 
         await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
-        return Results.Redirect("/");
+        return Results.Redirect("/projects");
     }
 
     private static async Task<IResult> LogoutAsync(HttpContext httpContext)

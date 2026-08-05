@@ -229,6 +229,11 @@ namespace ResponsabiliMano.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("frequency");
 
+                    b.Property<string>("Icon")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("icon");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)

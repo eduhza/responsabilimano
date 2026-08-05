@@ -9,6 +9,10 @@ public sealed class CreateProjectRequest
     [StringLength(200, ErrorMessage = "Project name cannot exceed 200 characters.")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Emoji picked in step one; purely decorative, so it stays optional.</summary>
+    [StringLength(16)]
+    public string? Icon { get; set; }
+
     [Required(ErrorMessage = "Start date is required.")]
     public DateTime StartDate { get; set; } = DateTime.Today;
 

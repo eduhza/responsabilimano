@@ -1,0 +1,61 @@
+@* Initials avatar. Tone carries the you/partner distinction that runs through every
+   comparison in the app. *@
+
+<span class="@CssClass" title="@Name" @attributes="AdditionalAttributes">@Initials</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string? Name { get; set; }
+
+    /// <summary>you | partner | you-soft | partner-soft | neutral</summary>
+    [Parameter]
+    public string Tone { get; set; } = "neutral";
+
+    /// <summary>sm | md | lg</summary>
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass
+    {
+        get
+        {
+            var classes = new List<string> { "rm-avatar", $"rm-avatar--{Tone}" };
+
+            if (Size != "md")
+            {
+                classes.Add($"rm-avatar--{Size}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(' ', classes);
+        }
+    }
+
+    /// <summary>First letter of the first and last word — "Ana Ribeiro" becomes "AR".</summary>
+    private string Initials
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                return "?";
+            }
+
+            var parts = Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length == 1
+                ? parts[0][..1].ToUpperInvariant()
+                : $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+        }
+    }
+}

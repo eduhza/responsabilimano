@@ -1,0 +1,4 @@
+.rm-field__hint {
+    font-size: 0.8125rem;
+    color: var(--rm-muted-fg);
+}

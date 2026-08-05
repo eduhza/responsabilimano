@@ -1,0 +1,40 @@
+@* Replaces FluentMessageBar. The .alert-danger / .alert-success class names are
+   asserted by the test suite, so they stay as the public contract. *@
+
+<div class="@CssClass" role="@(Tone == "danger" ? "alert" : "status")" @attributes="AdditionalAttributes">
+    <RmIcon Name="@IconName" Class="rm-alert__icon" />
+    <div>@ChildContent</div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>danger | success | info</summary>
+    [Parameter]
+    public string Tone { get; set; } = "info";
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => string.Join(' ', new[]
+    {
+        Tone switch
+        {
+            "danger" => "alert-danger",
+            "success" => "alert-success",
+            _ => "rm-alert rm-alert--info"
+        },
+        Class
+    }.Where(c => !string.IsNullOrWhiteSpace(c)));
+
+    private string IconName => Tone switch
+    {
+        "danger" => "alert-circle",
+        "success" => "check-circle",
+        _ => "alert-circle"
+    };
+}

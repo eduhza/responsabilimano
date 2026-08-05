@@ -1,0 +1,8 @@
+.error__request {
+    font-size: 0.8125rem;
+    color: var(--rm-muted-fg);
+}
+
+.error__request code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

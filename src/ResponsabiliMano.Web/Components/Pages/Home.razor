@@ -1,4 +1,4 @@
-@page "/"
+@page "/projects"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IStringLocalizer<AppStrings> Localizer
@@ -10,45 +10,71 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="home-header">
-            <h1 class="home-greeting">@Localizer["HomeWelcome", context.User.Identity?.Name ?? string.Empty]</h1>
-            <p class="home-subtitle">@Localizer["HomeSubtitle"]</p>
+        <div class="projects__head">
+            <div>
+                <h1 class="projects__title">@Localizer["MyProjectsTitle"]</h1>
+                <p class="projects__subtitle">@Localizer["HomeSubtitle"]</p>
+            </div>
+            <RmButton Href="/projects/new" Class="projects__new">
+                <RmIcon Name="plus" />
+                @Localizer["NavCreateProject"]
+            </RmButton>
         </div>
 
         @if (!string.IsNullOrEmpty(_error))
         {
-            <div class="alert-danger" role="alert">@_error</div>
+            <RmAlert Tone="danger" Class="mb-3">@_error</RmAlert>
         }
 
         @if (_loading)
         {
-            <div class="project-grid">
-                <div class="skeleton project-skeleton"></div>
-                <div class="skeleton project-skeleton"></div>
-                <div class="skeleton project-skeleton"></div>
+            <div class="projects__list">
+                <div class="skeleton projects__skeleton"></div>
+                <div class="skeleton projects__skeleton"></div>
             </div>
         }
         else if (_projects.Count == 0)
         {
-            <div class="empty-state">
-                <FluentIcon Value="@(new Icons.Regular.Size48.Add())" Color="Color.Accent" />
-                <h4 class="empty-state-title">@Localizer["HomeEmptyTitle"]</h4>
-                <p>@Localizer["HomeEmptyDescription"]</p>
-                <a href="/projects/new" class="rm-btn rm-btn-inline">@Localizer["HomeEmptyButton"]</a>
-            </div>
+            <RmEmptyState Icon="folder"
+                          Title="@Localizer["HomeEmptyTitle"]"
+                          Description="@Localizer["HomeEmptyDescription"]">
+                <RmButton Href="/projects/new">@Localizer["HomeEmptyButton"]</RmButton>
+            </RmEmptyState>
         }
         else
         {
-            <div class="project-grid">
+            <div class="projects__list">
                 @foreach (var project in _projects)
                 {
-                    <a class="project-card" href="@($"/projects/{project.Id}")" style="--status-color: @StatusColor(project.Status);">
-                        <span class="status-pill">@GetStatusText(project.Status)</span>
-                        <span class="project-card-title">@project.Name</span>
-                        <span class="project-card-meta">@project.StartDate.ToString("dd/MM/yyyy") — @project.EndDate.ToString("dd/MM/yyyy")</span>
+                    <a class="rm-card rm-card--interactive project" href="@($"/projects/{project.Id}")">
+                        <span class="rm-icon-tile rm-icon-tile--lg project__icon">@(project.Icon ?? "🎯")</span>
+
+                        <div class="project__body">
+                            <div class="project__heading">
+                                <h2 class="project__name">@project.Name</h2>
+                                <RmBadge Tone="@StatusTone(project.Status)" Dot="true">@StatusText(project.Status)</RmBadge>
+                            </div>
+                            <div class="project__meta">
+                                <span><RmIcon Name="calendar" Size="0.875rem" /> @Localizer["ProjectUntil", project.EndDate.ToString("dd MMM yyyy")]</span>
+                                <span><RmIcon Name="target" Size="0.875rem" /> @Localizer["ProjectGoalCount", project.Goals.Count]</span>
+                            </div>
+                        </div>
+
+                        <div class="project__side">
+                            <RmAvatarStack You="@project.Creator?.Name" Partner="@project.Partner?.Name" />
+                            <RmIcon Name="chevron-right" Class="project__chevron" />
+                        </div>
                     </a>
                 }
             </div>
+
+            <a class="rm-card rm-card--interactive rm-card--dashed projects__create" href="/projects/new">
+                <RmIconTile>
+                    <RmIcon Name="plus" Size="1.25rem" />
+                </RmIconTile>
+                <p class="projects__create-title">@Localizer["HomeCreateAnotherTitle"]</p>
+                <p class="projects__create-text">@Localizer["HomeCreateAnotherText"]</p>
+            </a>
         }
 
         <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
@@ -108,16 +134,15 @@
     private static string ProjectsSignature(IEnumerable<Core.Entities.Project> projects) =>
         string.Join("|", projects.Select(p => $"{p.Id}:{p.Status}:{p.Name}"));
 
-    private static string StatusColor(Core.Enums.ProjectStatus status) => status switch
+    private static string StatusTone(Core.Enums.ProjectStatus status) => status switch
     {
-        Core.Enums.ProjectStatus.Pending => "var(--rm-accent)",
-        Core.Enums.ProjectStatus.Active => "var(--rm-secondary)",
-        Core.Enums.ProjectStatus.Finished => "#5B9279",
-        Core.Enums.ProjectStatus.Cancelled => "var(--rm-primary)",
-        _ => "var(--rm-text-muted)"
+        Core.Enums.ProjectStatus.Active => "primary",
+        Core.Enums.ProjectStatus.Pending => "partner",
+        Core.Enums.ProjectStatus.Cancelled => "destructive",
+        _ => "muted"
     };
 
-    private string GetStatusText(Core.Enums.ProjectStatus status) => status switch
+    private string StatusText(Core.Enums.ProjectStatus status) => status switch
     {
         Core.Enums.ProjectStatus.Pending => Localizer["StatusPending"],
         Core.Enums.ProjectStatus.Active => Localizer["StatusActive"],

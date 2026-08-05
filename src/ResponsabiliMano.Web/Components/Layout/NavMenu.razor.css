@@ -1,54 +1,81 @@
-.nav-brand {
-    padding: 1.25rem 1rem;
-    text-align: center;
-    border-bottom: 1px solid var(--rm-text-muted);
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 2rem;
 }
 
-.app-title {
-    font-family: var(--rm-font-display);
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--rm-primary);
-    text-decoration: none;
-}
-
-    .app-title:hover {
-        color: var(--rm-primary-dark);
-    }
-
-::deep .nav-menu {
-    padding: 0.5rem 0;
-    background-color: transparent;
-}
-
-.logout-form {
-    margin: 0;
-    padding: 0;
-}
-
-.nav-link-button {
+.nav__link {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    width: 100%;
-    padding: 0.75rem 1.5rem;
-    background: none;
-    border: none;
-    color: var(--rm-text);
-    font-family: var(--rm-font-body);
-    font-size: 1rem;
-    cursor: pointer;
-    text-align: left;
-    border-radius: 4px;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--rm-radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rm-muted-fg);
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
 }
 
-    .nav-link-button:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-        color: var(--rm-primary);
-    }
+.nav__link:hover {
+    background: var(--rm-muted);
+    color: var(--rm-fg);
+    text-decoration: none;
+}
 
-@media (prefers-color-scheme: dark) {
-    .nav-link-button:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+/* NavLink stamps .active on the matching route. */
+.nav__link.active {
+    background: rgb(var(--rm-primary-rgb) / .1);
+    color: var(--rm-primary);
+}
+
+.nav__link--button {
+    width: 100%;
+    font-family: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav__cta {
+    margin-top: 1.25rem;
+}
+
+.nav__user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    /* Pushes the user block and logout to the bottom of the sidebar column. */
+    margin-top: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--rm-border);
+    border-radius: var(--rm-radius-md);
+    background: var(--rm-surface);
+}
+
+.nav__user-text {
+    min-width: 0;
+}
+
+.nav__user-name,
+.nav__user-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav__user-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rm-fg);
+}
+
+.nav__user-email {
+    font-size: 0.75rem;
+    color: var(--rm-muted-fg);
+}
+
+.nav__logout {
+    margin-top: 0.25rem;
 }

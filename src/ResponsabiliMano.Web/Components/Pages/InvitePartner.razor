@@ -9,47 +9,52 @@
 
 <PageTitle>@Localizer["InvitePartnerTitle"]</PageTitle>
 
-<h3>@Localizer["InvitePartnerTitle"]</h3>
+<div class="invite">
+    @if (_success)
+    {
+        <RmEmptyState Icon="mail" Title="@Localizer["InvitePartnerSuccess"].Value">
+            <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline">@Localizer["BackToProject"]</RmButton>
+        </RmEmptyState>
+    }
+    else
+    {
+        <a href="@($"/projects/{ProjectId}")" class="rm-back-link">
+            <RmIcon Name="arrow-left" Size="0.875rem" />
+            @Localizer["BackToProject"]
+        </a>
 
-@if (_success)
-{
-    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["InvitePartnerSuccess"]" AllowDismiss="false" />
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
-        @Localizer["BackToHome"]
-    </FluentButton>
-}
-else
-{
-    <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="invitePartnerForm">
-        <DataAnnotationsValidator />
-        <FluentValidationSummary />
+        <h1 class="invite__title">@Localizer["InvitePartnerTitle"]</h1>
+        <p class="invite__subtitle">@Localizer["InvitePartnerSubtitle"]</p>
 
-        <FluentTextField Id="partnerEmail"
-                         Label="@Localizer["PartnerEmailLabel"]"
-                         Appearance="FluentInputAppearance.Outline"
-                         TextFieldType="TextFieldType.Email"
-                         @bind-Value="_model.PartnerEmail"
-                         Required
-                         Style="width: 100%; max-width: 400px;" />
-        <FluentValidationMessage For="@(() => _model.PartnerEmail)" />
+        <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="invitePartnerForm" class="invite__form">
+            <DataAnnotationsValidator />
 
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" Class="mt-3" />
-        }
+            <RmField Label="@Localizer["PartnerEmailLabel"]" For="partnerEmail">
+                <InputText id="partnerEmail" type="email" class="rm-input" @bind-Value="_model.PartnerEmail"
+                           placeholder="@PartnerEmailPlaceholder" />
+                <ValidationMessage For="@(() => _model.PartnerEmail)" />
+            </RmField>
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
-            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@_isLoading" Loading="@_isLoading">
-                @(_isLoading ? Localizer["Sending"] : Localizer["InvitePartnerButton"])
-            </FluentButton>
-            <FluentAnchor Href="/" Appearance="Appearance.Neutral">
-                @Localizer["Cancel"]
-            </FluentAnchor>
-        </FluentStack>
-    </EditForm>
-}
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <RmAlert Tone="danger">@_error</RmAlert>
+            }
+
+            <div class="invite__actions">
+                <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline">@Localizer["Cancel"]</RmButton>
+                <button type="submit" class="rm-btn rm-btn--primary" disabled="@_isLoading">
+                    @(_isLoading ? Localizer["Sending"] : Localizer["InvitePartnerButton"])
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
 
 @code {
+    // Literal in C# rather than the markup: Razor reads a bare @ in an attribute
+    // value as the start of an expression.
+    private const string PartnerEmailPlaceholder = "parceiro@email.com";
+
     [Parameter]
     public Guid ProjectId { get; set; }
 

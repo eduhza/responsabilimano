@@ -1,45 +1,62 @@
 @page "/login"
 @attribute [AllowAnonymous]
+@layout AuthLayout
 @inject IStringLocalizer<AppStrings> Localizer
+
+@* Static SSR with a native form post (ADR-0003): the auth cookie cannot be set over
+   a SignalR circuit, so this page must never become interactive. The password
+   reveal is handled by wwwroot/js/rm.js rather than an @@onclick. *@
 
 <PageTitle>@Localizer["LoginTitle"]</PageTitle>
 
-<div class="rm-auth">
-    <div class="rm-auth-brand">
-        <div class="rm-auth-wordmark">Responsabili<span class="accent">Mano</span></div>
-        <div class="rm-auth-tagline">@Localizer["AuthTagline"]</div>
-    </div>
+<div>
+    <h1 class="auth-form__title">@Localizer["LoginTitle"]</h1>
+    <p class="auth-form__subtitle">@Localizer["LoginSubtitle"]</p>
 
-    <div class="rm-auth-card">
-        <h3>@Localizer["LoginTitle"]</h3>
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert-danger auth-form__alert" role="alert">@Localizer[$"Login{Error}"]</div>
+    }
 
-        @if (!string.IsNullOrEmpty(Error))
-        {
-            <div class="alert-danger" role="alert">@Localizer[$"Login{Error}"]</div>
-        }
+    <form method="post" action="/api/auth/login" class="auth-form">
+        <RmField Label="@Localizer["EmailLabel"]" For="email">
+            <input id="email" name="email" type="email" class="rm-input"
+                   placeholder="@EmailPlaceholder" required autocomplete="email" />
+        </RmField>
 
-        <form method="post" action="/api/auth/login">
-            <div class="rm-field">
-                <label for="email" class="rm-label">@Localizer["EmailLabel"]</label>
-                <input id="email" name="email" type="email" class="rm-input" required autocomplete="email" />
-            </div>
+        <RmField Label="@Localizer["PasswordLabel"]" For="password">
+            <Aside>
+                <a href="/forgot-password" class="auth-form__link-sm">@Localizer["ForgotPasswordLink"]</a>
+            </Aside>
+            <ChildContent>
+                <div class="rm-input-group">
+                    <input id="password" name="password" type="password" class="rm-input"
+                           required minlength="8" autocomplete="current-password" />
+                    <button type="button" class="rm-input-affix"
+                            data-password-toggle="password"
+                            data-label-show="@Localizer["ShowPassword"]"
+                            data-label-hide="@Localizer["HidePassword"]"
+                            aria-label="@Localizer["ShowPassword"]">
+                        <span data-icon="show"><RmIcon Name="eye" Size="1rem" /></span>
+                        <span data-icon="hide" hidden><RmIcon Name="eye-off" Size="1rem" /></span>
+                    </button>
+                </div>
+            </ChildContent>
+        </RmField>
 
-            <div class="rm-field">
-                <label for="password" class="rm-label">@Localizer["PasswordLabel"]</label>
-                <input id="password" name="password" type="password" class="rm-input" required minlength="8" autocomplete="current-password" />
-            </div>
+        <button type="submit" class="rm-btn rm-btn--primary rm-btn--block">@Localizer["LoginButton"]</button>
+    </form>
 
-            <button type="submit" class="rm-btn">@Localizer["LoginButton"]</button>
-        </form>
-    </div>
-
-    <div class="rm-auth-links">
-        <p><a href="/forgot-password">@Localizer["ForgotPasswordLink"]</a></p>
-        <p>@Localizer["NoAccount"] <a href="/register">@Localizer["RegisterButton"]</a></p>
-    </div>
+    <p class="auth-form__footer">
+        @Localizer["NoAccount"] <a href="/register" class="auth-form__link">@Localizer["RegisterButton"]</a>
+    </p>
 </div>
 
 @code {
+    // Literal in C# rather than the markup: Razor reads a bare @ in an attribute
+    // value as the start of an expression.
+    private const string EmailPlaceholder = "voce@email.com";
+
     [SupplyParameterFromQuery]
     public string? Error { get; set; }
 }

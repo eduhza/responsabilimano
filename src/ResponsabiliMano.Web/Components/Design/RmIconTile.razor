@@ -1,0 +1,45 @@
+<span class="@CssClass" @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>primary | accent | partner</summary>
+    [Parameter]
+    public string Tone { get; set; } = "primary";
+
+    /// <summary>sm | md | lg</summary>
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass
+    {
+        get
+        {
+            var classes = new List<string> { "rm-icon-tile" };
+
+            if (Tone != "primary")
+            {
+                classes.Add($"rm-icon-tile--{Tone}");
+            }
+
+            if (Size != "md")
+            {
+                classes.Add($"rm-icon-tile--{Size}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(' ', classes);
+        }
+    }
+}

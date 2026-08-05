@@ -1,69 +1,64 @@
-.page {
+.shell {
     min-height: 100vh;
-    width: 100%;
+    background: var(--rm-bg);
 }
 
-    .page ::deep .page-inner {
-        min-height: 100vh;
-        width: 100%;
-    }
-
-.sidebar {
+/* --- Sidebar (desktop only) --- */
+.shell__sidebar {
     display: none;
-    background-color: var(--rm-surface);
-    border-right: 1px solid var(--rm-text-muted);
-    flex-direction: column;
-}
-
-.page ::deep .main-content {
-    padding: 16px;
-    padding-bottom: 80px; /* leave room for mobile bottom nav */
-    width: 100%;
-    overflow: visible;
-}
-
-.main-content-inner {
-    width: 100%;
-}
-
-#blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
     position: fixed;
-    width: 100%;
-    z-index: 1000;
+    inset-block: 0;
+    left: 0;
+    z-index: 30;
+    width: var(--rm-sidebar-width);
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    background: var(--rm-sidebar);
+    border-right: 1px solid var(--rm-border);
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+.shell__brand {
+    display: block;
+    padding: 0 0.5rem;
+}
 
-@media (min-width: 641px) {
-    .sidebar {
+.shell__brand:hover {
+    text-decoration: none;
+}
+
+/* --- Top bar (mobile only) --- */
+.shell__topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rm-border);
+    background: color-mix(in srgb, var(--rm-bg) 80%, transparent);
+    backdrop-filter: blur(12px);
+}
+
+/* --- Content --- */
+.shell__main {
+    padding: 1.5rem 1rem;
+    /* Room for the fixed bottom nav. */
+    padding-bottom: 6rem;
+}
+
+@media (min-width: 1024px) {
+    .shell__sidebar {
         display: flex;
-        width: var(--rm-sidebar-width);
-        min-width: var(--rm-sidebar-width);
-        height: 100vh;
-        position: sticky;
-        top: 0;
     }
 
-    .page ::deep .main-content {
-        padding: 24px;
-        padding-bottom: 24px;
+    .shell__topbar {
+        display: none;
     }
 
-    .main-content-inner {
-        max-width: 900px;
-        margin: 0 auto;
+    .shell__main {
+        padding: 2.5rem 1.5rem;
+        margin-left: var(--rm-sidebar-width);
     }
 }

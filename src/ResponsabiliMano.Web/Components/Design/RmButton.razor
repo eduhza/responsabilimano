@@ -1,0 +1,78 @@
+@* Renders an <a> when Href is set and a <button> otherwise, so a link and an action
+   can share one visual definition. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" class="@CssClass" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="@Type" class="@CssClass" disabled="@Disabled" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>When set the button renders as an anchor.</summary>
+    [Parameter]
+    public string? Href { get; set; }
+
+    [Parameter]
+    public string Type { get; set; } = "button";
+
+    /// <summary>primary | outline | ghost | destructive</summary>
+    [Parameter]
+    public string Variant { get; set; } = "primary";
+
+    /// <summary>sm | md | lg</summary>
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    /// <summary>Stretches the button to the width of its container.</summary>
+    [Parameter]
+    public bool Block { get; set; }
+
+    /// <summary>Square button holding a single icon.</summary>
+    [Parameter]
+    public bool IconOnly { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass
+    {
+        get
+        {
+            var classes = new List<string> { "rm-btn", $"rm-btn--{Variant}" };
+
+            if (Size != "md")
+            {
+                classes.Add($"rm-btn--{Size}");
+            }
+
+            if (Block)
+            {
+                classes.Add("rm-btn--block");
+            }
+
+            if (IconOnly)
+            {
+                classes.Add("rm-btn--icon");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(' ', classes);
+        }
+    }
+}

@@ -1,40 +1,44 @@
+@* Mobile navigation. Mirrors the sidebar, with the primary action raised into a
+   centre FAB the way the reference design does. *@
+
 @inject IStringLocalizer<AppStrings> Localizer
 
 <nav class="bottom-nav">
-    <AuthorizeView>
-        <Authorized>
-            <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Home())" />
-                <span>@Localizer["NavHome"]</span>
-            </NavLink>
+    <div class="bottom-nav__inner">
+        <AuthorizeView>
+            <Authorized>
+                <NavLink href="/projects" Match="NavLinkMatch.All" class="bottom-nav__item">
+                    <RmIcon Name="folder" Size="1.25rem" />
+                    <span>@Localizer["NavProjects"]</span>
+                </NavLink>
 
-            <NavLink href="/projects/new" class="bottom-nav-item">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
-                <span>@Localizer["NavCreateProject"]</span>
-            </NavLink>
+                <div class="bottom-nav__fab">
+                    <RmButton Href="/projects/new" IconOnly="true" aria-label="@Localizer["NavCreateProject"]">
+                        <RmIcon Name="plus" Size="1.25rem" />
+                    </RmButton>
+                </div>
 
-            <form method="post" action="api/auth/logout" class="bottom-nav-form">
-                <button type="submit" class="bottom-nav-item">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
-                    <span>@Localizer["LogoutButton"]</span>
-                </button>
-            </form>
-        </Authorized>
-        <NotAuthorized>
-            <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Home())" />
-                <span>@Localizer["NavHome"]</span>
-            </NavLink>
+                <NavLink href="/profile" class="bottom-nav__item">
+                    <RmIcon Name="user" Size="1.25rem" />
+                    <span>@Localizer["NavProfile"]</span>
+                </NavLink>
+            </Authorized>
+            <NotAuthorized>
+                <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav__item">
+                    <RmIcon Name="folder" Size="1.25rem" />
+                    <span>@Localizer["NavHome"]</span>
+                </NavLink>
 
-            <NavLink href="/login" class="bottom-nav-item">
-                <FluentIcon Value="@(new Icons.Regular.Size20.ArrowEnter())" />
-                <span>@Localizer["LoginButton"]</span>
-            </NavLink>
+                <NavLink href="/login" class="bottom-nav__item">
+                    <RmIcon Name="arrow-right" Size="1.25rem" />
+                    <span>@Localizer["LoginButton"]</span>
+                </NavLink>
 
-            <NavLink href="/register" class="bottom-nav-item">
-                <FluentIcon Value="@(new Icons.Regular.Size20.PersonAdd())" />
-                <span>@Localizer["RegisterButton"]</span>
-            </NavLink>
-        </NotAuthorized>
-    </AuthorizeView>
+                <NavLink href="/register" class="bottom-nav__item">
+                    <RmIcon Name="user" Size="1.25rem" />
+                    <span>@Localizer["RegisterButton"]</span>
+                </NavLink>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
 </nav>
