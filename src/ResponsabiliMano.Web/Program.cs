@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.FluentUI.AspNetCore.Components;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Infrastructure.Data;
 using ResponsabiliMano.Infrastructure.DependencyInjection;
@@ -32,8 +31,6 @@ public partial class Program
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
-
-        builder.Services.AddFluentUIComponents();
 
         builder.Services.AddLocalization();
         builder.Services.AddResponsabiliManoInfrastructure(builder.Configuration);
@@ -68,7 +65,12 @@ public partial class Program
 
         var app = builder.Build();
 
-        // Apply migrations in every environment; seed demo data only in development.
+        // Apply migrations in every environment; seed demo data only when asked.
+        // The flag defaults to development but is separate from ASPNETCORE_ENVIRONMENT
+        // so a container can carry the demo fixture without also switching on developer
+        // exception pages and the rest of the development pipeline.
+        var seedDemoData = app.Configuration.GetValue("SeedDemoData", app.Environment.IsDevelopment());
+
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -81,7 +83,7 @@ public partial class Program
                 await db.Database.MigrateAsync();
             }
 
-            if (app.Environment.IsDevelopment())
+            if (seedDemoData)
             {
                 await SeedData.SeedAsync(db);
             }

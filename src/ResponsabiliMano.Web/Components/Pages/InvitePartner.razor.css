@@ -1,0 +1,28 @@
+.invite {
+    max-width: 32rem;
+    margin: 0 auto;
+}
+
+.invite__title {
+    margin-top: 1rem;
+    font-size: 1.875rem;
+}
+
+.invite__subtitle {
+    margin-top: 0.5rem;
+    color: var(--rm-muted-fg);
+}
+
+.invite__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 2rem;
+}
+
+.invite__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}

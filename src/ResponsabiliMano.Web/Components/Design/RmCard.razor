@@ -1,0 +1,70 @@
+@if (Href is not null)
+{
+    <a href="@Href" class="@CssClass" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <div class="@CssClass" @attributes="AdditionalAttributes">@ChildContent</div>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Turns the card into a link and enables the hover treatment.</summary>
+    [Parameter]
+    public string? Href { get; set; }
+
+    /// <summary>Tighter radius and padding, for cards nested inside other cards.</summary>
+    [Parameter]
+    public bool Flat { get; set; }
+
+    /// <summary>Larger radius plus the tinted shadow, for hero/showcase cards.</summary>
+    [Parameter]
+    public bool Raised { get; set; }
+
+    /// <summary>Dashed outline, used for "create something here" affordances.</summary>
+    [Parameter]
+    public bool Dashed { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass
+    {
+        get
+        {
+            var classes = new List<string> { "rm-card" };
+
+            if (Flat)
+            {
+                classes.Add("rm-card--flat");
+            }
+
+            if (Raised)
+            {
+                classes.Add("rm-card--raised");
+            }
+
+            if (Dashed)
+            {
+                classes.Add("rm-card--dashed");
+            }
+
+            if (Href is not null)
+            {
+                classes.Add("rm-card--interactive");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(' ', classes);
+        }
+    }
+}

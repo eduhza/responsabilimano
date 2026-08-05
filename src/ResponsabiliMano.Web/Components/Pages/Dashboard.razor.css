@@ -1,0 +1,151 @@
+.dash__skeleton {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.dash__skeleton--head { height: 3rem; }
+.dash__skeleton--chart { height: 20rem; }
+
+.dash__head {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.dash__title {
+    font-size: 1.5rem;
+}
+
+.dash__subtitle {
+    margin-top: 0.25rem;
+    color: var(--rm-muted-fg);
+}
+
+.dash__legend {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dash__legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dash__legend-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 999px;
+}
+
+.dash__legend-dot--you { background: var(--rm-you); }
+.dash__legend-dot--partner { background: var(--rm-partner); }
+
+/* --- Stats --- */
+.dash__stats {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.dash__section--first {
+    margin-top: 1.5rem;
+}
+
+.dash__streak-value {
+    font-size: 1.875rem;
+    font-weight: 600;
+}
+
+.dash__streak-caption {
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+/* --- Chart --- */
+.dash__chart-card {
+    margin-top: 1.5rem;
+}
+
+.dash__chart-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.dash__chart-title {
+    font-size: 1.125rem;
+}
+
+.dash__chart-sub {
+    margin-top: 0.125rem;
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.dash__chart {
+    position: relative;
+    height: 20rem;
+}
+
+/* --- Moods --- */
+.dash__section {
+    margin-top: 2rem;
+    font-size: 1.125rem;
+}
+
+.dash__moods {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.mood {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mood__none {
+    width: 44px;
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--rm-muted-fg);
+}
+
+.mood__name {
+    font-family: var(--rm-font-display);
+    font-weight: 600;
+}
+
+.mood__label {
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+@media (min-width: 640px) {
+    .dash__head {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+    }
+
+    .dash__title {
+        font-size: 1.875rem;
+    }
+
+    .dash__stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .dash__moods {
+        grid-template-columns: 1fr 1fr;
+    }
+}

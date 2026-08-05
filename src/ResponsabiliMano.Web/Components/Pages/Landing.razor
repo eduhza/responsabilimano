@@ -1,0 +1,211 @@
+@page "/"
+@attribute [AllowAnonymous]
+@layout LandingLayout
+@inject IStringLocalizer<AppStrings> Localizer
+@inject NavigationManager Navigation
+
+@* Public marketing page. Static SSR on purpose: it is the first thing an anonymous
+   visitor loads, and nothing here needs a circuit. *@
+
+<PageTitle>@Localizer["LandingTitle"]</PageTitle>
+
+<section class="hero">
+    <div class="hero__texture rm-grid-bg"></div>
+
+    <div class="hero__inner">
+        <div class="rm-rise">
+            <span class="hero__badge">
+                <span class="hero__badge-dot">
+                    <span class="hero__badge-ping rm-ping"></span>
+                    <span class="hero__badge-core"></span>
+                </span>
+                @Localizer["LandingHeroBadge"]
+            </span>
+
+            <h1 class="hero__title">
+                @Localizer["LandingHeroTitleLead"] <span class="rm-primary-text">@Localizer["LandingHeroTitleHighlightOne"]</span>.<br />
+                @Localizer["LandingHeroTitleTail"] <span class="rm-partner-text">@Localizer["LandingHeroTitleHighlightTwo"]</span>.
+            </h1>
+
+            <p class="hero__subtitle">@Localizer["LandingHeroSubtitle"]</p>
+
+            <div class="hero__actions">
+                <RmButton Href="/register" Size="lg">
+                    @Localizer["LandingHeroCta"]
+                    <RmIcon Name="arrow-right" />
+                </RmButton>
+            </div>
+
+            <p class="hero__note">@Localizer["LandingHeroNote"]</p>
+        </div>
+
+        @* Showcase: a project mid-flight, so the value proposition is visible before signup. *@
+        <div class="hero__showcase rm-rise" style="--rm-delay: 120ms">
+            <div class="hero__showcase-glow"></div>
+
+            <RmCard Raised="true">
+                <div class="showcase__head">
+                    <div>
+                        <p class="showcase__eyebrow">@Localizer["LandingShowcaseProject"]</p>
+                        <p class="showcase__period">@Localizer["LandingShowcasePeriod"]</p>
+                    </div>
+                    <RmBadge Tone="primary" Dot="true">@Localizer["StatusActive"]</RmBadge>
+                </div>
+
+                <div class="showcase__chart">
+                    <div class="showcase__legend">
+                        <span class="rm-you-text"><span class="showcase__dot showcase__dot--you"></span> Ana</span>
+                        <span class="rm-partner-text"><span class="showcase__dot showcase__dot--partner"></span> Bruno</span>
+                    </div>
+                    <svg viewBox="0 0 260 70" preserveAspectRatio="none" class="showcase__sparkline" aria-hidden="true">
+                        <polyline points="0,12 43,20 86,26 129,31 172,40 215,46 260,54" class="showcase__line showcase__line--you" />
+                        <polyline points="0,18 43,24 86,36 129,38 172,48 215,56 260,62" class="showcase__line showcase__line--partner" />
+                    </svg>
+                </div>
+
+                <div class="showcase__metrics">
+                    <div class="showcase__metric">
+                        <span class="rm-you-text showcase__metric-value">
+                            <RmIcon Name="trending-down" />
+                            <span class="rm-display">-3,9 kg</span>
+                        </span>
+                        <p class="showcase__metric-caption">Ana · @Localizer["LandingShowcaseSinceStart"]</p>
+                    </div>
+                    <div class="showcase__metric">
+                        <span class="rm-partner-text showcase__metric-value">
+                            <RmIcon Name="trending-down" />
+                            <span class="rm-display">-5,0 kg</span>
+                        </span>
+                        <p class="showcase__metric-caption">Bruno · @Localizer["LandingShowcaseSinceStart"]</p>
+                    </div>
+                </div>
+
+                <div class="showcase__mood">
+                    <p class="showcase__mood-label">@Localizer["LandingShowcaseMood"]</p>
+                    <div class="showcase__mood-faces">
+                        <span><RmIcon Name="smile" Size="1.25rem" /> Ana</span>
+                        <span><RmIcon Name="smile" Size="1.25rem" /> Bruno</span>
+                    </div>
+                </div>
+            </RmCard>
+        </div>
+    </div>
+</section>
+
+<section id="como-funciona" class="section">
+    <RmSectionHeader Eyebrow="@Localizer["LandingNavHowItWorks"]" Title="@Localizer["LandingStepsTitle"]" />
+
+    <ol class="steps">
+        @foreach (var (number, icon, title, description) in Steps)
+        {
+            <li class="rm-card steps__item">
+                <span class="steps__number rm-display">@number</span>
+                <RmIconTile Class="steps__icon">
+                    <RmIcon Name="@icon" Size="1.25rem" />
+                </RmIconTile>
+                <h3 class="steps__title">@title</h3>
+                <p class="steps__description">@description</p>
+            </li>
+        }
+    </ol>
+</section>
+
+<section id="recursos" class="section-wide rm-dotted-bg">
+    <div class="section">
+        <RmSectionHeader Eyebrow="@Localizer["LandingNavFeatures"]" Title="@Localizer["LandingFeaturesTitle"]" />
+
+        <div class="features">
+            @* Lead feature spans two columns: the mutual-agreement rule is what makes
+               this product different from a solo habit tracker. *@
+            <article class="rm-card features__lead">
+                <div>
+                    <RmIconTile>
+                        <RmIcon Name="handshake" Size="1.25rem" />
+                    </RmIconTile>
+                    <h3 class="features__lead-title">@Localizer["LandingFeatureAgreementTitle"]</h3>
+                    <p class="features__text">@Localizer["LandingFeatureAgreementText"]</p>
+                </div>
+                <div class="features__proof">
+                    <RmAvatarStack You="Ana Ribeiro" Partner="Bruno Tavares" />
+                    <p class="features__proof-text">@Localizer["LandingFeatureAgreementProof"]</p>
+                </div>
+            </article>
+
+            @foreach (var (icon, title, text) in Features)
+            {
+                <article class="rm-card">
+                    <RmIconTile Tone="accent" Size="sm">
+                        <RmIcon Name="@icon" Size="1.125rem" />
+                    </RmIconTile>
+                    <h3 class="features__title">@title</h3>
+                    <p class="features__text">@text</p>
+                </article>
+            }
+
+            <article class="rm-card features__mood">
+                <div>
+                    <h3 class="features__title features__title--flush">@Localizer["LandingFeatureMoodTitle"]</h3>
+                    <p class="features__text">@Localizer["LandingFeatureMoodText"]</p>
+                </div>
+                <div class="features__faces">
+                    @foreach (var feeling in Enum.GetValues<Feeling>())
+                    {
+                        <FeelingFace Feeling="feeling" Size="28" />
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section id="dupla" class="section">
+    <div class="cta">
+        <div class="cta__texture rm-grid-bg"></div>
+        <div class="cta__inner">
+            <h2 class="cta__title">@Localizer["LandingCtaTitle"]</h2>
+            <p class="cta__text">@Localizer["LandingCtaText"]</p>
+            <div class="cta__actions">
+                <RmButton Href="/register" Size="lg" Variant="outline">
+                    @Localizer["LandingCtaPrimary"]
+                    <RmIcon Name="arrow-right" />
+                </RmButton>
+                <RmButton Href="/login" Size="lg" Variant="ghost" Class="cta__ghost">
+                    @Localizer["LandingCtaSecondary"]
+                </RmButton>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Signed-in visitors have no use for the pitch; send them to their projects.
+        if (HttpContextUser?.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/projects");
+        }
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private System.Security.Claims.ClaimsPrincipal? HttpContextUser =>
+        AuthenticationStateTask?.IsCompletedSuccessfully == true
+            ? AuthenticationStateTask.Result.User
+            : null;
+
+    private (string Number, string Icon, string Title, string Description)[] Steps =>
+    [
+        ("01", "target", Localizer["LandingStepOneTitle"], Localizer["LandingStepOneText"]),
+        ("02", "mail", Localizer["LandingStepTwoTitle"], Localizer["LandingStepTwoText"]),
+        ("03", "trending-up", Localizer["LandingStepThreeTitle"], Localizer["LandingStepThreeText"])
+    ];
+
+    private (string Icon, string Title, string Text)[] Features =>
+    [
+        ("settings", Localizer["LandingFeatureGoalsTitle"], Localizer["LandingFeatureGoalsText"]),
+        ("repeat", Localizer["LandingFeatureFrequencyTitle"], Localizer["LandingFeatureFrequencyText"]),
+        ("bell", Localizer["LandingFeatureRemindersTitle"], Localizer["LandingFeatureRemindersText"])
+    ];
+}

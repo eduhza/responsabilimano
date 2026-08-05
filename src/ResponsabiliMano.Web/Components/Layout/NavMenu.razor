@@ -1,36 +1,56 @@
-﻿@inject IStringLocalizer<AppStrings> Localizer
+@inject IStringLocalizer<AppStrings> Localizer
 
-<div class="nav-brand">
-    <a class="app-title" href="">@Localizer["AppTitle"]</a>
-</div>
+<AuthorizeView>
+    <Authorized>
+        <nav class="nav">
+            <NavLink href="/projects" Match="NavLinkMatch.All" class="nav__link">
+                <RmIcon Name="folder" Size="1.125rem" />
+                <span>@Localizer["NavProjects"]</span>
+            </NavLink>
 
-<FluentNavMenu Width="240" Collapsible="false" Title="@Localizer["NavHome"]" Class="nav-menu">
-    <AuthorizeView>
-        <Authorized>
-            <FluentNavLink Href="/" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">
-                @Localizer["NavHome"]
-            </FluentNavLink>
+            <NavLink href="/projects/new" class="nav__link">
+                <RmIcon Name="plus" Size="1.125rem" />
+                <span>@Localizer["NavCreateProject"]</span>
+            </NavLink>
 
-            <FluentNavLink Href="/projects/new" Icon="@(new Icons.Regular.Size20.Add())">
-                @Localizer["NavCreateProject"]
-            </FluentNavLink>
+            <NavLink href="/profile" class="nav__link">
+                <RmIcon Name="user" Size="1.125rem" />
+                <span>@Localizer["NavProfile"]</span>
+            </NavLink>
+        </nav>
 
-            <form method="post" action="api/auth/logout" class="logout-form">
-                <button type="submit" class="nav-link-button">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
-                    <span>@Localizer["LogoutButton"]</span>
-                </button>
-            </form>
-        </Authorized>
-        <NotAuthorized>
-            <FluentNavLink Href="/login" Icon="@(new Icons.Regular.Size20.ArrowEnter())">
-                @Localizer["LoginButton"]
-            </FluentNavLink>
+        <RmButton Href="/projects/new" Block="true" Class="nav__cta">
+            <RmIcon Name="plus" />
+            @Localizer["NavCreateProject"]
+        </RmButton>
 
-            <FluentNavLink Href="/register" Icon="@(new Icons.Regular.Size20.PersonAdd())">
-                @Localizer["RegisterButton"]
-            </FluentNavLink>
-        </NotAuthorized>
-    </AuthorizeView>
-</FluentNavMenu>
+        @* Pinned to the bottom: who you are signed in as, and the way out. *@
+        <div class="nav__user">
+            <RmAvatar Name="@context.User.Identity?.Name" Tone="neutral" />
+            <div class="nav__user-text">
+                <p class="nav__user-name">@context.User.Identity?.Name</p>
+                <p class="nav__user-email">@context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+            </div>
+        </div>
 
+        <form method="post" action="api/auth/logout" class="nav__logout">
+            <button type="submit" class="nav__link nav__link--button">
+                <RmIcon Name="log-out" Size="1.125rem" />
+                <span>@Localizer["LogoutButton"]</span>
+            </button>
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <nav class="nav">
+            <NavLink href="/login" class="nav__link">
+                <RmIcon Name="arrow-right" Size="1.125rem" />
+                <span>@Localizer["LoginButton"]</span>
+            </NavLink>
+
+            <NavLink href="/register" class="nav__link">
+                <RmIcon Name="user" Size="1.125rem" />
+                <span>@Localizer["RegisterButton"]</span>
+            </NavLink>
+        </nav>
+    </NotAuthorized>
+</AuthorizeView>

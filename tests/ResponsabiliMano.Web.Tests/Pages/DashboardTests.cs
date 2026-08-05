@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.FeatureManagement;
-using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,8 +35,6 @@ public class DashboardTests : TestContext
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassthroughLocalizer());
         Services.AddSingleton<IJSRuntime>(_jsRuntime);
         Services.AddSingleton<ILogger<Dashboard>>(NullLogger<Dashboard>.Instance);
-        Services.AddSingleton(new LibraryConfiguration { CollocatedJavaScriptQueryString = null });
-        Services.AddSingleton<GlobalState>();
     }
 
     [Fact]
@@ -154,8 +151,9 @@ public class DashboardTests : TestContext
         var cut = RenderComponent<Dashboard>(p => p.Add(x => x.ProjectId, projectId));
 
         Assert.Contains("DashboardGoalSelector", cut.Markup);
-        Assert.NotNull(cut.Find("fluent-select"));
-        Assert.Equal(2, cut.FindAll("fluent-option").Count);
+        // The goal picker is a segmented control now, one button per metric.
+        Assert.NotNull(cut.Find(".rm-segmented"));
+        Assert.Equal(2, cut.FindAll(".rm-segmented__item").Count);
     }
 
     // --- Fakes ---
@@ -168,7 +166,7 @@ public class DashboardTests : TestContext
         public Task<Project> CreateProjectAsync(
             Guid creatorId, string name, DateTime startDate, DateTime endDate,
             ProjectFrequency frequency, IEnumerable<GoalFieldInput> goals,
-            CancellationToken cancellationToken = default)
+            string? icon = null, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 
         public Task<ProjectInvitation> InvitePartnerAsync(

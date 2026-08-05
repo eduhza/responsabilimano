@@ -5,14 +5,16 @@
     [Parameter] public int Size { get; set; } = 48;
     [Parameter] public string? Class { get; set; }
 
+    // Reads from the design tokens so the scale re-tints with the theme: the low end
+    // borrows the partner warm, the high end the brand green.
     private string Color => Feeling switch
     {
-        Feeling.VerySad => "#E85D4E",
-        Feeling.Sad => "#F4A261",
-        Feeling.Neutral => "#B0B0B0",
-        Feeling.Happy => "#5B9279",
-        Feeling.VeryHappy => "#2D9D78",
-        _ => "#B0B0B0"
+        Feeling.VerySad => "var(--rm-partner)",
+        Feeling.Sad => "var(--rm-chart-4)",
+        Feeling.Neutral => "var(--rm-muted-fg)",
+        Feeling.Happy => "var(--rm-chart-3)",
+        Feeling.VeryHappy => "var(--rm-primary)",
+        _ => "var(--rm-muted-fg)"
     };
 
     // A filled circle in the feeling's color with white features — bold, friendly,

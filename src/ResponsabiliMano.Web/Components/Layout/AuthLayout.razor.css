@@ -1,0 +1,185 @@
+.auth {
+    display: grid;
+    min-height: 100vh;
+    background: var(--rm-bg);
+}
+
+/* --- Brand panel --- */
+.auth__panel {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5rem;
+    background: var(--rm-primary);
+    color: var(--rm-primary-fg);
+}
+
+.auth__panel-texture {
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.auth__panel-brand,
+.auth__quote,
+.auth__panel-tagline {
+    position: relative;
+}
+
+/* On the solid green panel the logo has to invert: white plate, green glyph. */
+.auth__panel-brand ::deep .rm-logo__mark {
+    background: var(--rm-primary-fg);
+    color: var(--rm-primary);
+}
+
+.auth__panel-brand ::deep .rm-logo__word,
+.auth__panel-brand ::deep .rm-logo__word-accent {
+    color: var(--rm-primary-fg);
+}
+
+.auth__panel-brand:hover {
+    text-decoration: none;
+}
+
+.auth__quote {
+    max-width: 28rem;
+    margin: 0;
+}
+
+.auth__quote-mark {
+    opacity: 0.4;
+}
+
+.auth__quote-text {
+    margin: 1rem 0 0;
+    font-family: var(--rm-font-display);
+    font-feature-settings: "ss01";
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.375;
+    letter-spacing: -0.02em;
+}
+
+.auth__quote-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.auth__quote-avatar {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / .15);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.auth__quote-name,
+.auth__quote-meta {
+    display: block;
+    font-size: 0.875rem;
+}
+
+.auth__quote-name {
+    font-weight: 600;
+}
+
+.auth__quote-meta {
+    opacity: 0.7;
+}
+
+.auth__panel-tagline {
+    font-size: 0.875rem;
+    opacity: 0.6;
+}
+
+/* --- Form column --- */
+.auth__main {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1rem;
+}
+
+.auth__main-brand:hover {
+    text-decoration: none;
+}
+
+.auth__form {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth__form > * {
+    width: 100%;
+    max-width: 24rem;
+    padding: 2.5rem 0;
+}
+
+/* Shared chrome for whatever credential page is rendered into this layout, so
+   Login/Register/Forgot/Reset do not each carry a copy. */
+.auth__form ::deep .auth-form__title {
+    font-size: 1.875rem;
+}
+
+.auth__form ::deep .auth-form__subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.auth__form ::deep .auth-form__alert {
+    margin-top: 1.5rem;
+}
+
+.auth__form ::deep .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 2rem;
+}
+
+.auth__form ::deep .auth-form__footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.auth__form ::deep .auth-form__link {
+    font-weight: 600;
+}
+
+.auth__form ::deep .auth-form__link-sm {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+@media (min-width: 640px) {
+    .auth__main {
+        padding-inline: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .auth {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .auth__panel {
+        display: flex;
+    }
+
+    .auth__main-brand {
+        display: none;
+    }
+}

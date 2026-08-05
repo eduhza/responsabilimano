@@ -53,7 +53,7 @@ public static class ProjectEndpoints
 
             var project = await projectService.CreateProjectAsync(
                 userId, request.Name, request.StartDate, request.EndDate,
-                request.Frequency, goals, cancellationToken);
+                request.Frequency, goals, cancellationToken: cancellationToken);
 
             return Results.Created($"/api/projects/{project.Id}", new { project.Id, project.Name, project.Status });
         });

@@ -32,6 +32,7 @@ public sealed class ProjectService : IProjectService
         DateTime endDate,
         ProjectFrequency frequency,
         IEnumerable<GoalFieldInput> goals,
+        string? icon = null,
         CancellationToken cancellationToken = default)
     {
         if (endDate <= startDate)
@@ -41,6 +42,7 @@ public sealed class ProjectService : IProjectService
         {
             Id = Guid.NewGuid(),
             Name = name.Trim(),
+            Icon = string.IsNullOrWhiteSpace(icon) ? null : icon.Trim(),
             CreatorId = creatorId,
             StartDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
             EndDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
@@ -192,8 +194,13 @@ public sealed class ProjectService : IProjectService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        // Goals and both partners are eagerly loaded because the project list card shows
+        // the goal count and the pair's avatars.
         return await _context.Projects
             .AsNoTracking()
+            .Include(p => p.Goals)
+            .Include(p => p.Creator)
+            .Include(p => p.Partner)
             .Where(p => p.CreatorId == userId || p.PartnerId == userId)
             .OrderByDescending(p => p.StartDate)
             .ToListAsync(cancellationToken);

@@ -1,0 +1,34 @@
+@* Split screen for the credential screens: a solid brand panel carrying social proof
+   on the left, the form on the right. The panel collapses away below 1024px. *@
+
+@inherits LayoutComponentBase
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="auth">
+    <aside class="auth__panel">
+        <div class="auth__panel-texture rm-grid-bg"></div>
+
+        <a href="/" class="auth__panel-brand"><RmLogo /></a>
+
+        <figure class="auth__quote">
+            <RmIcon Name="quote" Size="2rem" Class="auth__quote-mark" />
+            <blockquote class="auth__quote-text">@Localizer["AuthQuote"]</blockquote>
+            <figcaption class="auth__quote-author">
+                <span class="auth__quote-avatar">BT</span>
+                <span>
+                    <span class="auth__quote-name">@Localizer["AuthQuoteName"]</span>
+                    <span class="auth__quote-meta">@Localizer["AuthQuoteMeta"]</span>
+                </span>
+            </figcaption>
+        </figure>
+
+        <p class="auth__panel-tagline">@Localizer["AuthTagline"]</p>
+    </aside>
+
+    <main class="auth__main">
+        <a href="/" class="auth__main-brand"><RmLogo /></a>
+        <div class="auth__form">
+            @Body
+        </div>
+    </main>
+</div>

@@ -19,7 +19,7 @@ Determine the inputs from context or by asking briefly:
 
 - **Spec path**: the `.md` spec that was just implemented. Prefer the active IDE document or the spec referenced in the conversation.
 - **App base URL**: default is `http://localhost:8080`. If the project uses a different port, infer it from `docker-compose.yml` or ask.
-- **Credentials / seed data**: for auth flows, use seeded credentials from the project (e.g. `a@example.com` / `Password123`) unless the spec provides others.
+- **Credentials / seed data**: for auth flows, use seeded credentials from the project (`ana@email.com` or `bruno@email.com`, password `Password123`) unless the spec provides others.
 - **Docker compose command**: `docker compose up -d --build` at the repository root.
 
 ## Workflow
@@ -63,9 +63,18 @@ Determine the inputs from context or by asking briefly:
 
 ## Project-specific notes for ResponsabiliMano
 
-- The app is **static-SSR only**: no Blazor interactive circuit is active for most pages.
-- **Reliable flows** are plain HTML POST forms: login and logout.
-- **Unreliable flows** are `EditForm`-based pages: register, create project, invite partner, forgot/reset password. These submit empty fields and show validation errors. Do not assume they work through the UI.
+- Render modes are **per page** (ADR-0003, enforced by `RenderModeTests`):
+  - **Static SSR**: the landing page (`/`), `/login` and `/register`. These post native HTML
+    forms because the auth cookie cannot be set over a SignalR circuit. Their field ids,
+    names and form actions are a contract — do not assume they can be made interactive.
+  - **Interactive Server**: every other page. `EditForm`-based flows (create project,
+    invite partner, check-in, forgot/reset password) do work through the UI; spec X1
+    applied `@rendermode InteractiveServer` to them.
+- `/` is the public marketing landing. Signed-in visitors are redirected to `/projects`,
+  which is the authenticated project list.
+- The demo fixture is gated by the `SeedDemoData` config flag (on by default in
+  `docker-compose.yml`), and `SeedData` skips entirely when any user already exists — an
+  older volume will keep its old data. Truncate the tables to re-seed.
 - Email normalization can be tested with a mixed-cased email such as `A@Example.COM`.
 
 ## Output format

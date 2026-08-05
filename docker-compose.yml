@@ -23,6 +23,9 @@ services:
       dockerfile: Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      # Demo fixture (Ana + Bruno, Projeto Verão). On by default here so the compose
+      # stack is worth looking at; set to false for a genuinely empty environment.
+      SeedDemoData: ${SEED_DEMO_DATA:-true}
       ConnectionStrings__DefaultConnection: "Host=db;Database=${POSTGRES_DB:-responsabilimano};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}"
     ports:
       - "8080:8080"

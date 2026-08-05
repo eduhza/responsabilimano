@@ -1,0 +1,29 @@
+<div class="rm-card rm-card--flat rm-stat @(Highlight ? "rm-stat--highlight" : null) @Class">
+    <div class="rm-stat__head">
+        <span class="rm-stat__label">@Label</span>
+        @if (Icon is not null)
+        {
+            <span class="rm-stat__icon"><RmIcon Name="@Icon" /></span>
+        }
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string? Label { get; set; }
+
+    /// <summary>RmIcon name shown at the top right.</summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>Brand gradient fill, for the one stat that should stand out.</summary>
+    [Parameter]
+    public bool Highlight { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

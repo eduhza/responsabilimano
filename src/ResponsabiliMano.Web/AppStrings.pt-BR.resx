@@ -477,4 +477,226 @@
   <data name="HomeEmptyButton" xml:space="preserve">
     <value>Criar projeto</value>
   </data>
+  <data name="AuthQuote" xml:space="preserve">
+    <value>“Sozinha eu já tinha desistido três vezes. Com a Ana me cobrando toda sexta, não teve como afrouxar.”</value>
+  </data>
+  <data name="AuthQuoteName" xml:space="preserve">
+    <value>Bruno Tavares</value>
+  </data>
+  <data name="AuthQuoteMeta" xml:space="preserve">
+    <value>Projeto Verão · -5 kg</value>
+  </data>
+  <data name="LandingTitle" xml:space="preserve">
+    <value>Metas em dupla, resultados de verdade</value>
+  </data>
+  <data name="LandingNavHowItWorks" xml:space="preserve">
+    <value>Como funciona</value>
+  </data>
+  <data name="LandingNavFeatures" xml:space="preserve">
+    <value>Recursos</value>
+  </data>
+  <data name="LandingNavDuo" xml:space="preserve">
+    <value>A dupla</value>
+  </data>
+  <data name="LandingFooterTagline" xml:space="preserve">
+    <value>Feito para duplas que se cobram com carinho.</value>
+  </data>
+  <data name="LandingHeroBadge" xml:space="preserve">
+    <value>Metas que você não abandona</value>
+  </data>
+  <data name="LandingHeroTitleLead" xml:space="preserve">
+    <value>Metas em</value>
+  </data>
+  <data name="LandingHeroTitleHighlightOne" xml:space="preserve">
+    <value>dupla</value>
+  </data>
+  <data name="LandingHeroTitleTail" xml:space="preserve">
+    <value>Resultados de</value>
+  </data>
+  <data name="LandingHeroTitleHighlightTwo" xml:space="preserve">
+    <value>verdade</value>
+  </data>
+  <data name="LandingHeroSubtitle" xml:space="preserve">
+    <value>Escolha um parceiro de responsabilidade, combinem as regras juntos e façam check-ins semanais. Ninguém desiste quando alguém está acompanhando de perto.</value>
+  </data>
+  <data name="LandingHeroCta" xml:space="preserve">
+    <value>Começar em dupla</value>
+  </data>
+  <data name="LandingHeroNote" xml:space="preserve">
+    <value>Grátis para começar · Sem cartão de crédito</value>
+  </data>
+  <data name="LandingShowcaseProject" xml:space="preserve">
+    <value>Projeto Verão</value>
+  </data>
+  <data name="LandingShowcasePeriod" xml:space="preserve">
+    <value>Semana 7 de 15</value>
+  </data>
+  <data name="LandingShowcaseSinceStart" xml:space="preserve">
+    <value>desde o início</value>
+  </data>
+  <data name="LandingShowcaseMood" xml:space="preserve">
+    <value>Clima da dupla</value>
+  </data>
+  <data name="LandingStepsTitle" xml:space="preserve">
+    <value>Três passos entre a intenção e o resultado</value>
+  </data>
+  <data name="LandingStepOneTitle" xml:space="preserve">
+    <value>Defina o acordo</value>
+  </data>
+  <data name="LandingStepOneText" xml:space="preserve">
+    <value>Crie um projeto, configure as metas (peso, treinos, dieta…) e a frequência dos check-ins.</value>
+  </data>
+  <data name="LandingStepTwoTitle" xml:space="preserve">
+    <value>Convide e negociem</value>
+  </data>
+  <data name="LandingStepTwoText" xml:space="preserve">
+    <value>Convide seu parceiro por e-mail. O projeto só começa quando os dois aprovam as regras.</value>
+  </data>
+  <data name="LandingStepThreeTitle" xml:space="preserve">
+    <value>Acompanhem juntos</value>
+  </data>
+  <data name="LandingStepThreeText" xml:space="preserve">
+    <value>A cada período vocês fazem o check-in e veem a evolução lado a lado no painel.</value>
+  </data>
+  <data name="LandingFeaturesTitle" xml:space="preserve">
+    <value>Feito para quem só termina o que começa quando tem companhia</value>
+  </data>
+  <data name="LandingFeatureAgreementTitle" xml:space="preserve">
+    <value>Acordo mútuo antes de começar</value>
+  </data>
+  <data name="LandingFeatureAgreementText" xml:space="preserve">
+    <value>Nada de metas impostas. O criador propõe, o convidado sugere ajustes, e o projeto só entra em andamento quando os dois apertam as mãos.</value>
+  </data>
+  <data name="LandingFeatureAgreementProof" xml:space="preserve">
+    <value>Ana e Bruno aprovaram as regras</value>
+  </data>
+  <data name="LandingFeatureGoalsTitle" xml:space="preserve">
+    <value>Metas configuráveis</value>
+  </data>
+  <data name="LandingFeatureGoalsText" xml:space="preserve">
+    <value>Label, tipo, unidade, mínimo, máximo e valor-alvo para cada meta.</value>
+  </data>
+  <data name="LandingFeatureFrequencyTitle" xml:space="preserve">
+    <value>Check-in na sua frequência</value>
+  </data>
+  <data name="LandingFeatureFrequencyText" xml:space="preserve">
+    <value>Diário, semanal, quinzenal ou mensal — você define o ritmo do projeto.</value>
+  </data>
+  <data name="LandingFeatureRemindersTitle" xml:space="preserve">
+    <value>Lembretes automáticos</value>
+  </data>
+  <data name="LandingFeatureRemindersText" xml:space="preserve">
+    <value>Esqueceu o check-in? Um e-mail gentil chega para você e para o parceiro.</value>
+  </data>
+  <data name="LandingFeatureMoodTitle" xml:space="preserve">
+    <value>Como você chegou nessa semana?</value>
+  </data>
+  <data name="LandingFeatureMoodText" xml:space="preserve">
+    <value>Escala de 5 rostos para medir o ânimo da dupla.</value>
+  </data>
+  <data name="LandingCtaTitle" xml:space="preserve">
+    <value>Chame aquela pessoa e comecem hoje</value>
+  </data>
+  <data name="LandingCtaText" xml:space="preserve">
+    <value>A meta que sozinho você adia, em dupla vira compromisso. É de graça para começar.</value>
+  </data>
+  <data name="LandingCtaPrimary" xml:space="preserve">
+    <value>Criar minha conta</value>
+  </data>
+  <data name="LandingCtaSecondary" xml:space="preserve">
+    <value>Já tenho conta</value>
+  </data>
+  <data name="LoginSubtitle" xml:space="preserve">
+    <value>Entre para continuar acompanhando suas metas.</value>
+  </data>
+  <data name="RegisterSubtitle" xml:space="preserve">
+    <value>Comece grátis e chame seu parceiro de responsabilidade.</value>
+  </data>
+  <data name="RegisterTermsConsent" xml:space="preserve">
+    <value>Concordo com os termos de uso e a política de privacidade.</value>
+  </data>
+  <data name="NamePlaceholder" xml:space="preserve">
+    <value>Seu nome</value>
+  </data>
+  <data name="PasswordPlaceholder" xml:space="preserve">
+    <value>Mínimo 8 caracteres</value>
+  </data>
+  <data name="ShowPassword" xml:space="preserve">
+    <value>Mostrar senha</value>
+  </data>
+  <data name="HidePassword" xml:space="preserve">
+    <value>Ocultar senha</value>
+  </data>
+  <data name="ForgotPasswordSubtitle" xml:space="preserve">
+    <value>Enviaremos um link para você criar uma senha nova.</value>
+  </data>
+  <data name="ResetPasswordSubtitle" xml:space="preserve">
+    <value>Escolha uma senha nova para a sua conta.</value>
+  </data>
+  <data name="NavProjects" xml:space="preserve">
+    <value>Projetos</value>
+  </data>
+  <data name="NavProfile" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="ProfileTitle" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="ProfileSubtitle" xml:space="preserve">
+    <value>Seus dados e preferências.</value>
+  </data>
+  <data name="ProfileThemeTitle" xml:space="preserve">
+    <value>Tema</value>
+  </data>
+  <data name="ProfileThemeText" xml:space="preserve">
+    <value>O app segue o tema claro ou escuro do seu sistema.</value>
+  </data>
+  <data name="HomeCreateAnotherTitle" xml:space="preserve">
+    <value>Criar um novo acordo</value>
+  </data>
+  <data name="HomeCreateAnotherText" xml:space="preserve">
+    <value>Defina metas, convide alguém e comecem juntos.</value>
+  </data>
+  <data name="ProjectUntil" xml:space="preserve">
+    <value>Até {0}</value>
+  </data>
+  <data name="ProjectGoalCount" xml:space="preserve">
+    <value>{0} metas</value>
+  </data>
+  <data name="ProjectIconLabel" xml:space="preserve">
+    <value>Ícone</value>
+  </data>
+  <data name="ProjectNamePlaceholder" xml:space="preserve">
+    <value>Ex.: Projeto Verão</value>
+  </data>
+  <data name="CreateProjectSubtitle" xml:space="preserve">
+    <value>Monte o acordo. Seu parceiro poderá sugerir mudanças antes de começar.</value>
+  </data>
+  <data name="CreateProjectUnnamed" xml:space="preserve">
+    <value>Projeto sem nome</value>
+  </data>
+  <data name="CreateProjectInviteHint" xml:space="preserve">
+    <value>Depois de criar, convide seu parceiro por e-mail. O projeto só começa quando os dois aprovam.</value>
+  </data>
+  <data name="CreateStepDetails" xml:space="preserve">
+    <value>Detalhes</value>
+  </data>
+  <data name="CreateStepInvite" xml:space="preserve">
+    <value>Convite</value>
+  </data>
+  <data name="StepNext" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="StepBack" xml:space="preserve">
+    <value>Voltar</value>
+  </data>
+  <data name="InvitePartnerSubtitle" xml:space="preserve">
+    <value>Mande o convite por e-mail. Seu parceiro precisa aceitar antes de começarem.</value>
+  </data>
+  <data name="DashboardCompareTitle" xml:space="preserve">
+    <value>Comparar evolução</value>
+  </data>
+  <data name="DashboardCompareText" xml:space="preserve">
+    <value>Você e {0} lado a lado</value>
+  </data>
 </root>

@@ -1,0 +1,37 @@
+.rm-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rm-logo__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: var(--rm-radius-lg);
+    background: var(--rm-primary);
+    color: var(--rm-primary-fg);
+    box-shadow: var(--rm-shadow-sm);
+}
+
+.rm-logo__mark svg {
+    width: 62%;
+    height: 62%;
+}
+
+.rm-logo__word {
+    font-family: var(--rm-font-display);
+    font-feature-settings: "ss01";
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--rm-fg);
+    white-space: nowrap;
+}
+
+.rm-logo__word-accent {
+    color: var(--rm-primary);
+}

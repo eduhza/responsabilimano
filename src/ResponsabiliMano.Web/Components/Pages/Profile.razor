@@ -1,0 +1,36 @@
+@page "/profile"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["ProfileTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1 class="profile__heading">@Localizer["ProfileTitle"]</h1>
+        <p class="profile__subtitle">@Localizer["ProfileSubtitle"]</p>
+
+        <RmCard Class="profile__identity">
+            <RmAvatar Name="@context.User.Identity?.Name" Tone="neutral" Size="lg" />
+            <div>
+                <p class="profile__name">@context.User.Identity?.Name</p>
+                <p class="profile__email">@context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+            </div>
+        </RmCard>
+
+        <RmCard Class="profile__row">
+            <div>
+                <p class="profile__row-title">@Localizer["ProfileThemeTitle"]</p>
+                <p class="profile__row-text">@Localizer["ProfileThemeText"]</p>
+            </div>
+        </RmCard>
+
+        @* Logout stays a native form post so the cookie is cleared by the server. *@
+        <form method="post" action="/api/auth/logout" class="profile__logout">
+            <button type="submit" class="rm-btn rm-btn--outline">
+                <RmIcon Name="log-out" />
+                @Localizer["LogoutButton"]
+            </button>
+        </form>
+    </Authorized>
+</AuthorizeView>

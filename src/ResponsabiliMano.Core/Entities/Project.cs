@@ -6,6 +6,10 @@ public class Project
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
+
+    /// <summary>Emoji chosen when the project is created, used as its visual marker in lists.</summary>
+    public string? Icon { get; set; }
+
     public Guid CreatorId { get; set; }
     public Guid? PartnerId { get; set; }
     public DateTime StartDate { get; set; }

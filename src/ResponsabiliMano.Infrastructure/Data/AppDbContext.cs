@@ -42,6 +42,7 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Icon).HasColumnName("icon").HasMaxLength(16);
             entity.Property(e => e.CreatorId).HasColumnName("creator_id");
             entity.Property(e => e.PartnerId).HasColumnName("partner_id");
             entity.Property(e => e.StartDate).HasColumnName("start_date");

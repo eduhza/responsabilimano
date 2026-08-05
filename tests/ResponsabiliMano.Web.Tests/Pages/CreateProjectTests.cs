@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.JSInterop;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
@@ -31,8 +30,6 @@ public class CreateProjectTests : TestContext
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassthroughLocalizer());
         Services.AddSingleton<ILogger<CreateProject>>(NullLogger<CreateProject>.Instance);
-        Services.AddSingleton(new LibraryConfiguration { CollocatedJavaScriptQueryString = null });
-        Services.AddSingleton<GlobalState>();
         Services.AddSingleton<IJSRuntime>(new FakeJSRuntime());
     }
 
@@ -61,12 +58,16 @@ public class CreateProjectTests : TestContext
                 TargetValue = 70m
             });
 
+            // The submit button only exists on the wizard's last step.
+            var stepField = instance.GetType().GetField("_step", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            stepField!.SetValue(instance, 2);
+
             var form = cut.Find("form");
             form.Submit();
         });
 
-        var submitButton = cut.Find("fluent-button[appearance='accent']");
-        Assert.True(submitButton.HasAttribute("disabled") || submitButton.HasAttribute("loading"));
+        var submitButton = cut.Find("button[type='submit']");
+        Assert.True(submitButton.HasAttribute("disabled"));
         Assert.Contains("Creating", submitButton.TextContent);
 
         _projectService.CreateTask!.SetResult(new Project
@@ -93,7 +94,7 @@ public class CreateProjectTests : TestContext
         public Task<Project> CreateProjectAsync(
             Guid creatorId, string name, DateTime startDate, DateTime endDate,
             ProjectFrequency frequency, IEnumerable<GoalFieldInput> goals,
-            CancellationToken cancellationToken = default)
+            string? icon = null, CancellationToken cancellationToken = default)
         {
             return (CreateTask ?? new TaskCompletionSource<Project>()).Task;
         }

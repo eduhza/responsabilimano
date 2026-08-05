@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject IProjectService ProjectService
-@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
@@ -12,125 +11,98 @@
 
 @if (_loading)
 {
-    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 6rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 8rem;"></div>
+    <div class="skeleton accept__skeleton accept__skeleton--head"></div>
+    <div class="skeleton accept__skeleton accept__skeleton--body"></div>
 }
 else if (_error is not null)
 {
-    <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
-        @Localizer["BackToHome"]
-    </FluentButton>
+    <RmAlert Tone="danger">@_error</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
 }
-else if (_accepted && _project is not null)
+else if (_project is not null)
 {
-    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["InvitationAccepted"]" AllowDismiss="false" />
-
-    <div class="detail-head">
-        <h1 class="detail-title">@_project.Name</h1>
-        <span class="status-pill" style="--status-color: @StatusColor(_project.Status);">@GetStatusText(_project.Status)</span>
-    </div>
-
-    <div class="rm-meta">
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["StartDateLabel"]</span>
-            <span class="rm-meta-value">@_project.StartDate.ToString("dd/MM/yyyy")</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["EndDateLabel"]</span>
-            <span class="rm-meta-value">@_project.EndDate.ToString("dd/MM/yyyy")</span>
-        </div>
-        <div class="rm-meta-item">
-            <span class="rm-meta-label">@Localizer["FrequencyLabel"]</span>
-            <span class="rm-meta-value">@GetFrequencyText(_project.Frequency)</span>
-        </div>
-    </div>
-
-    <h4 class="rm-section-title">@Localizer["GoalsSectionTitle"]</h4>
-    <div class="goal-list">
-        @foreach (var goal in _project.Goals)
+    <div class="accept">
+        @if (_accepted)
         {
-            <div class="goal-tile">
-                <p class="goal-tile-label">@goal.Label</p>
-                <div class="goal-tile-target">
-                    @(goal.TargetValue?.ToString() ?? "—")<span class="unit"> @goal.Unit</span>
-                </div>
-                @if (goal.MinValue is not null || goal.MaxValue is not null)
-                {
-                    <div class="goal-tile-range">@goal.MinValue … @goal.MaxValue @goal.Unit</div>
-                }
-            </div>
+            <RmAlert Tone="success">@Localizer["InvitationAccepted"]</RmAlert>
         }
-    </div>
-
-    @if (_project.Status == Core.Enums.ProjectStatus.Pending)
-    {
-        <FluentCard Class="mb-3">
-            <h5 style="margin-top: 0;">@Localizer["ApproveProjectTitle"]</h5>
-            <p>@Localizer["ApproveProjectDescription"]</p>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
-                <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleApproveProject">
-                    @Localizer["ApproveButton"]
-                </FluentButton>
-                <FluentAnchor Href="@($"/projects/{_project.Id}")" Appearance="Appearance.Outline">
-                    @Localizer["ProposeChangeButton"]
-                </FluentAnchor>
-            </FluentStack>
-        </FluentCard>
-    }
-
-    @if (!string.IsNullOrEmpty(_statusMessage))
-    {
-        <FluentMessageBar Intent="@_statusMessageIntent" Title="@_statusMessage" AllowDismiss="false" Class="mb-3" />
-    }
-
-    <FluentAnchor Href="@($"/projects/{_project.Id}")" Appearance="Appearance.Neutral">
-        @Localizer["ViewProjectDetails"]
-    </FluentAnchor>
-}
-else
-{
-    <FluentCard>
-        <h4 style="margin-top: 0;">@Localizer["InvitationTitle"]</h4>
-        <p>@Localizer["InvitationPreviewText"]</p>
-
-        @if (_project is not null)
+        else
         {
-            <h5 class="detail-title" style="font-size: 1.3rem;">@_project.Name</h5>
-            <div class="rm-meta">
-                <div class="rm-meta-item">
-                    <span class="rm-meta-label">@Localizer["StartDateLabel"]</span>
-                    <span class="rm-meta-value">@_project.StartDate.ToString("dd/MM/yyyy")</span>
-                </div>
-                <div class="rm-meta-item">
-                    <span class="rm-meta-label">@Localizer["EndDateLabel"]</span>
-                    <span class="rm-meta-value">@_project.EndDate.ToString("dd/MM/yyyy")</span>
-                </div>
-                <div class="rm-meta-item">
-                    <span class="rm-meta-label">@Localizer["FrequencyLabel"]</span>
-                    <span class="rm-meta-value">@GetFrequencyText(_project.Frequency)</span>
-                </div>
-            </div>
+            <RmSectionHeader Title="@Localizer["InvitationTitle"].Value"
+                             Description="@Localizer["InvitationPreviewText"].Value" />
+        }
 
-            <h6 class="rm-section-title" style="font-size: 1rem; margin-top: 0.5rem;">@Localizer["GoalsSectionTitle"]</h6>
-            <div class="goal-list">
-                @foreach (var goal in _project.Goals)
-                {
-                    <div class="goal-tile">
-                        <p class="goal-tile-label">@goal.Label</p>
-                        <div class="goal-tile-target">
-                            @(goal.TargetValue?.ToString() ?? "—")<span class="unit"> @goal.Unit</span>
-                        </div>
+        <RmCard Class="accept__hero">
+            <div class="accept__identity">
+                <span class="rm-icon-tile rm-icon-tile--lg rm-icon-tile--accent accept__emoji">@(_project.Icon ?? "🎯")</span>
+                <div>
+                    <RmBadge Tone="@StatusTone(_project.Status)" Dot="true">@GetStatusText(_project.Status)</RmBadge>
+                    <h1 class="accept__title">@_project.Name</h1>
+                    <div class="accept__meta">
+                        <span>
+                            <RmIcon Name="calendar" Size="0.875rem" />
+                            @_project.StartDate.ToString("dd MMM yyyy") — @_project.EndDate.ToString("dd MMM yyyy")
+                        </span>
+                        <span>
+                            <RmIcon Name="repeat" Size="0.875rem" />
+                            @GetFrequencyText(_project.Frequency)
+                        </span>
                     </div>
-                }
+                </div>
             </div>
+        </RmCard>
 
-            <FluentButton Appearance="Appearance.Accent" Disabled="@_actionLoading" Loading="@_actionLoading" OnClick="HandleAcceptInvitation">
-                @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
-            </FluentButton>
+        <h2 class="accept__section">@Localizer["GoalsSectionTitle"]</h2>
+        <div class="accept__goals">
+            @foreach (var goal in _project.Goals)
+            {
+                <RmCard Flat="true">
+                    <p class="accept__goal-label">@goal.Label</p>
+                    <p class="accept__goal-target rm-display rm-tabular">
+                        @(goal.TargetValue?.ToString("0.##") ?? "—")<span class="accept__goal-unit">@goal.Unit</span>
+                    </p>
+                </RmCard>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(_statusMessage))
+        {
+            <RmAlert Tone="@_statusTone" Class="mt-3">@_statusMessage</RmAlert>
         }
-    </FluentCard>
+
+        @if (!_accepted)
+        {
+            <RmButton Disabled="_actionLoading" @onclick="HandleAcceptInvitation" Class="mt-3">
+                <RmIcon Name="handshake" />
+                @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
+            </RmButton>
+        }
+        else if (_project.Status == Core.Enums.ProjectStatus.Pending)
+        {
+            <RmCard Class="accept__approve">
+                <div>
+                    <h2 class="accept__approve-title">@Localizer["ApproveProjectTitle"]</h2>
+                    <p class="accept__approve-text">@Localizer["ApproveProjectDescription"]</p>
+                </div>
+                <div class="accept__approve-actions">
+                    <RmButton Href="@($"/projects/{_project.Id}")" Variant="outline">@Localizer["ProposeChangeButton"]</RmButton>
+                    <RmButton Disabled="_actionLoading" @onclick="HandleApproveProject">@Localizer["ApproveButton"]</RmButton>
+                </div>
+            </RmCard>
+        }
+        else
+        {
+            <RmButton Href="@($"/projects/{_project.Id}")" Variant="outline" Class="mt-3">
+                @Localizer["ViewProjectDetails"]
+            </RmButton>
+        }
+
+        <RmConfirmDialog @ref="_confirmDialog"
+                         Title="@Localizer["ConfirmApproveTitle"]"
+                         Message="@Localizer["ConfirmApproveMessage"]"
+                         ConfirmText="@Localizer["ApproveButton"]"
+                         CancelText="@Localizer["Cancel"]" />
+    </div>
 }
 
 @code {
@@ -144,7 +116,9 @@ else
     private bool _actionLoading;
     private string? _error;
     private string? _statusMessage;
-    private MessageIntent _statusMessageIntent = MessageIntent.Info;
+    private string _statusTone = "info";
+
+    private RmConfirmDialog? _confirmDialog;
 
     protected override async Task OnInitializedAsync()
     {
@@ -222,14 +196,7 @@ else
 
     private async Task HandleApproveProject()
     {
-        var dialog = await DialogService.ShowConfirmationAsync(
-            @Localizer["ApproveProjectDescription"],
-            primaryText: @Localizer["ApproveButton"],
-            secondaryText: @Localizer["Cancel"],
-            title: @Localizer["ConfirmApproveTitle"]);
-
-        var result = await dialog.Result;
-        if (result.Cancelled)
+        if (_confirmDialog is null || !await _confirmDialog.ShowAsync())
             return;
 
         _actionLoading = true;
@@ -241,12 +208,12 @@ else
             await ProjectService.ApproveProjectAsync(_project.Id, _currentUserId);
             _project = await ProjectService.GetProjectAsync(_project.Id, _currentUserId);
             _statusMessage = Localizer["ProjectApprovedSuccess"];
-            _statusMessageIntent = MessageIntent.Success;
+            _statusTone = "success";
         }
         catch (Exception ex)
         {
             _statusMessage = ex.Message;
-            _statusMessageIntent = MessageIntent.Error;
+            _statusTone = "danger";
         }
         finally
         {
@@ -254,13 +221,12 @@ else
         }
     }
 
-    private static string StatusColor(Core.Enums.ProjectStatus status) => status switch
+    private static string StatusTone(Core.Enums.ProjectStatus status) => status switch
     {
-        Core.Enums.ProjectStatus.Pending => "var(--rm-accent)",
-        Core.Enums.ProjectStatus.Active => "var(--rm-secondary)",
-        Core.Enums.ProjectStatus.Finished => "#5B9279",
-        Core.Enums.ProjectStatus.Cancelled => "var(--rm-primary)",
-        _ => "var(--rm-text-muted)"
+        Core.Enums.ProjectStatus.Active => "primary",
+        Core.Enums.ProjectStatus.Pending => "partner",
+        Core.Enums.ProjectStatus.Cancelled => "destructive",
+        _ => "muted"
     };
 
     private string GetStatusText(Core.Enums.ProjectStatus status) => status switch

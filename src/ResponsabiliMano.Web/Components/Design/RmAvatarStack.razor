@@ -1,0 +1,28 @@
+@* The duo, overlapping. You first, partner behind. *@
+
+<div class="rm-avatar-stack @Class">
+    <RmAvatar Name="@You" Tone="@(Soft ? "you-soft" : "you")" Size="@Size" />
+    @if (!string.IsNullOrWhiteSpace(Partner))
+    {
+        <RmAvatar Name="@Partner" Tone="@(Soft ? "partner-soft" : "partner")" Size="@Size" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string? You { get; set; }
+
+    /// <summary>Omitted while a project has no partner yet.</summary>
+    [Parameter]
+    public string? Partner { get; set; }
+
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    /// <summary>Tinted background with coloured text instead of a solid fill.</summary>
+    [Parameter]
+    public bool Soft { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}
