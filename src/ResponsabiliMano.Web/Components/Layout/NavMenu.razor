@@ -3,15 +3,22 @@
 <AuthorizeView>
     <Authorized>
         <nav class="nav">
+            @* Painel and Check-in live under a project, so there is no global
+               destination yet: they render as placeholders until there is one. *@
+            <span class="nav__link nav__link--disabled" aria-disabled="true">
+                <RmIcon Name="layout-dashboard" Size="1.125rem" />
+                <span>@Localizer["NavDashboard"]</span>
+            </span>
+
             <NavLink href="/projects" Match="NavLinkMatch.All" class="nav__link">
                 <RmIcon Name="folder" Size="1.125rem" />
                 <span>@Localizer["NavProjects"]</span>
             </NavLink>
 
-            <NavLink href="/projects/new" class="nav__link">
-                <RmIcon Name="plus" Size="1.125rem" />
-                <span>@Localizer["NavCreateProject"]</span>
-            </NavLink>
+            <span class="nav__link nav__link--disabled" aria-disabled="true">
+                <RmIcon Name="check-circle" Size="1.125rem" />
+                <span>@Localizer["NavCheckIn"]</span>
+            </span>
 
             <NavLink href="/profile" class="nav__link">
                 <RmIcon Name="user" Size="1.125rem" />
@@ -19,10 +26,12 @@
             </NavLink>
         </nav>
 
-        <RmButton Href="/projects/new" Block="true" Class="nav__cta">
-            <RmIcon Name="plus" />
-            @Localizer["NavCreateProject"]
-        </RmButton>
+        <div class="nav__cta">
+            <RmButton Href="/projects/new" Block="true">
+                <RmIcon Name="plus" />
+                @Localizer["NavCreateProject"]
+            </RmButton>
+        </div>
 
         @* Pinned to the bottom: who you are signed in as, and the way out. *@
         <div class="nav__user">
