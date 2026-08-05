@@ -649,7 +649,19 @@
     <value>Theme</value>
   </data>
   <data name="ProfileThemeText" xml:space="preserve">
-    <value>The app follows your system light or dark theme.</value>
+    <value>Choose between light, dark, or follow your system theme.</value>
+  </data>
+  <data name="ThemeLabel" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>System theme</value>
   </data>
   <data name="HomeCreateAnotherTitle" xml:space="preserve">
     <value>Create a new agreement</value>

@@ -19,9 +19,15 @@
         </RmCard>
 
         <RmCard Class="profile__row">
-            <div>
-                <p class="profile__row-title">@Localizer["ProfileThemeTitle"]</p>
-                <p class="profile__row-text">@Localizer["ProfileThemeText"]</p>
+            <div class="profile__theme">
+                <div>
+                    <p class="profile__row-title">@Localizer["ProfileThemeTitle"]</p>
+                    <p class="profile__row-text">@Localizer["ProfileThemeText"]</p>
+                </div>
+                <RmThemeToggle Label="@Localizer["ThemeLabel"]"
+                               LightLabel="@Localizer["ThemeLight"]"
+                               DarkLabel="@Localizer["ThemeDark"]"
+                               SystemLabel="@Localizer["ThemeSystem"]" />
             </div>
         </RmCard>
 

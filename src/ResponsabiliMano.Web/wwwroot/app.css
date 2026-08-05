@@ -75,45 +75,46 @@
     --rm-shadow-xl: 0 20px 25px -5px rgb(var(--rm-primary-rgb) / .10), 0 8px 10px -6px rgb(var(--rm-primary-rgb) / .06);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --rm-bg: #0A0A0A;
-        --rm-surface: #171717;
-        --rm-sidebar: #171717;
-        --rm-fg: #FAFAFA;
-        --rm-muted: #262626;
-        --rm-muted-fg: #A1A1A1;
+/* Dark theme: applied via data-resolved-theme="dark", which the inline anti-FOUC
+   script in App.razor sets based on localStorage['rm-theme'] and the OS preference.
+   The JS resolves "system" to "light"/"dark" so this block stays a single selector. */
+:root[data-resolved-theme="dark"] {
+    --rm-bg: #0A0A0A;
+    --rm-surface: #171717;
+    --rm-sidebar: #171717;
+    --rm-fg: #FAFAFA;
+    --rm-muted: #262626;
+    --rm-muted-fg: #A1A1A1;
 
-        /* The reference left dark --primary at the shadcn default grey, which drops
-           the brand entirely. Keep the green, lightened for contrast on near-black. */
-        --rm-primary: #2FA871;
-        --rm-primary-rgb: 47 168 113;
-        --rm-primary-fg: #08140D;
-        --rm-secondary: #262626;
-        --rm-secondary-fg: #FAFAFA;
-        --rm-accent: #1B2A20;
-        --rm-accent-fg: #D7F2CA;
+    /* The reference left dark --primary at the shadcn default grey, which drops
+       the brand entirely. Keep the green, lightened for contrast on near-black. */
+    --rm-primary: #2FA871;
+    --rm-primary-rgb: 47 168 113;
+    --rm-primary-fg: #08140D;
+    --rm-secondary: #262626;
+    --rm-secondary-fg: #FAFAFA;
+    --rm-accent: #1B2A20;
+    --rm-accent-fg: #D7F2CA;
 
-        --rm-border: rgb(255 255 255 / .10);
-        --rm-input-border: rgb(255 255 255 / .15);
-        --rm-ring: #2FA871;
-        --rm-ring-rgb: 47 168 113;
+    --rm-border: rgb(255 255 255 / .10);
+    --rm-input-border: rgb(255 255 255 / .15);
+    --rm-ring: #2FA871;
+    --rm-ring-rgb: 47 168 113;
 
-        --rm-destructive: #FF6568;
-        --rm-destructive-rgb: 255 101 104;
+    --rm-destructive: #FF6568;
+    --rm-destructive-rgb: 255 101 104;
 
-        --rm-you: #2FA871;
-        --rm-you-rgb: 47 168 113;
-        --rm-you-fg: #08140D;
-        --rm-partner: #EE8067;
-        --rm-partner-rgb: 238 128 103;
-        --rm-partner-fg: #1A0D08;
+    --rm-you: #2FA871;
+    --rm-you-rgb: 47 168 113;
+    --rm-you-fg: #08140D;
+    --rm-partner: #EE8067;
+    --rm-partner-rgb: 238 128 103;
+    --rm-partner-fg: #1A0D08;
 
-        --rm-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / .4);
-        --rm-shadow-md: 0 4px 6px -1px rgb(0 0 0 / .45);
-        --rm-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .5);
-        --rm-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / .55);
-    }
+    --rm-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / .4);
+    --rm-shadow-md: 0 4px 6px -1px rgb(0 0 0 / .45);
+    --rm-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .5);
+    --rm-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / .55);
 }
 
 /* ===================== Base ===================== */

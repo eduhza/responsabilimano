@@ -29,6 +29,14 @@
     margin-top: 1rem;
 }
 
+.profile__theme {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
 .profile__row-title {
     font-weight: 500;
 }
