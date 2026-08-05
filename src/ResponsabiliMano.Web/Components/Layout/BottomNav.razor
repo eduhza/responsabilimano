@@ -18,6 +18,12 @@
                     </RmButton>
                 </div>
 
+                @* Mirrors the sidebar placeholder: Check-in needs a project. *@
+                <span class="bottom-nav__item bottom-nav__item--disabled" aria-disabled="true">
+                    <RmIcon Name="check-circle" Size="1.25rem" />
+                    <span>@Localizer["NavCheckIn"]</span>
+                </span>
+
                 <NavLink href="/profile" class="bottom-nav__item">
                     <RmIcon Name="user" Size="1.25rem" />
                     <span>@Localizer["NavProfile"]</span>
