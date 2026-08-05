@@ -12,6 +12,7 @@ public interface IProjectService
         DateTime endDate,
         ProjectFrequency frequency,
         IEnumerable<GoalFieldInput> goals,
+        string? icon = null,
         CancellationToken cancellationToken = default);
 
     Task<ProjectInvitation> InvitePartnerAsync(

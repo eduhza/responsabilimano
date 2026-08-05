@@ -16,124 +16,128 @@
 
 @if (_loading)
 {
-    <div class="skeleton" style="width: 60%; height: 2rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 24rem; margin-bottom: 1.5rem;"></div>
-    <div class="skeleton" style="width: 100%; height: 6rem;"></div>
+    <div class="skeleton dash__skeleton dash__skeleton--head"></div>
+    <div class="skeleton dash__skeleton dash__skeleton--chart"></div>
 }
 else if (!_available)
 {
-    <FluentMessageBar Intent="MessageIntent.Error" Title="@Localizer["ProjectNotFound"]" AllowDismiss="false" />
-    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" Class="mt-3">
-        @Localizer["BackToHome"]
-    </FluentButton>
+    <RmAlert Tone="danger">@Localizer["ProjectNotFound"]</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
 }
 else if (_error is not null)
 {
-    <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
-    <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral" Class="mt-3">
-        @Localizer["BackToProject"]
-    </FluentAnchor>
-}
-else if (_dashboard is not null && (!_dashboard.Metrics.Any() || !_dashboard.Participants.Any()))
-{
-    <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
-    <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
-    <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
-    <div class="empty-state">
-        <h4 class="empty-state-title">@Localizer["DashboardEmptyTitle"]</h4>
-        <p>@Localizer["DashboardEmptyDescription"]</p>
-        <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral">
-            @Localizer["BackToProject"]
-        </FluentAnchor>
-    </div>
+    <RmAlert Tone="danger">@_error</RmAlert>
+    <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline" Class="mt-3">@Localizer["BackToProject"]</RmButton>
 }
 else if (_dashboard is not null)
 {
     <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
-    <h3>@_dashboard.ProjectName — @Localizer["DashboardTitle"]</h3>
-    <StreakIndicator CurrentStreak="_streak.Current" BestStreak="_streak.Best" />
 
-    @if (_dashboard.Metrics.Count > 1)
-    {
-        <div class="mb-3" style="max-width: 400px;">
-            <FluentSelect TOption="string"
-                          Label="@Localizer["DashboardGoalSelector"]"
-                          Appearance="Appearance.Outline"
-                          Value="_selectedGoalIndex.ToString()"
-                          ValueChanged="@OnGoalSelected"
-                          Style="width: 100%;">
-                @for (var i = 0; i < _dashboard.Metrics.Count; i++)
-                {
-                    var idx = i;
-                    <FluentOption Value="@idx.ToString()">@_dashboard.Metrics[idx].Label (@_dashboard.Metrics[idx].Unit)</FluentOption>
-                }
-            </FluentSelect>
+    @* Labelled explicitly: the visible text is the project name, so the action itself
+       only reads as "back to the project" to a screen reader without this. *@
+    <a href="@($"/projects/{ProjectId}")" class="rm-back-link" aria-label="@Localizer["BackToProject"]">
+        <RmIcon Name="arrow-left" Size="0.875rem" />
+        @_dashboard.ProjectName
+    </a>
+
+    <div class="dash__head">
+        <div>
+            <h1 class="dash__title">@Localizer["DashboardTitle"]</h1>
+            <p class="dash__subtitle">@_dashboard.ProjectName</p>
         </div>
-    }
-
-    @if (_dashboard.Metrics.Count > 0)
-    {
-        <div class="chart-wrap">
-            <canvas id="dashboardChart" style="max-height: 400px;"></canvas>
+        <div class="dash__legend">
+            @for (var i = 0; i < _dashboard.Participants.Count; i++)
+            {
+                <span>
+                    <span class="dash__legend-dot @(i == 0 ? "dash__legend-dot--you" : "dash__legend-dot--partner")"></span>
+                    @_dashboard.Participants[i].Name
+                </span>
+            }
         </div>
-    }
+    </div>
 
-    <h4 class="rm-section-title">@Localizer["DashboardFeelingCards"]</h4>
-    <div class="dash-cards">
-        @foreach (var participant in _dashboard.Participants)
-        {
-            <div class="stat-card feeling-card">
-                @if (participant.LatestFeeling is not null)
-                {
-                    <FeelingFace Feeling="participant.LatestFeeling.Value" Size="44" />
-                }
-                else
-                {
-                    <span class="text-muted" style="font-size: 2rem; width: 44px; text-align: center;">—</span>
-                }
+    @if (!_dashboard.Metrics.Any() || !_dashboard.Participants.Any())
+    {
+        <RmEmptyState Icon="trending-up"
+                      Title="@Localizer["DashboardEmptyTitle"]"
+                      Description="@Localizer["DashboardEmptyDescription"]">
+            <RmButton Href="@($"/projects/{ProjectId}")" Variant="outline">@Localizer["BackToProject"]</RmButton>
+        </RmEmptyState>
+    }
+    else
+    {
+        @* Averages first: a side-by-side read of where the pair stands, before the
+           period-by-period detail. *@
+        <h2 class="dash__section dash__section--first">@Localizer["DashboardAverages"]</h2>
+        <div class="dash__stats">
+            @foreach (var metric in _dashboard.Metrics)
+            {
+                <RmStatCard Label="@($"{metric.Label} ({metric.Unit})")" Icon="target">
+                    <RmCompareBar YouValue="@Average(metric, 0)" PartnerValue="@Average(metric, 1)" Unit="@metric.Unit" />
+                </RmStatCard>
+            }
+
+            <RmStatCard Label="@Localizer["StreakDays"]" Icon="flame" Highlight="true">
                 <div>
-                    <div class="feeling-card-name">@participant.Name</div>
+                    <p class="dash__streak-value rm-display">@_streak.Current</p>
+                    <p class="dash__streak-caption">@Localizer["StreakBest", _streak.Best]</p>
+                </div>
+            </RmStatCard>
+        </div>
+
+        <RmCard Class="dash__chart-card">
+            <div class="dash__chart-head">
+                <div>
+                    <h2 class="dash__chart-title">@_dashboard.Metrics[_selectedGoalIndex].Label</h2>
+                    <p class="dash__chart-sub">@Localizer["DashboardPeriodAxis"] · @_dashboard.Metrics[_selectedGoalIndex].Unit</p>
+                </div>
+
+                @if (_dashboard.Metrics.Count > 1)
+                {
+                    <div class="rm-segmented" role="group" aria-label="@Localizer["DashboardGoalSelector"]">
+                        @for (var i = 0; i < _dashboard.Metrics.Count; i++)
+                        {
+                            var idx = i;
+                            <button type="button" class="rm-segmented__item"
+                                    aria-pressed="@(_selectedGoalIndex == idx)"
+                                    @onclick="() => OnGoalSelected(idx)">
+                                @_dashboard.Metrics[idx].Label
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="dash__chart">
+                <canvas id="dashboardChart"></canvas>
+            </div>
+        </RmCard>
+
+        <h2 class="dash__section">@Localizer["DashboardFeelingCards"]</h2>
+        <div class="dash__moods">
+            @foreach (var participant in _dashboard.Participants)
+            {
+                <RmCard Flat="true" Class="mood">
                     @if (participant.LatestFeeling is not null)
                     {
-                        <div class="feeling-card-mood">@FeelingText(participant.LatestFeeling.Value)</div>
+                        <FeelingFace Feeling="participant.LatestFeeling.Value" Size="44" />
                     }
                     else
                     {
-                        <div class="feeling-card-mood">@Localizer["DashboardNoCheckIns"]</div>
+                        <span class="mood__none">—</span>
                     }
-                </div>
-            </div>
-        }
-    </div>
-
-    <h4 class="rm-section-title">@Localizer["DashboardAverages"]</h4>
-    <div class="dash-cards">
-        @foreach (var metric in _dashboard.Metrics)
-        {
-            @foreach (var participant in _dashboard.Participants)
-            {
-                var avg = metric.Series.FirstOrDefault(s => s.UserId == participant.UserId)?.AverageValue;
-                <div class="stat-card">
-                    <span class="stat-card-label">@participant.Name — @metric.Label</span>
-                    <span class="stat-card-value">
-                        @if (avg is not null)
-                        {
-                            @avg
-                            <span class="unit" style="font-size:0.85rem;font-weight:400;color:var(--rm-text-muted);">@metric.Unit</span>
-                        }
-                        else
-                        {
-                            <span>—</span>
-                        }
-                    </span>
-                </div>
+                    <div>
+                        <p class="mood__name">@participant.Name</p>
+                        <p class="mood__label">
+                            @(participant.LatestFeeling is not null
+                                ? FeelingText(participant.LatestFeeling.Value)
+                                : Localizer["DashboardNoCheckIns"].Value)
+                        </p>
+                    </div>
+                </RmCard>
             }
-        }
-    </div>
-
-    <FluentAnchor Href="@($"/projects/{ProjectId}")" Appearance="Appearance.Neutral">
-        @Localizer["BackToProject"]
-    </FluentAnchor>
+        </div>
+    }
 }
 
 @code {
@@ -262,13 +266,20 @@ else if (_dashboard is not null)
         string.Join("|", d.Metrics.Select(m =>
             $"{m.GoalFieldId}:{string.Join(",", m.Series.Select(s => $"{s.UserId}/{s.PeriodNumber}/{s.Value}"))}"));
 
-    private async Task OnGoalSelected(string? value)
+    private async Task OnGoalSelected(int index)
     {
-        if (int.TryParse(value, out var index))
-        {
-            _selectedGoalIndex = index;
-            await RenderChartAsync();
-        }
+        _selectedGoalIndex = index;
+        await RenderChartAsync();
+    }
+
+    /// <summary>Average for the participant at <paramref name="position"/>, 0 = you.</summary>
+    private decimal Average(DashboardMetricSeries metric, int position)
+    {
+        if (_dashboard is null || position >= _dashboard.Participants.Count)
+            return 0m;
+
+        var userId = _dashboard.Participants[position].UserId;
+        return metric.Series.FirstOrDefault(s => s.UserId == userId)?.AverageValue ?? 0m;
     }
 
     private async Task RenderChartAsync()
@@ -289,13 +300,9 @@ else if (_dashboard is not null)
             .ToList();
 
         var datasets = new List<object>();
-        var colors = new[]
-        {
-            "rgb(232, 93, 78)",
-            "rgb(91, 146, 121)",
-            "rgb(45, 157, 120)",
-            "rgb(244, 162, 97)"
-        };
+        // Token names, not literals: dashboard.js resolves them so the series follow the
+        // you/partner pair and re-tint with the theme.
+        var colorTokens = new[] { "--rm-you", "--rm-partner", "--rm-chart-3", "--rm-chart-4" };
 
         for (var i = 0; i < _dashboard.Participants.Count; i++)
         {
@@ -315,8 +322,9 @@ else if (_dashboard is not null)
             {
                 label = participant.Name,
                 data = data,
-                borderColor = colors[i % colors.Length],
-                tension = 0.1,
+                colorToken = colorTokens[i % colorTokens.Length],
+                tension = 0.3,
+                borderWidth = 2.5,
                 fill = false
             });
         }

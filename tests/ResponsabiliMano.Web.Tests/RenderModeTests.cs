@@ -27,6 +27,7 @@ public class RenderModeTests
         // receive live updates (spec RT2). It only reads auth state — never sets the
         // cookie — so ADR-0003's static-page constraint does not apply to it.
         typeof(Home),
+        typeof(Profile),
     ];
 
     // Pages that must remain static SSR (see ADR-0003): they POST the auth cookie over
@@ -35,6 +36,9 @@ public class RenderModeTests
     [
         typeof(Register),
         typeof(Login),
+        // The public landing page has no interactivity and is the first thing an
+        // anonymous visitor loads, so it stays static too.
+        typeof(Landing),
     ];
 
     [Theory]

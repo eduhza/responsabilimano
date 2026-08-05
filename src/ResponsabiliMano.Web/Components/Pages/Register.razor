@@ -1,54 +1,74 @@
 @page "/register"
 @attribute [AllowAnonymous]
+@layout AuthLayout
 @inject IStringLocalizer<AppStrings> Localizer
+
+@* Static SSR with a native form post — see the note in Login.razor. The field ids,
+   names and action are a contract with AuthEndpoints and RegisterTests. *@
 
 <PageTitle>@Localizer["RegisterTitle"]</PageTitle>
 
-<div class="rm-auth">
-    <div class="rm-auth-brand">
-        <div class="rm-auth-wordmark">Responsabili<span class="accent">Mano</span></div>
-        <div class="rm-auth-tagline">@Localizer["AuthTagline"]</div>
-    </div>
+<div>
+    <h1 class="auth-form__title">@Localizer["RegisterTitle"]</h1>
+    <p class="auth-form__subtitle">@Localizer["RegisterSubtitle"]</p>
 
-    <div class="rm-auth-card">
-        <h3>@Localizer["RegisterTitle"]</h3>
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert-danger auth-form__alert" role="alert">@Localizer["RegisterError"]</div>
+    }
 
-        @if (!string.IsNullOrEmpty(Error))
-        {
-            <div class="alert-danger" role="alert">@Localizer["RegisterError"]</div>
-        }
+    <form method="post" action="/api/auth/register-and-login" class="auth-form">
+        <RmField Label="@Localizer["NameLabel"]" For="name">
+            <input id="name" name="Name" class="rm-input" placeholder="@Localizer["NamePlaceholder"]"
+                   required maxlength="200" autocomplete="name" />
+        </RmField>
 
-        <form method="post" action="/api/auth/register-and-login">
-            <div class="rm-field">
-                <label for="name" class="rm-label">@Localizer["NameLabel"]</label>
-                <input id="name" name="Name" class="rm-input" required maxlength="200" autocomplete="name" />
+        <RmField Label="@Localizer["EmailLabel"]" For="email">
+            <input id="email" name="Email" type="email" class="rm-input"
+                   placeholder="@EmailPlaceholder" required autocomplete="email" />
+        </RmField>
+
+        <RmField Label="@Localizer["PasswordLabel"]" For="password">
+            <div class="rm-input-group">
+                <input id="password" name="Password" type="password" class="rm-input"
+                       placeholder="@Localizer["PasswordPlaceholder"]"
+                       required minlength="8" autocomplete="new-password" />
+                <button type="button" class="rm-input-affix"
+                        data-password-toggle="password"
+                        data-label-show="@Localizer["ShowPassword"]"
+                        data-label-hide="@Localizer["HidePassword"]"
+                        aria-label="@Localizer["ShowPassword"]">
+                    <span data-icon="show"><RmIcon Name="eye" Size="1rem" /></span>
+                    <span data-icon="hide" hidden><RmIcon Name="eye-off" Size="1rem" /></span>
+                </button>
             </div>
+        </RmField>
 
-            <div class="rm-field">
-                <label for="email" class="rm-label">@Localizer["EmailLabel"]</label>
-                <input id="email" name="Email" type="email" class="rm-input" required autocomplete="email" />
-            </div>
+        @* The reference design drops the confirmation field, but the endpoint validates
+           it, so it stays. *@
+        <RmField Label="@Localizer["ConfirmPasswordLabel"]" For="confirmPassword">
+            <input id="confirmPassword" name="ConfirmPassword" type="password" class="rm-input"
+                   required minlength="8" autocomplete="new-password" />
+        </RmField>
 
-            <div class="rm-field">
-                <label for="password" class="rm-label">@Localizer["PasswordLabel"]</label>
-                <input id="password" name="Password" type="password" class="rm-input" required minlength="8" autocomplete="new-password" />
-            </div>
+        <label class="rm-checkbox">
+            <input type="checkbox" required />
+            <span>@Localizer["RegisterTermsConsent"]</span>
+        </label>
 
-            <div class="rm-field">
-                <label for="confirmPassword" class="rm-label">@Localizer["ConfirmPasswordLabel"]</label>
-                <input id="confirmPassword" name="ConfirmPassword" type="password" class="rm-input" required minlength="8" autocomplete="new-password" />
-            </div>
+        <button type="submit" class="rm-btn rm-btn--primary rm-btn--block">@Localizer["RegisterButton"]</button>
+    </form>
 
-            <button type="submit" class="rm-btn">@Localizer["RegisterButton"]</button>
-        </form>
-    </div>
-
-    <div class="rm-auth-links">
-        <p>@Localizer["AlreadyHaveAccount"] <a href="/login">@Localizer["LoginButton"]</a></p>
-    </div>
+    <p class="auth-form__footer">
+        @Localizer["AlreadyHaveAccount"] <a href="/login" class="auth-form__link">@Localizer["LoginButton"]</a>
+    </p>
 </div>
 
 @code {
+    // Literal in C# rather than the markup: Razor reads a bare @ in an attribute
+    // value as the start of an expression.
+    private const string EmailPlaceholder = "voce@email.com";
+
     [Parameter]
     [SupplyParameterFromQuery]
     public string? Error { get; set; }

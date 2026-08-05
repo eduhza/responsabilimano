@@ -1,0 +1,26 @@
+<div class="rm-section-header @Class">
+    @if (Eyebrow is not null)
+    {
+        <p class="rm-section-header__eyebrow">@Eyebrow</p>
+    }
+    <h2 class="rm-section-header__title">@Title</h2>
+    @if (Description is not null)
+    {
+        <p class="rm-section-header__description">@Description</p>
+    }
+</div>
+
+@code {
+    /// <summary>Small uppercase kicker above the title.</summary>
+    [Parameter]
+    public string? Eyebrow { get; set; }
+
+    [Parameter, EditorRequired]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

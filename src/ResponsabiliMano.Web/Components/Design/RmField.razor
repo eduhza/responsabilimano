@@ -1,0 +1,48 @@
+@* Label + control + validation chrome. The control itself stays a native Blazor
+   InputText/InputNumber/InputDate so we inherit EditForm binding for free. *@
+
+<div class="rm-field @Class">
+    @if (Label is not null)
+    {
+        @if (Aside is not null)
+        {
+            <div class="rm-label__row">
+                <label class="rm-label" for="@For">@Label</label>
+                @Aside
+            </div>
+        }
+        else
+        {
+            <label class="rm-label" for="@For">@Label</label>
+        }
+    }
+
+    @ChildContent
+
+    @if (Hint is not null)
+    {
+        <span class="rm-field__hint">@Hint</span>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>Id of the control the label points at.</summary>
+    [Parameter]
+    public string? For { get; set; }
+
+    /// <summary>Trailing content on the label row, e.g. a "forgot password" link.</summary>
+    [Parameter]
+    public RenderFragment? Aside { get; set; }
+
+    [Parameter]
+    public RenderFragment? Hint { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

@@ -1,6 +1,6 @@
 ---
 name: testing-responsabilimano
-description: Test ResponsabiliMano end-to-end through its local Blazor UI and PostgreSQL-backed web app. Use when verifying auth/project/email flows or backend refactors.
+description: Test ResponsabiliMano through its local Blazor UI and PostgreSQL-backed web app. Use when verifying auth/project/email flows or backend refactors.
 ---
 
 # Testing ResponsabiliMano

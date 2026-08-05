@@ -7,175 +7,217 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILogger<CreateProject> Logger
 
+@* Three visual steps over a single EditForm — the wizard is presentation only, so
+   validation and submission stay one atomic operation. *@
+
 <PageTitle>@Localizer["CreateProjectTitle"]</PageTitle>
 
-<h3>@Localizer["CreateProjectTitle"]</h3>
+<div class="create">
+    @if (_success)
+    {
+        <RmAlert Tone="success">@Localizer["CreateProjectSuccess"]</RmAlert>
 
-@if (_success)
-{
-    <FluentMessageBar Intent="MessageIntent.Success" Title="@Localizer["CreateProjectSuccess"]" AllowDismiss="false" />
+        <div class="create__actions mt-3">
+            <RmButton Href="@($"/projects/{_createdProjectId}/invite")">@Localizer["InvitePartnerButton"]</RmButton>
+            <RmButton Href="/projects" Variant="outline">@Localizer["BackToHome"]</RmButton>
+        </div>
+    }
+    else
+    {
+        <a href="/projects" class="rm-back-link">
+            <RmIcon Name="arrow-left" Size="0.875rem" />
+            @Localizer["MyProjectsTitle"]
+        </a>
 
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
-        <FluentAnchor Href="@($"/projects/{_createdProjectId}/invite")" Appearance="Appearance.Accent">
-            @Localizer["InvitePartnerButton"]
-        </FluentAnchor>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))">
-            @Localizer["BackToHome"]
-        </FluentButton>
-    </FluentStack>
-}
-else
-{
-    <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="createProjectForm">
-        <DataAnnotationsValidator />
-        <FluentValidationSummary />
+        <h1 class="create__title">@Localizer["CreateProjectTitle"]</h1>
+        <p class="create__subtitle">@Localizer["CreateProjectSubtitle"]</p>
 
-        <FluentTextField Id="name"
-                         Label="@Localizer["ProjectNameLabel"]"
-                         Appearance="FluentInputAppearance.Outline"
-                         @bind-Value="_model.Name"
-                         Required
-                         Style="width: 100%;" />
-        <FluentValidationMessage For="@(() => _model.Name)" />
-
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 1rem; flex-wrap: wrap;">
-            <div>
-                <FluentDatePicker Label="@Localizer["StartDateLabel"]"
-                                  Value="_model.StartDate"
-                                  ValueChanged="@(v => _model.StartDate = v ?? DateTime.Today)"
-                                  Style="width: 100%;" />
-                <FluentValidationMessage For="@(() => _model.StartDate)" />
-            </div>
-            <div>
-                <FluentDatePicker Label="@Localizer["EndDateLabel"]"
-                                  Value="_model.EndDate"
-                                  ValueChanged="@(v => _model.EndDate = v ?? DateTime.Today)"
-                                  Style="width: 100%;" />
-                <FluentValidationMessage For="@(() => _model.EndDate)" />
-            </div>
-            <div style="min-width: 200px;">
-                <FluentSelect TOption="string"
-                              Id="frequency"
-                              Label="@Localizer["FrequencyLabel"]"
-                              Appearance="Appearance.Outline"
-                              Value="_model.Frequency.ToString()"
-                              ValueChanged="@(v => _model.Frequency = Enum.Parse<ProjectFrequency>(v ?? string.Empty))"
-                              Style="width: 100%;">
-                    <FluentOption Value="@ProjectFrequency.Daily.ToString()">@Localizer["FrequencyDaily"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Weekly.ToString()">@Localizer["FrequencyWeekly"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Biweekly.ToString()">@Localizer["FrequencyBiweekly"]</FluentOption>
-                    <FluentOption Value="@ProjectFrequency.Monthly.ToString()">@Localizer["FrequencyMonthly"]</FluentOption>
-                </FluentSelect>
-                <FluentValidationMessage For="@(() => _model.Frequency)" />
-            </div>
-        </FluentStack>
-
-        <h4 style="margin-top: 1.5rem;">@Localizer["GoalsSectionTitle"]</h4>
-
-        @for (var i = 0; i < _model.Goals.Count; i++)
-        {
-            var index = i;
-            <FluentCard Class="mb-3 goal-card">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h5 style="margin: 0;">@Localizer["GoalLabel", index + 1]</h5>
-                    @if (_model.Goals.Count > 1)
+        <ol class="stepper">
+            @foreach (var step in Steps)
+            {
+                <li class="stepper__item">
+                    <span class="stepper__chip @(step.Index <= _step ? "is-active" : null)">
+                        <RmIcon Name="@step.Icon" Size="0.875rem" />
+                        <span class="stepper__label">@step.Label</span>
+                    </span>
+                    @if (step.Index < Steps.Length - 1)
                     {
-                        <FluentButton Type="ButtonType.Button"
-                                      Appearance="Appearance.Outline"
-                                      IconStart="@(new Icons.Regular.Size20.Delete())"
-                                      IconColor="Color.Error"
-                                      OnClick="@(() => RemoveGoal(index))">
-                            @Localizer["RemoveGoalButton"]
-                        </FluentButton>
+                        <span class="stepper__line"></span>
                     }
-                </FluentStack>
+                </li>
+            }
+        </ol>
 
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap;">
-                    <div style="flex: 2; min-width: 200px;">
-                        <FluentTextField Label="@Localizer["GoalFieldLabel"]"
-                                         Appearance="FluentInputAppearance.Outline"
-                                         @bind-Value="_model.Goals[index].Label"
-                                         Style="width: 100%;" />
-                    </div>
-                    <div style="flex: 1; min-width: 150px;">
-                        <FluentSelect TOption="string"
-                                      Label="@Localizer["GoalDataTypeLabel"]"
-                                      Appearance="Appearance.Outline"
-                                      Value="_model.Goals[index].DataType.ToString()"
-                                      ValueChanged="@(v => _model.Goals[index].DataType = Enum.Parse<GoalDataType>(v ?? string.Empty))"
-                                      Style="width: 100%;">
-                            <FluentOption Value="@GoalDataType.Decimal.ToString()">@Localizer["DataTypeDecimal"]</FluentOption>
-                            <FluentOption Value="@GoalDataType.Integer.ToString()">@Localizer["DataTypeInteger"]</FluentOption>
-                            <FluentOption Value="@GoalDataType.Percent.ToString()">@Localizer["DataTypePercent"]</FluentOption>
-                        </FluentSelect>
-                    </div>
-                    <div style="flex: 1; min-width: 100px;">
-                        <FluentTextField Label="@Localizer["GoalUnitLabel"]"
-                                         Appearance="FluentInputAppearance.Outline"
-                                         @bind-Value="_model.Goals[index].Unit"
-                                         Style="width: 100%;" />
-                    </div>
-                </FluentStack>
+        <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="createProjectForm" class="create__form">
+            <DataAnnotationsValidator />
 
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="flex-wrap: wrap; margin-top: 0.75rem;">
-                    <div style="flex: 1; min-width: 120px;">
-                        <FluentNumberField TValue="decimal?"
-                                           Label="@Localizer["GoalMinValueLabel"]"
-                                           Appearance="FluentInputAppearance.Outline"
-                                           HideStep="true"
-                                           @bind-Value="_model.Goals[index].MinValue"
-                                           Style="width: 100%;" />
-                    </div>
-                    <div style="flex: 1; min-width: 120px;">
-                        <FluentNumberField TValue="decimal?"
-                                           Label="@Localizer["GoalMaxValueLabel"]"
-                                           Appearance="FluentInputAppearance.Outline"
-                                           HideStep="true"
-                                           @bind-Value="_model.Goals[index].MaxValue"
-                                           Style="width: 100%;" />
-                    </div>
-                    <div style="flex: 1; min-width: 120px;">
-                        <FluentNumberField TValue="decimal?"
-                                           Label="@Localizer["GoalTargetValueLabel"]"
-                                           Appearance="FluentInputAppearance.Outline"
-                                           HideStep="true"
-                                           @bind-Value="_model.Goals[index].TargetValue"
-                                           Style="width: 100%;" />
-                    </div>
-                </FluentStack>
-            </FluentCard>
-        }
+            @* Every step stays mounted so bound values survive navigation; only the
+               active one is displayed. *@
+            <div class="create__step" hidden="@(_step != 0)">
+                <RmField Label="@Localizer["ProjectNameLabel"]" For="name">
+                    <InputText id="name" class="rm-input" @bind-Value="_model.Name"
+                               placeholder="@Localizer["ProjectNamePlaceholder"]" />
+                    <ValidationMessage For="@(() => _model.Name)" />
+                </RmField>
 
-        <FluentButton Type="ButtonType.Button"
-                      Appearance="Appearance.Outline"
-                      IconStart="@(new Icons.Regular.Size20.Add())"
-                      OnClick="AddGoal"
-                      Class="mb-3">
-            @Localizer["AddGoalButton"]
-        </FluentButton>
+                <RmField Label="@Localizer["ProjectIconLabel"]">
+                    <div class="icon-picker">
+                        @foreach (var icon in IconChoices)
+                        {
+                            <button type="button"
+                                    class="icon-picker__option @(_model.Icon == icon ? "is-selected" : null)"
+                                    aria-pressed="@(_model.Icon == icon)"
+                                    @onclick="() => _model.Icon = icon">
+                                @icon
+                            </button>
+                        }
+                    </div>
+                </RmField>
 
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <FluentMessageBar Intent="MessageIntent.Error" Title="@_error" AllowDismiss="false" />
-        }
+                <div class="create__grid">
+                    <RmField Label="@Localizer["StartDateLabel"]" For="startDate">
+                        <InputDate id="startDate" class="rm-input" @bind-Value="_model.StartDate" />
+                        <ValidationMessage For="@(() => _model.StartDate)" />
+                    </RmField>
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
-            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@_isLoading" Loading="@_isLoading">
-                @(_isLoading ? Localizer["Creating"] : Localizer["CreateProjectButton"])
-            </FluentButton>
-            <FluentAnchor Href="/" Appearance="Appearance.Neutral">
-                @Localizer["Cancel"]
-            </FluentAnchor>
-        </FluentStack>
-    </EditForm>
-}
+                    <RmField Label="@Localizer["EndDateLabel"]" For="endDate">
+                        <InputDate id="endDate" class="rm-input" @bind-Value="_model.EndDate" />
+                        <ValidationMessage For="@(() => _model.EndDate)" />
+                    </RmField>
+                </div>
+
+                <RmField Label="@Localizer["FrequencyLabel"]" For="frequency">
+                    <InputSelect id="frequency" class="rm-select" @bind-Value="_model.Frequency">
+                        <option value="@ProjectFrequency.Daily">@Localizer["FrequencyDaily"]</option>
+                        <option value="@ProjectFrequency.Weekly">@Localizer["FrequencyWeekly"]</option>
+                        <option value="@ProjectFrequency.Biweekly">@Localizer["FrequencyBiweekly"]</option>
+                        <option value="@ProjectFrequency.Monthly">@Localizer["FrequencyMonthly"]</option>
+                    </InputSelect>
+                </RmField>
+            </div>
+
+            <div class="create__step" hidden="@(_step != 1)">
+                @for (var i = 0; i < _model.Goals.Count; i++)
+                {
+                    var index = i;
+                    <RmCard Class="goal">
+                        <div class="goal__head">
+                            <h2 class="goal__title">@Localizer["GoalLabel", index + 1]</h2>
+                            @if (_model.Goals.Count > 1)
+                            {
+                                <RmButton Variant="ghost" Size="sm" @onclick="() => RemoveGoal(index)">
+                                    <RmIcon Name="x" />
+                                    @Localizer["RemoveGoalButton"]
+                                </RmButton>
+                            }
+                        </div>
+
+                        <div class="goal__grid">
+                            <RmField Label="@Localizer["GoalFieldLabel"]" Class="goal__span-2">
+                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Label" />
+                            </RmField>
+
+                            <RmField Label="@Localizer["GoalDataTypeLabel"]">
+                                <InputSelect class="rm-select" @bind-Value="_model.Goals[index].DataType">
+                                    <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
+                                    <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
+                                    <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
+                                </InputSelect>
+                            </RmField>
+
+                            <RmField Label="@Localizer["GoalUnitLabel"]">
+                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Unit" />
+                            </RmField>
+
+                            <RmField Label="@Localizer["GoalMinValueLabel"]">
+                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].MinValue" />
+                            </RmField>
+
+                            <RmField Label="@Localizer["GoalMaxValueLabel"]">
+                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].MaxValue" />
+                            </RmField>
+
+                            <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].TargetValue" />
+                            </RmField>
+                        </div>
+                    </RmCard>
+                }
+
+                <RmButton Variant="outline" @onclick="AddGoal">
+                    <RmIcon Name="plus" />
+                    @Localizer["AddGoalButton"]
+                </RmButton>
+            </div>
+
+            <div class="create__step" hidden="@(_step != 2)">
+                <RmCard>
+                    <div class="create__summary-head">
+                        <span class="rm-icon-tile rm-icon-tile--lg">@(_model.Icon ?? "🎯")</span>
+                        <div>
+                            <p class="create__summary-name">@(string.IsNullOrWhiteSpace(_model.Name) ? Localizer["CreateProjectUnnamed"] : _model.Name)</p>
+                            <p class="create__summary-meta">
+                                @_model.StartDate.ToString("dd/MM/yyyy") — @_model.EndDate.ToString("dd/MM/yyyy")
+                                · @Localizer["ProjectGoalCount", _model.Goals.Count]
+                            </p>
+                        </div>
+                    </div>
+                    <p class="create__summary-text">@Localizer["CreateProjectInviteHint"]</p>
+                </RmCard>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <RmAlert Tone="danger">@_error</RmAlert>
+                }
+            </div>
+
+            <div class="create__actions">
+                @if (_step == 0)
+                {
+                    <RmButton Href="/projects" Variant="outline">@Localizer["Cancel"]</RmButton>
+                }
+                else
+                {
+                    <RmButton Variant="outline" @onclick="() => _step--">
+                        <RmIcon Name="arrow-left" />
+                        @Localizer["StepBack"]
+                    </RmButton>
+                }
+
+                @if (_step < Steps.Length - 1)
+                {
+                    <RmButton @onclick="() => _step++">
+                        @Localizer["StepNext"]
+                        <RmIcon Name="arrow-right" />
+                    </RmButton>
+                }
+                else
+                {
+                    <button type="submit" class="rm-btn rm-btn--primary" disabled="@_isLoading">
+                        @(_isLoading ? Localizer["Creating"] : Localizer["CreateProjectButton"])
+                    </button>
+                }
+            </div>
+        </EditForm>
+    }
+</div>
 
 @code {
+    private static readonly string[] IconChoices = ["🌊", "🏃", "💪", "🥗", "🧘", "🚴", "🏋️", "🎯"];
+
     private CreateProjectRequest _model = new();
     private string? _error;
     private bool _isLoading;
     private bool _success;
+    private int _step;
     private Guid _createdProjectId;
+
+    private (int Index, string Icon, string Label)[] Steps =>
+    [
+        (0, "pencil", Localizer["CreateStepDetails"]),
+        (1, "target", Localizer["GoalsSectionTitle"]),
+        (2, "mail", Localizer["CreateStepInvite"])
+    ];
 
     protected override void OnInitialized()
     {
@@ -183,6 +225,8 @@ else
         {
             _model.Goals.Add(new GoalFieldRequest());
         }
+
+        _model.Icon ??= IconChoices[0];
     }
 
     private void AddGoal()
@@ -219,7 +263,7 @@ else
 
             var project = await ProjectService.CreateProjectAsync(
                 userId, _model.Name, _model.StartDate, _model.EndDate,
-                _model.Frequency, goals);
+                _model.Frequency, goals, _model.Icon);
 
             _createdProjectId = project.Id;
             _success = true;
@@ -227,11 +271,14 @@ else
         catch (ArgumentException ex)
         {
             _error = ex.Message;
+            // Validation failures live on the review step, so stay there to show them.
+            _step = Steps.Length - 1;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to create project");
             _error = Localizer["CreateProjectError"];
+            _step = Steps.Length - 1;
         }
         finally
         {

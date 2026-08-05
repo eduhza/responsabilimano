@@ -1,0 +1,35 @@
+@* Marketing chrome. Public, anonymous, no app shell. *@
+
+@inherits LayoutComponentBase
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="landing">
+    <header class="landing__header">
+        <div class="landing__header-inner">
+            <a href="/" aria-label="ResponsabiliMano" class="landing__brand"><RmLogo /></a>
+
+            <nav class="landing__nav">
+                <a href="#como-funciona">@Localizer["LandingNavHowItWorks"]</a>
+                <a href="#recursos">@Localizer["LandingNavFeatures"]</a>
+                <a href="#dupla">@Localizer["LandingNavDuo"]</a>
+            </nav>
+
+            <div class="landing__actions">
+                <RmButton Href="/login" Variant="ghost" Size="sm">@Localizer["LoginButton"]</RmButton>
+                <RmButton Href="/register" Size="sm">@Localizer["RegisterButton"]</RmButton>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        @Body
+    </main>
+
+    <footer class="landing__footer">
+        <div class="landing__footer-inner">
+            <RmLogo />
+            <p class="rm-muted">@Localizer["LandingFooterTagline"]</p>
+            <p class="rm-muted">© @DateTime.UtcNow.Year ResponsabiliMano</p>
+        </div>
+    </footer>
+</div>

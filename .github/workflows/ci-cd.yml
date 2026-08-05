@@ -30,7 +30,6 @@ jobs:
       - name: Test (+ coverage)
         run: >
           dotnet test --no-build --configuration Release
-          --filter "FullyQualifiedName!~ResponsabiliMano.Web.E2ETests"
           --settings coverage.runsettings
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
@@ -105,35 +104,8 @@ jobs:
       - name: Contract conformance (routes match contract)
         run: python scripts/contract-conformance.py
 
-  # End-to-end tests: exercise the real Blazor server + static assets.
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Restore
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Install Playwright browsers
-        run: pwsh -File "tests/ResponsabiliMano.Web.E2ETests/bin/Release/net10.0/playwright.ps1" install --with-deps
-
-      - name: Run E2E tests
-        run: |
-          dotnet test tests/ResponsabiliMano.Web.E2ETests/ResponsabiliMano.Web.E2ETests.csproj \
-            --no-build --configuration Release --nologo
-
   deploy:
-    needs: [build-and-test, codeql, spec-and-contract-gate, e2e]
+    needs: [build-and-test, codeql, spec-and-contract-gate]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

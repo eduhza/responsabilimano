@@ -1,0 +1,23 @@
+{
+  "skill_name": "e2e-playwright-tester",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Terminei a specs/D3-project-checkin-dashboard-fluentui.md. Roda o teste E2E para validar o fluxo de check-in e dashboard.",
+      "expected_output": "A skill roda 'docker compose up -d --build' na raiz, faz login com credenciais de seed, navega até o projeto demo, abre o dashboard e relata o resultado com screenshots e erros de console.",
+      "files": ["specs/D3-project-checkin-dashboard-fluentui.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "A specs/D2-auth-home-fluentui.md foi implementada. Valide o fluxo de login e a tela inicial com MCP Playwright.",
+      "expected_output": "A skill reconstrói os containers, acessa /login, preenche e-mail e senha de seed, faz login, verifica 'Olá, Usuário A!' na home e relata pass/fail.",
+      "files": ["specs/D2-auth-home-fluentui.md"]
+    },
+    {
+      "id": 3,
+      "prompt": "Quero testar o cadastro de um novo projeto.",
+      "expected_output": "A skill pergunta qual spec, depois avisa que a página de criação de projeto usa EditForm sem render mode interativo e não funciona estaticamente, portanto não consegue testar esse fluxo via UI.",
+      "files": ["specs/D1-fluentui-foundation-layout.md"]
+    }
+  ]
+}

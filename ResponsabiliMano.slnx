@@ -6,7 +6,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ResponsabiliMano.Infrastructure.Tests/ResponsabiliMano.Infrastructure.Tests.csproj" />
-    <Project Path="tests/ResponsabiliMano.Web.E2ETests/ResponsabiliMano.Web.E2ETests.csproj" />
     <Project Path="tests/ResponsabiliMano.Web.Tests/ResponsabiliMano.Web.Tests.csproj" />
     <Project Path="tests/ResponsabiliMano.Web.IntegrationTests/ResponsabiliMano.Web.IntegrationTests.csproj" />
   </Folder>

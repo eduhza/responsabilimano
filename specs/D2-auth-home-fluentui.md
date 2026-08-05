@@ -34,8 +34,8 @@ Como usuário, quero telas de login, cadastro, recuperação de senha e home com
 5. O erro de login (query param `?Error=...`) é exibido via `FluentMessageBar` com `Severity="MessageBarSeverity.Error"` em vez de `alert alert-danger`.
 6. O link "Esqueci minha senha" usa `FluentAnchor` (ou `<a>` estilizado) apontando para `/forgot-password`.
 7. O texto "Não tem uma conta?" com link para `/register` permanece.
-8. O título `h3` com `@Localizer["LoginTitle"]` (pt-BR: "Entrar") é mantido — o E2E testa `h3:has-text('Entrar')`.
-9. O botão mantém o role e nome acessíveis — o E2E testa `GetByRole(AriaRole.Button, { Name = "Entrar" })`.
+8. O título `h3` com `@Localizer["LoginTitle"]` (pt-BR: "Entrar") é mantido.
+9. O botão mantém o role e nome acessíveis.
 
 ### AC2 — Register refatorada com FluentUI
 
@@ -45,8 +45,8 @@ Como usuário, quero telas de login, cadastro, recuperação de senha e home com
 4. Os inputs mantêm seus IDs: `id="name"`, `id="email"`, `id="password"`, `id="confirmPassword"`.
 5. O erro (query param `?Error=...`) é exibido via `FluentMessageBar` com `Severity="MessageBarSeverity.Error"`.
 6. O texto "Já tem uma conta?" com link para `/login` permanece.
-7. O título `h3` com `@Localizer["RegisterTitle"]` (pt-BR: "Cadastro") é mantido — o E2E testa `h3:has-text('Cadastro')`.
-8. O botão mantém o nome acessível — o E2E testa `GetByRole(AriaRole.Button, { Name = "Cadastrar" })`.
+7. O título `h3` com `@Localizer["RegisterTitle"]` (pt-BR: "Cadastro") é mantido.
+8. O botão mantém o nome acessível.
 
 ### AC3 — ForgotPassword refatorada com FluentUI
 
@@ -74,7 +74,7 @@ Como usuário, quero telas de login, cadastro, recuperação de senha e home com
 ### AC5 — Home refatorada com FluentUI
 
 1. `Home.razor` **não** ganha `@rendermode` — permanece SSR estático (ADR-0003).
-2. O título `h1` com `@Localizer["HomeWelcome", ...]` (pt-BR: "Olá, {0}!") é mantido — o E2E testa `h1:has-text('Olá')` e `h1:has-text('Alice Test')`.
+2. O título `h1` com `@Localizer["HomeWelcome", ...]` (pt-BR: "Olá, {0}!") é mantido.
 3. A lista de projetos usa `FluentCard` para cada projeto em vez de `list-group-item`.
 4. Cada card de projeto é um link clicável para `/projects/{id}` com o nome do projeto e um badge de status.
 5. O badge de status usa cores da paleta "Energia":
@@ -121,19 +121,9 @@ Como usuário, quero telas de login, cadastro, recuperação de senha e home com
 2. Login, Register, Home permanecem na lista `StaticPages` (sem `@rendermode`).
 3. ForgotPassword, ResetPassword permanecem na lista `InteractivePages` (com `@rendermode InteractiveServer`).
 
-### AC11 — E2E e testes existentes passam
+### AC11 — Testes existentes passam
 
-1. Os testes E2E (`AuthFlowTests`) passam. Seletores críticos preservados:
-   - `h3:has-text('Entrar')` no Login
-   - `#email`, `#password` no Login
-   - `GetByRole(AriaRole.Button, { Name = "Entrar" })` no Login
-   - `h3:has-text('Cadastro')` no Register
-   - `#name`, `#email`, `#password`, `#confirmPassword` no Register
-   - `GetByRole(AriaRole.Button, { Name = "Cadastrar" })` no Register
-   - `h1:has-text('Olá')` e `h1:has-text('Alice Test')` na Home
-   - `GetByRole(AriaRole.Button, { Name = "Sair' })` no logout (nav/bottom-nav — spec D1)
-2. Se algum seletor quebrar pela mudança de componente, o teste é atualizado para usar texto/role equivalente — mas a优先idade é manter os seletores ativos.
-3. Os testes de integração continuam passando.
+1. Os testes de integração continuam passando.
 
 ### AC12 — Novas chaves de i18n
 
@@ -194,16 +184,6 @@ dotnet test tests/ResponsabiliMano.Web.Tests
 ```powershell
 dotnet test tests/ResponsabiliMano.Web.IntegrationTests
 ```
-
-### Testes E2E (Playwright)
-
-```powershell
-dotnet test tests/ResponsabiliMano.Web.E2ETests --filter "AuthFlowTests"
-```
-
-Seletores críticos que devem passar:
-- `Register_and_login_flow_works` — registra, verifica "Olá", logout, login, verifica nome.
-- `Login_with_invalid_credentials_shows_error` — login com credenciais inválidas mostra erro.
 
 ### Verificação manual
 

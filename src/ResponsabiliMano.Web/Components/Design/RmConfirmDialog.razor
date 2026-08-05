@@ -1,0 +1,64 @@
+@* Replaces Fluent's IDialogService with the native <dialog> element.
+   Usage: keep a @ref and await ShowAsync() — it resolves to the user's choice. *@
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<dialog @ref="_dialog" class="rm-dialog" @onclose="HandleNativeClose">
+    <h2 class="rm-dialog__title">@Title</h2>
+    <p class="rm-dialog__body">@Message</p>
+    <div class="rm-dialog__actions">
+        <RmButton Variant="outline" @onclick="() => CloseAsync(false)">@CancelText</RmButton>
+        <RmButton Variant="@ConfirmVariant" @onclick="() => CloseAsync(true)">@ConfirmText</RmButton>
+    </div>
+</dialog>
+
+@code {
+    private ElementReference _dialog;
+    private TaskCompletionSource<bool>? _completion;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "OK";
+
+    [Parameter]
+    public string CancelText { get; set; } = "Cancelar";
+
+    /// <summary>primary | destructive — use destructive for irreversible actions.</summary>
+    [Parameter]
+    public string ConfirmVariant { get; set; } = "primary";
+
+    /// <summary>Opens the dialog and completes with the user's choice.</summary>
+    public async Task<bool> ShowAsync()
+    {
+        _completion = new TaskCompletionSource<bool>();
+        await JS.InvokeVoidAsync("rm.dialog.show", _dialog);
+        return await _completion.Task;
+    }
+
+    private async Task CloseAsync(bool confirmed)
+    {
+        // Settle first: closing fires @onclose, which would otherwise resolve false.
+        _completion?.TrySetResult(confirmed);
+        _completion = null;
+        await JS.InvokeVoidAsync("rm.dialog.close", _dialog);
+    }
+
+    /// <summary>Esc and backdrop dismissal both land here and count as a cancel.</summary>
+    private void HandleNativeClose()
+    {
+        _completion?.TrySetResult(false);
+        _completion = null;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _completion?.TrySetResult(false);
+        return ValueTask.CompletedTask;
+    }
+}

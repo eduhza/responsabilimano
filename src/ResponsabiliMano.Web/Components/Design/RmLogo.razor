@@ -1,0 +1,29 @@
+@* Brand mark: two hands reaching across a shared line — the "duo" idea in one glyph. *@
+
+<span class="rm-logo @Class">
+    <span class="rm-logo__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 13.5c-1.4 0-2.5-1.1-2.5-2.5S5.6 8.5 7 8.5" />
+            <path d="M17 13.5c1.4 0 2.5-1.1 2.5-2.5S18.4 8.5 17 8.5" />
+            <path d="M7 8.5h3l1.2-1.4a1 1 0 0 1 1.6 0L14 8.5h3" />
+            <path d="M7 13.5h3l1.2 1.4a1 1 0 0 0 1.6 0l1.2-1.4h3" />
+            <path d="M12 8.5v5" />
+        </svg>
+    </span>
+    @if (ShowWordmark)
+    {
+        <span class="rm-logo__word">Responsabili<span class="rm-logo__word-accent">Mano</span></span>
+    }
+</span>
+
+@code {
+    [Parameter]
+    public bool ShowWordmark { get; set; } = true;
+
+    /// <summary>Inverts the mark for use on the solid primary background.</summary>
+    [Parameter]
+    public bool OnPrimary { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

@@ -1,0 +1,27 @@
+.rm-section-header {
+    max-width: 42rem;
+}
+
+.rm-section-header__eyebrow {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--rm-primary);
+}
+
+.rm-section-header__title {
+    margin-top: 0.75rem;
+    font-size: 1.875rem;
+}
+
+.rm-section-header__description {
+    margin-top: 0.5rem;
+    color: var(--rm-muted-fg);
+}
+
+@media (min-width: 640px) {
+    .rm-section-header__title {
+        font-size: 2.25rem;
+    }
+}

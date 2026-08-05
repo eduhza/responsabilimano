@@ -1,0 +1,28 @@
+.rm-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.rm-stat--highlight {
+    background: linear-gradient(to bottom right, rgb(var(--rm-primary-rgb) / .1), var(--rm-accent));
+    justify-content: space-between;
+}
+
+.rm-stat__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.rm-stat__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rm-muted-fg);
+}
+
+.rm-stat__icon {
+    display: inline-flex;
+    color: var(--rm-muted-fg);
+}

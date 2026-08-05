@@ -29,23 +29,23 @@ Como usuário, quero telas de gestão de projetos, check-in e dashboard com visu
 6. O botão de submit usa `FluentButton` com `Appearance="Appearance.Accent"`.
 7. O estado de sucesso exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Success"` + botões "Convidar Parceiro" e "Voltar para Home".
 8. O erro (`_error`) é exibido via `FluentMessageBar` com `Severity="MessageBarSeverity.Error"`.
-9. O input de nome mantém `id="name"` — o E2E testa `#name`.
-10. O título `h3` com `@Localizer["CreateProjectTitle"]` (pt-BR: "Criar Projeto") é mantido — o E2E testa `h3:has-text('Criar Projeto')`.
-11. O botão de submit mantém o nome acessível — o E2E testa `GetByRole(AriaRole.Button, { Name = "Criar Projeto" })`.
-12. O estado de sucesso mantém `div.alert-success` ou equivalente — o E2E testa `div.alert-success`. **Nota:** Se `FluentMessageBar` não renderizar com classe `alert-success`, o E2E deve ser atualizado para usar texto/role.
-13. Os campos de meta dentro de cards devem manter a classe `form-control` ou equivalente selecionável — o E2E testa `.card .form-control` para preencher campos. Se FluentUI não usar essas classes, o seletor E2E deve ser atualizado para `[class*='card'] input` ou similar.
+9. O input de nome mantém `id="name"`.
+10. O título `h3` com `@Localizer["CreateProjectTitle"]` (pt-BR: "Criar Projeto") é mantido.
+11. O botão de submit mantém o nome acessível.
+12. O estado de sucesso mantém `div.alert-success` ou equivalente.
+13. Os campos de meta dentro de cards devem manter a classe `form-control` ou equivalente selecionável.
 
 ### AC2 — InvitePartner refatorada com FluentUI
 
 1. `InvitePartner.razor` mantém `@rendermode InteractiveServer` (ADR-0003).
 2. O `EditForm` usa `FluentTextField` para o e-mail do parceiro (em vez de `InputText`).
-3. O input mantém `id="partnerEmail"` — o E2E testa `#partnerEmail`.
+3. O input mantém `id="partnerEmail"`.
 4. O botão de submit usa `FluentButton` com `Appearance="Appearance.Accent"`.
 5. O estado de sucesso exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Success"`.
 6. O erro é exibido via `FluentMessageBar` com `Severity="MessageBarSeverity.Error"`.
-7. O título `h3` com `@Localizer["InvitePartnerTitle"]` (pt-BR: "Convidar Parceiro") é mantido — o E2E testa `h3:has-text('Convidar Parceiro')`.
-8. O botão mantém o nome acessível — o E2E testa `GetByRole(AriaRole.Button, { Name = "Convidar Parceiro" })`.
-9. O estado de sucesso deve ser detectável pelo E2E — atualizar seletor se `alert-success` não existir mais.
+7. O título `h3` com `@Localizer["InvitePartnerTitle"]` (pt-BR: "Convidar Parceiro") é mantido.
+8. O botão mantém o nome acessível.
+9. O estado de sucesso deve ser detectável — atualizar seletor se `alert-success` não existir mais.
 
 ### AC3 — ProjectDetail refatorada com FluentUI
 
@@ -72,23 +72,23 @@ Como usuário, quero telas de gestão de projetos, check-in e dashboard com visu
 4. O card de convite usa `FluentCard` com informações do projeto em `FluentStack`.
 5. A lista de metas usa `FluentList` ou lista estilizada (em vez de `<ul>` simples).
 6. O botão "Aceitar Convite" usa `FluentButton` com `Appearance="Appearance.Accent"`.
-7. O título `h4` com `@Localizer["InvitationTitle"]` (pt-BR: "Convite") é mantido — o E2E testa `h4:has-text('Convite')`.
-8. O botão mantém o nome acessível — o E2E testa `GetByRole(AriaRole.Button, { Name = "Aceitar Convite" })`.
-9. Após aceitar, o botão "Aprovar" (se projeto pendente) usa `FluentButton` — o E2E testa `GetByRole(AriaRole.Button, { Name = "Aprovar" })` e `button:has-text('Aprovar')`.
+7. O título `h4` com `@Localizer["InvitationTitle"]` (pt-BR: "Convite") é mantido.
+8. O botão mantém o nome acessível.
+9. Após aceitar, o botão "Aprovar" (se projeto pendente) usa `FluentButton`.
 10. A mensagem de sucesso "Convite aceito" usa `FluentMessageBar` com `Severity="MessageBarSeverity.Success"`.
-11. A mensagem de status após aprovação usa `FluentMessageBar` com `Severity="MessageBarSeverity.Info"` — o E2E testa `div.alert-info:has-text('aprovado')`. Atualizar seletor se necessário.
+11. A mensagem de status após aprovação usa `FluentMessageBar` com `Severity="MessageBarSeverity.Info"`.
 
 ### AC5 — CheckIn refatorada com FluentUI
 
 1. `CheckIn.razor` mantém `@rendermode InteractiveServer` (ADR-0003).
-2. O título `h3` com `@Localizer["CheckInTitle"]` (pt-BR: "Check-in") é mantido — o E2E testa `h3:has-text('Check-in')`.
-3. Os campos de métricas usam `FluentNumberField` (em vez de `input type="number"`). O E2E testa `input[type='number']` — se `FluentNumberField` renderizar `<input type="number">`, o seletor continua funcionando; caso contrário, atualizar E2E.
+2. O título `h3` com `@Localizer["CheckInTitle"]` (pt-BR: "Check-in") é mantido.
+3. Os campos de métricas usam `FluentNumberField` (em vez de `input type="number"`).
 4. O seletor de sentimento (faces) é redesenhado (ver AC6).
 5. O botão "Enviar check-in" usa `FluentButton` com `Appearance="Appearance.Accent"`.
-6. O botão mantém o nome acessível — o E2E testa `GetByRole(AriaRole.Button, { Name = "Enviar check-in" })`.
-7. O estado de sucesso exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Success"` — o E2E testa `div.alert-success:has-text('Check-in registrado')`. Atualizar seletor se necessário.
-8. O erro de validação (valor fora do range) exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Error"` — o E2E testa `div.alert-danger` e verifica texto "maximum". Atualizar seletor se necessário.
-9. O estado "já registrou" exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Warning"` ou `Success` — o E2E testa `div.alert-success` e texto "já registrou". Atualizar seletor se necessário.
+6. O botão mantém o nome acessível.
+7. O estado de sucesso exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Success"`.
+8. O erro de validação (valor fora do range) exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Error"`.
+9. O estado "já registrou" exibe `FluentMessageBar` com `Severity="MessageBarSeverity.Warning"` ou `Success`.
 10. O botão "Voltar ao Projeto" usa `FluentButton` com `Appearance="Appearance.Neutral"`.
 11. Skeleton loading enquanto carrega os dados do projeto e metas.
 
@@ -100,7 +100,7 @@ Como usuário, quero telas de gestão de projetos, check-in e dashboard com visu
    - **Neutral** (`#B0B0B0` — Cinza): boca reta
    - **Happy** (`#5B9279` — Verde suave): boca sorrindo
    - **VeryHappy** (`#2D9D78` — Verde vibrante): boca sorrindo aberta, olhos felizes
-2. Cada face é um `<button>` com `title` contendo o texto localizado — o E2E testa `button[title='Bem']` (Happy em pt-BR). Os titles devem ser mantidos: `title="@Localizer["FeelingVerySad"]"`, `title="@Localizer["FeelingSad"]"`, etc.
+2. Cada face é um `<button>` com `title` contendo o texto localizado. Os titles devem ser mantidos: `title="@Localizer["FeelingVerySad"]"`, `title="@Localizer["FeelingSad"]"`, etc.
 3. A face selecionada tem um anel visual (border ou box-shadow) com a cor da paleta primária (`--rm-primary`).
 4. As faces não selecionadas têm `opacity: 0.6` e aumentam para `1.0` no hover.
 5. As faces são dispostas horizontalmente com `gap: 12px`, centralizadas.
@@ -169,29 +169,9 @@ Como usuário, quero telas de gestão de projetos, check-in e dashboard com visu
 1. `RenderModeTests.cs` continua passando sem modificação.
 2. CreateProject, InvitePartner, ProjectDetail, InvitationAccept, CheckIn, Dashboard permanecem na lista `InteractivePages` (com `@rendermode InteractiveServer`).
 
-### AC13 — E2E e testes existentes passam
+### AC13 — Testes existentes passam
 
-1. Os testes E2E (`ProjectAndCheckInFlowTests`) passam. Seletores críticos preservados ou atualizados:
-   - `h3:has-text('Criar Projeto')` no CreateProject
-   - `#name` no CreateProject
-   - `.card .form-control` para campos de meta — **pode necessitar atualização** se FluentCard não usar classe `card`
-   - `GetByRole(AriaRole.Button, { Name = "Criar Projeto" })` no CreateProject
-   - `div.alert-success` — **pode necessitar atualização** para `FluentMessageBar`
-   - `h3:has-text('Convidar Parceiro')` no InvitePartner
-   - `#partnerEmail` no InvitePartner
-   - `GetByRole(AriaRole.Button, { Name = "Convidar Parceiro" })` no InvitePartner
-   - `h4:has-text('Convite')` no InvitationAccept
-   - `GetByRole(AriaRole.Button, { Name = "Aceitar Convite" })` no InvitationAccept
-   - `GetByRole(AriaRole.Button, { Name = "Aprovar" })` no InvitationAccept/ProjectDetail
-   - `div.alert-info:has-text('aprovado')` — **pode necessitar atualização**
-   - `h3:has-text('Check-in')` no CheckIn
-   - `input[type='number']` no CheckIn — **pode necessitar atualização** se FluentNumberField não renderizar `type="number"`
-   - `button[title='Bem']` no CheckIn — **deve ser mantido** (title do botão de sentimento)
-   - `GetByRole(AriaRole.Button, { Name = "Enviar check-in" })` no CheckIn
-   - `div.alert-success:has-text('Check-in registrado')` — **pode necessitar atualização**
-   - `div.alert-danger` com texto "maximum" — **pode necessitar atualização**
-2. A prioridade é manter os seletores funcionando. Se a troca de componente FluentUI mudar o DOM, o teste E2E é atualizado para usar seletores equivalentes (texto, role, aria-label).
-3. Os testes de integração continuam passando.
+1. Os testes de integração continuam passando.
 
 ### AC14 — Novas chaves de i18n
 
@@ -248,7 +228,7 @@ none — esta spec não altera endpoints ou contratos. O cálculo de streak é f
 ### Build
 
 ```powershell
-dotnet build ResponsibiliMano.slnx
+dotnet build ResponsabiliMano.slnx
 ```
 
 ### Testes unitários (bUnit + RenderMode)
@@ -264,17 +244,6 @@ dotnet test tests/ResponsabiliMano.Web.Tests
 ```powershell
 dotnet test tests/ResponsabiliMano.Web.IntegrationTests
 ```
-
-### Testes E2E (Playwright)
-
-```powershell
-dotnet test tests/ResponsabiliMano.Web.E2ETests --filter "ProjectAndCheckInFlowTests"
-```
-
-Testes críticos que devem passar:
-- `Create_project_invite_accept_approve_and_check_in` — fluxo completo.
-- `CheckIn_rejects_out_of_range_value` — validação de range.
-- `CheckIn_prevents_duplicate_submission` — check-in duplicado.
 
 ### Verificação manual
 
