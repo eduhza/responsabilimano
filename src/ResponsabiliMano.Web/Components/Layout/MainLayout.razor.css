@@ -26,6 +26,11 @@
     text-decoration: none;
 }
 
+/* Theme toggle pinned at the bottom of the sidebar, above the user card. */
+.shell__theme {
+    margin-top: 1rem;
+}
+
 /* --- Top bar (mobile only) --- */
 .shell__topbar {
     position: sticky;
@@ -39,6 +44,12 @@
     border-bottom: 1px solid var(--rm-border);
     background: color-mix(in srgb, var(--rm-bg) 80%, transparent);
     backdrop-filter: blur(12px);
+}
+
+.shell__topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 /* --- Content --- */

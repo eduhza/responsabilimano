@@ -26,7 +26,13 @@
     </aside>
 
     <main class="auth__main">
-        <a href="/" class="auth__main-brand"><RmLogo /></a>
+        <div class="auth__main-top">
+            <a href="/" class="auth__main-brand"><RmLogo /></a>
+            <RmThemeToggle Class="auth__theme" Label="@Localizer["ThemeLabel"]"
+                           LightLabel="@Localizer["ThemeLight"]"
+                           DarkLabel="@Localizer["ThemeDark"]"
+                           SystemLabel="@Localizer["ThemeSystem"]" />
+        </div>
         <div class="auth__form">
             @Body
         </div>

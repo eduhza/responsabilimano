@@ -1,5 +1,7 @@
 window.dashboardChart = {
     _chart: null,
+    _lastConfig: null,
+    _lastCanvasId: null,
 
     // Datasets arrive with a token name (e.g. "--rm-you") instead of a literal colour,
     // so the chart re-tints with the theme instead of hardcoding the palette in C#.
@@ -11,6 +13,9 @@ window.dashboardChart = {
     render: function (canvasId, config) {
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
+
+        this._lastCanvasId = canvasId;
+        this._lastConfig = config;
 
         const fg = this._token('--rm-muted-fg', '#606d64');
         const border = this._token('--rm-border', '#dbe0d6');
@@ -45,3 +50,10 @@ window.dashboardChart = {
         }
     }
 };
+
+// Re-render the chart with the new theme's tokens when the user toggles the theme.
+window.addEventListener('rm:theme', function () {
+    if (window.dashboardChart._chart && window.dashboardChart._lastConfig && window.dashboardChart._lastCanvasId) {
+        window.dashboardChart.render(window.dashboardChart._lastCanvasId, window.dashboardChart._lastConfig);
+    }
+});

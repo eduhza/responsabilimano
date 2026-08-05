@@ -108,6 +108,13 @@
     padding: 2rem 1rem;
 }
 
+.auth__main-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
 .auth__main-brand:hover {
     text-decoration: none;
 }
@@ -179,7 +186,12 @@
         display: flex;
     }
 
+    /* The brand lives on the green panel; keep only the theme toggle on this side. */
     .auth__main-brand {
         display: none;
+    }
+
+    .auth__main-top {
+        justify-content: flex-end;
     }
 }
