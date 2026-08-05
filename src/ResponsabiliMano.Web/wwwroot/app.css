@@ -152,6 +152,16 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0;
 }
 
+h1:focus-visible,
+h2:focus-visible,
+h3:focus-visible,
+h4:focus-visible,
+h5:focus-visible,
+h6:focus-visible {
+    box-shadow: none;
+    border-color: transparent;
+}
+
 p {
     margin: 0;
 }
