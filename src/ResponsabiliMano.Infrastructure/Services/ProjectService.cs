@@ -373,53 +373,7 @@ public sealed class ProjectService : IProjectService
             .Select(c => c.PeriodNumber)
             .ToListAsync(cancellationToken);
 
-        if (periods.Count == 0)
-            return (0, 0);
-
-        var current = 0;
-        int? expected = null;
-        foreach (var period in periods)
-        {
-            if (expected is null)
-            {
-                current = 1;
-                expected = period - 1;
-            }
-            else if (period == expected)
-            {
-                current++;
-                expected = period - 1;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        var best = 0;
-        var run = 0;
-        int? runExpected = null;
-        foreach (var period in periods)
-        {
-            if (runExpected is null || period == runExpected)
-            {
-                run++;
-                runExpected = period - 1;
-            }
-            else
-            {
-                if (run > best)
-                    best = run;
-
-                run = 1;
-                runExpected = period - 1;
-            }
-        }
-
-        if (run > best)
-            best = run;
-
-        return (current, best);
+        return StreakCalculator.FromPeriods(periods);
     }
 
     private T DeserializePayload<T>(ProjectChangeRequest changeRequest) where T : class

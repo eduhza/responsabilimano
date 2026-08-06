@@ -1,0 +1,248 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDashboardService DashboardService
+@inject IFeatureManager FeatureManager
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject ILogger<GlobalDashboard> Logger
+@using Microsoft.FeatureManagement
+
+<PageTitle>@Localizer["GlobalDashboardTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <div class="skeleton gdash__skeleton gdash__skeleton--head"></div>
+    <div class="skeleton gdash__skeleton gdash__skeleton--stats"></div>
+    <div class="skeleton gdash__skeleton gdash__skeleton--list"></div>
+}
+else if (!_available)
+{
+    @* The nav item is hidden while the flag is off, so landing here means a typed or
+       bookmarked URL: answer like any unknown route rather than explaining the flag. *@
+    <RmEmptyState Icon="alert-circle"
+                  Title="@Localizer["NotFoundTitle"].Value"
+                  Description="@Localizer["NotFoundMessage"].Value">
+        <RmButton Href="/projects" Variant="outline">@Localizer["BackToHome"]</RmButton>
+    </RmEmptyState>
+}
+else if (_error is not null)
+{
+    <RmAlert Tone="danger">@_error</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
+}
+else if (_data is not null)
+{
+    <AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
+
+    <div class="gdash__head">
+        <div>
+            <h1 class="gdash__title">@Localizer["GlobalDashboardTitle"]</h1>
+            <p class="gdash__subtitle">@Localizer["GlobalDashboardSubtitle"]</p>
+        </div>
+        <RmButton Href="/projects/new" Variant="outline" Size="sm">
+            <RmIcon Name="plus" />
+            @Localizer["NavCreateProject"]
+        </RmButton>
+    </div>
+
+    @if (_data.Projects.Count == 0)
+    {
+        <RmEmptyState Icon="layout-dashboard"
+                      Title="@Localizer["GlobalEmptyTitle"]"
+                      Description="@Localizer["GlobalEmptyDescription"]">
+            <RmButton Href="/projects/new">@Localizer["HomeEmptyButton"]</RmButton>
+        </RmEmptyState>
+    }
+    else
+    {
+        @* Four numbers that answer "how am I doing overall?" before any per-project
+           detail: what is running, what I have logged, what I owe, how consistent I am. *@
+        <div class="gdash__stats">
+            <RmStatCard Label="@Localizer["GlobalActiveProjects"]" Icon="folder">
+                <p class="gdash__stat-value rm-display rm-tabular">@_data.ActiveProjects</p>
+                <p class="gdash__stat-caption">@Localizer["GlobalOfTotalProjects", _data.TotalProjects]</p>
+            </RmStatCard>
+
+            <RmStatCard Label="@Localizer["GlobalTotalCheckIns"]" Icon="clipboard-check">
+                <p class="gdash__stat-value rm-display rm-tabular">@_data.TotalCheckIns</p>
+                <p class="gdash__stat-caption">@Localizer["GlobalTotalCheckInsCaption"]</p>
+            </RmStatCard>
+
+            <RmStatCard Label="@Localizer["GlobalOpenCheckIns"]" Icon="clock">
+                <p class="gdash__stat-value rm-display rm-tabular">@_data.OpenCheckIns</p>
+                <p class="gdash__stat-caption">@Localizer["GlobalOpenCheckInsCaption"]</p>
+            </RmStatCard>
+
+            <RmStatCard Label="@Localizer["GlobalStreak"]" Icon="flame" Highlight="true">
+                <p class="gdash__stat-value rm-display rm-tabular">@_data.CurrentStreak</p>
+                <p class="gdash__stat-caption">@Localizer["StreakBest", _data.BestStreak]</p>
+            </RmStatCard>
+        </div>
+
+        @if (_data.OpenCheckIns > 0)
+        {
+            <RmAlert Class="gdash__nudge">@Localizer["GlobalOpenCheckInsNudge", _data.OpenCheckIns]</RmAlert>
+        }
+
+        <h2 class="gdash__section">@Localizer["GlobalProjectsSection"]</h2>
+
+        <div class="gdash__list">
+            @foreach (var project in _data.Projects)
+            {
+                <div class="rm-card gcard">
+                    @* The whole summary is one link to the project; the compare link
+                       below it cannot nest inside an anchor. *@
+                    <a class="gcard__main" href="@($"/projects/{project.ProjectId}")">
+                        <span class="rm-icon-tile rm-icon-tile--lg gcard__icon">@(project.Icon ?? "🎯")</span>
+
+                        <div class="gcard__body">
+                            <div class="gcard__heading">
+                                <h3 class="gcard__name">@project.Name</h3>
+                                <RmBadge Tone="@StatusTone(project.Status)" Dot="true">@StatusText(project.Status)</RmBadge>
+                                @if (project.CheckInPending)
+                                {
+                                    <RmBadge Tone="partner">@Localizer["GlobalCheckInPending"]</RmBadge>
+                                }
+                            </div>
+
+                            <div class="gcard__meta">
+                                <span><RmIcon Name="repeat" Size="0.875rem" /> @FrequencyText(project.Frequency)</span>
+                                <span><RmIcon Name="target" Size="0.875rem" /> @Localizer["ProjectGoalCount", project.GoalCount]</span>
+                                <span><RmIcon Name="clipboard-check" Size="0.875rem" /> @Localizer["GlobalCheckInsSubmitted", project.CheckInsSubmitted]</span>
+                            </div>
+
+                            @if (project.CurrentPeriod > 0 && project.TotalPeriods > 0)
+                            {
+                                var percent = Math.Min(100, (int)Math.Round(100m * Math.Min(project.CurrentPeriod, project.TotalPeriods) / project.TotalPeriods));
+                                <div class="gcard__progress">
+                                    <div class="gcard__progress-track">
+                                        <div class="gcard__progress-fill" style="width: @(percent)%"></div>
+                                    </div>
+                                    <span class="gcard__progress-label rm-tabular">
+                                        @Localizer["GlobalPeriodProgress", Math.Min(project.CurrentPeriod, project.TotalPeriods), project.TotalPeriods]
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="gcard__progress-label">@Localizer["GlobalNotStarted"]</p>
+                            }
+                        </div>
+
+                        <div class="gcard__side">
+                            @if (project.LatestFeeling is not null)
+                            {
+                                <FeelingFace Feeling="project.LatestFeeling.Value" Size="32" />
+                            }
+                            <RmAvatarStack You="@project.CreatorName" Partner="@project.PartnerName" Soft="true" />
+                            <RmIcon Name="chevron-right" Class="gcard__chevron" />
+                        </div>
+                    </a>
+
+                    @if (project.Status == ProjectStatus.Active)
+                    {
+                        <a class="gcard__compare" href="@($"/projects/{project.ProjectId}/dashboard")">
+                            <RmIcon Name="trending-up" Size="0.875rem" />
+                            @Localizer["DashboardCompareTitle"]
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private GlobalDashboardResponse? _data;
+    private bool _loading = true;
+    private bool _available = true;
+    private string? _error;
+    private Guid _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard))
+        {
+            _available = false;
+            _loading = false;
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _data = await DashboardService.GetGlobalDashboardAsync(_currentUserId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load the global dashboard for user {UserId}", _currentUserId);
+            _error = Localizer["DashboardError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    // Live updates (spec RT2): re-query on a timer and re-render only when something
+    // a partner could have changed actually moved.
+    private async Task RefreshAsync()
+    {
+        if (!_available || _loading || _currentUserId == Guid.Empty)
+            return;
+
+        try
+        {
+            var latest = await DashboardService.GetGlobalDashboardAsync(_currentUserId);
+            if (_data is not null && Signature(latest) == Signature(_data))
+                return;
+
+            _data = latest;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh the global dashboard for user {UserId}", _currentUserId);
+        }
+    }
+
+    private static string Signature(GlobalDashboardResponse d) =>
+        $"{d.TotalProjects}:{d.ActiveProjects}:{d.TotalCheckIns}:{d.CurrentStreak}:{d.BestStreak}:{d.OpenCheckIns}||" +
+        string.Join("|", d.Projects.Select(p =>
+            $"{p.ProjectId}:{p.Name}:{p.Status}:{p.CurrentPeriod}:{p.CheckInsSubmitted}:{p.CheckInPending}:{p.LatestFeeling}:{p.PartnerName}"));
+
+    private static string StatusTone(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Active => "primary",
+        ProjectStatus.Pending => "partner",
+        ProjectStatus.Cancelled => "destructive",
+        _ => "muted"
+    };
+
+    private string StatusText(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Pending => Localizer["StatusPending"],
+        ProjectStatus.Active => Localizer["StatusActive"],
+        ProjectStatus.Finished => Localizer["StatusFinished"],
+        ProjectStatus.Cancelled => Localizer["StatusCancelled"],
+        _ => status.ToString()
+    };
+
+    private string FrequencyText(ProjectFrequency frequency) => frequency switch
+    {
+        ProjectFrequency.Daily => Localizer["FrequencyDaily"],
+        ProjectFrequency.Weekly => Localizer["FrequencyWeekly"],
+        ProjectFrequency.Biweekly => Localizer["FrequencyBiweekly"],
+        ProjectFrequency.Monthly => Localizer["FrequencyMonthly"],
+        _ => frequency.ToString()
+    };
+}

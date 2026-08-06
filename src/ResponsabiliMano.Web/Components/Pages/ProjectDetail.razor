@@ -51,14 +51,10 @@ else
             </div>
         </div>
 
+        @* No dashboard button here: the "compare progress" card below is the single
+           entry point to this project's panel. *@
         <div class="detail__people">
             <RmAvatarStack You="@_project.Creator?.Name" Partner="@_project.Partner?.Name" Soft="true" />
-            @if (_project.Status == Core.Enums.ProjectStatus.Active && _dashboardEnabled)
-            {
-                <RmButton Href="@($"/projects/{_project.Id}/dashboard")" Variant="outline" Size="sm">
-                    @Localizer["DashboardButton"]
-                </RmButton>
-            }
         </div>
     </RmCard>
 

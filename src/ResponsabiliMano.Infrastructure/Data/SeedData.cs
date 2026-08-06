@@ -66,9 +66,10 @@ public static class SeedData
             PartnerId = bruno.Id,
             // Seven full weeks elapsed, so periods 1-7 are history and period 8 is open —
             // the check-in screen stays usable instead of reporting "already submitted".
-            // Fifteen weekly periods in total.
+            // The end date is inclusive and lands inside period 15, so the panel reads
+            // "period 8 of 15" rather than opening a one-day sixteenth period.
             StartDate = now.AddDays(-49),
-            EndDate = now.AddDays(56),
+            EndDate = now.AddDays(55),
             Frequency = ProjectFrequency.Weekly,
             Status = ProjectStatus.Active,
             Goals = [weight, workouts, diet, water]

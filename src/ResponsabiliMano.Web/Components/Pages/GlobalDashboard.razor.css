@@ -1,0 +1,189 @@
+.gdash__skeleton {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-radius: var(--rm-radius-xl);
+}
+
+.gdash__skeleton--head { height: 3rem; }
+.gdash__skeleton--stats { height: 7rem; }
+.gdash__skeleton--list { height: 14rem; }
+
+.gdash__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.gdash__title {
+    font-size: 1.875rem;
+}
+
+.gdash__subtitle {
+    max-width: 36rem;
+    margin-top: 0.5rem;
+    color: var(--rm-muted-fg);
+}
+
+/* --- KPIs --- */
+.gdash__stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.gdash__stat-value {
+    font-size: 1.875rem;
+    font-weight: 600;
+}
+
+.gdash__stat-caption {
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.gdash__nudge {
+    margin-top: 1rem;
+}
+
+.gdash__section {
+    margin-top: 2rem;
+    font-size: 1.125rem;
+}
+
+.gdash__list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* --- Project card --- */
+.gcard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.gcard__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    color: inherit;
+}
+
+.gcard__main:hover {
+    text-decoration: none;
+}
+
+.gcard__main:hover .gcard__name {
+    color: var(--rm-primary);
+}
+
+.gcard__icon {
+    font-size: 1.875rem;
+    line-height: 1;
+}
+
+.gcard__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.gcard__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gcard__name {
+    font-size: 1.25rem;
+    transition: color .15s ease;
+}
+
+.gcard__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--rm-muted-fg);
+}
+
+.gcard__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* --- Progress --- */
+.gcard__progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.gcard__progress-track {
+    flex: 1;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--rm-surface);
+    overflow: hidden;
+}
+
+.gcard__progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--rm-primary);
+}
+
+.gcard__progress-label {
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--rm-muted-fg);
+    white-space: nowrap;
+}
+
+.gcard__progress .gcard__progress-label {
+    margin-top: 0;
+}
+
+.gcard__side {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.gcard__chevron {
+    color: var(--rm-muted-fg);
+}
+
+.gcard__compare {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rm-border);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rm-primary);
+}
+
+@media (min-width: 640px) {
+    .gdash__stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .gcard__main {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .gcard__side {
+        justify-content: flex-end;
+    }
+}

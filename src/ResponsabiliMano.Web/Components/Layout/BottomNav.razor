@@ -2,11 +2,21 @@
    centre FAB the way the reference design does. *@
 
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IFeatureManager FeatureManager
+@using Microsoft.FeatureManagement
 
 <nav class="bottom-nav">
     <div class="bottom-nav__inner">
         <AuthorizeView>
             <Authorized>
+                @if (_dashboardEnabled)
+                {
+                    <NavLink href="/dashboard" class="bottom-nav__item">
+                        <RmIcon Name="layout-dashboard" Size="1.25rem" />
+                        <span>@Localizer["NavDashboard"]</span>
+                    </NavLink>
+                }
+
                 <NavLink href="/projects" Match="NavLinkMatch.All" class="bottom-nav__item">
                     <RmIcon Name="folder" Size="1.25rem" />
                     <span>@Localizer["NavProjects"]</span>
@@ -18,12 +28,8 @@
                     </RmButton>
                 </div>
 
-                @* Mirrors the sidebar placeholder: Check-in needs a project. *@
-                <span class="bottom-nav__item bottom-nav__item--disabled" aria-disabled="true">
-                    <RmIcon Name="check-circle" Size="1.25rem" />
-                    <span>@Localizer["NavCheckIn"]</span>
-                </span>
-
+                @* Check-in needs a project, so it has no slot here: the bar keeps four
+                   real destinations around the FAB instead of a dead placeholder. *@
                 <NavLink href="/profile" class="bottom-nav__item">
                     <RmIcon Name="user" Size="1.25rem" />
                     <span>@Localizer["NavProfile"]</span>
@@ -48,3 +54,12 @@
         </AuthorizeView>
     </div>
 </nav>
+
+@code {
+    private bool _dashboardEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dashboardEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard);
+    }
+}

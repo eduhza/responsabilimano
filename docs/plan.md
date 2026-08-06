@@ -261,3 +261,5 @@ Este documento organiza o desenvolvimento em sprints curtas. Cada sprint possui 
     *   [x] RT2 — Atualização ao vivo entre parceiros via polling (`AutoRefresh` ~5s) → corrige "aceite do parceiro não atualizava" (Bug B). `specs/RT2-live-updates-polling.md`
     *   [x] D5 — Elevação visual das telas de produto (cards no lugar de DataGrid, faces coloridas, grid do dashboard consertado, dark mode legível). `specs/D5-product-screens-elevation.md`
     *   Verificado: build + 176 testes (Infra 111, Web 20, Integração 35, E2E 10) + captura visual (light/dark, desktop/mobile).
+*   [ ] **Painel global** (feedback de produção — "Painel" levava ao dashboard de um projeto, sem visão dos demais)
+    *   [ ] S6.1 — `/dashboard` com KPIs consolidados + card por projeto; `/projects/{id}/dashboard` volta a ser só do projeto; item "Painel" da navegação habilitado atrás da flag `Dashboard`. `specs/S6.1-global-dashboard.md`
