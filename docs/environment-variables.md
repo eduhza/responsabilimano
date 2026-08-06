@@ -21,18 +21,21 @@ Seção `EmailSettings`. Sem `SmtpPassword` a aplicação usa o `LoggingEmailSer
 | `EmailSettings__FromName` | Nome do remetente | `Clube BomVoar` |
 | `EmailSettings__FromEmail` | Endereço do remetente (= SmtpUser) | `naoresponda@bomvoarturismo.com` |
 
-## GCP / Produção (secrets do GitHub Actions)
+## GCP / Produção (substituições do Cloud Build)
 
-Usados pelo workflow `.github/workflows/ci-cd.yml` no deploy para Cloud Run via Workload Identity Federation.
+O deploy roda no Google Cloud Build (`cloudbuild.yaml`), não no GitHub Actions.
+As substituições abaixo têm default no próprio arquivo e podem ser sobrescritas
+por build.
 
-| Secret | Descrição | Valor configurado |
-|--------|-----------|-------------------|
-| `GCP_PROJECT_ID` | ID do projeto no Google Cloud | `responsabilimano` |
-| `GCP_REGION` | Região do Cloud Run / Artifact Registry | `us-central1` |
-| `GCP_REPOSITORY` | Repositório do Artifact Registry (Docker) | `containers` |
-| `GCP_SERVICE_NAME` | Nome do serviço no Cloud Run | `responsabilimano-web` |
-| `GCP_SERVICE_ACCOUNT` | Service account de deploy | `github-deployer@responsabilimano.iam.gserviceaccount.com` |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Provider WIF (OIDC) | `projects/144768016039/locations/global/workloadIdentityPools/github-pool/providers/github-provider` |
+| Substituição | Descrição | Default |
+|--------------|-----------|---------|
+| `_REGION` | Região do Cloud Run / Artifact Registry | `us-central1` |
+| `_REPOSITORY` | Repositório do Artifact Registry (Docker) | `containers` |
+| `_SERVICE` | Nome do serviço no Cloud Run | `responsabilimano-web` |
+| `_SQL_INSTANCE` | Instância do Cloud SQL | `responsabilimano-db` |
+| `_TAG` | Tag da imagem (o trigger passa o commit SHA) | `latest` |
+
+`PROJECT_ID` é uma substituição nativa do Cloud Build (`responsabilimano`).
 
 ### Recursos provisionados no GCP
 

@@ -25,66 +25,92 @@ de domínio/SSL, feature flags e backup do banco.
 | Artifact Registry | `us-central1-docker.pkg.dev/responsabilimano/containers` |
 | Secret Manager | `connection-string`, `cron-secret`, `email-smtp-password` |
 | Service account (runtime) | `responsabilimano-run@responsabilimano.iam.gserviceaccount.com` |
-| Service account (deploy CI) | `github-deployer@responsabilimano.iam.gserviceaccount.com` |
+| Service account (deploy) | `cloudbuild-deployer@responsabilimano.iam.gserviceaccount.com` |
+| Cloud Build (conexão GitHub) | `github-eduhza` (região `us-central1`) |
+| Cloud Build (trigger) | `deploy-main` — push em `main` |
 
 > Para variáveis de ambiente e secrets completos, consulte
 > [`docs/environment-variables.md`](environment-variables.md).
 
 ---
 
-## Deploy automatizado (CI/CD)
+## Arquitetura do pipeline
 
-O pipeline de CI/CD está definido em `.github/workflows/ci-cd.yml` e é acionado
-em push/PR para `main` e `develop`.
+O CI e o CD são **independentes**, propositalmente:
 
-### O que acontece no merge para `main`
+| Etapa | Onde roda | Arquivo |
+|-------|-----------|---------|
+| Build, testes, coverage, SCA | GitHub Actions | `.github/workflows/ci-cd.yml` |
+| CodeQL (SAST) | GitHub Actions | `.github/workflows/ci-cd.yml` |
+| Spec conformance & contract test | GitHub Actions | `.github/workflows/ci-cd.yml` |
+| **Build da imagem + deploy no Cloud Run** | **Google Cloud Build** | `cloudbuild.yaml` |
 
-1. **Build & Test** — `dotnet build` + `dotnet test` com cobertura.
-2. **CodeQL (SAST)** — análise estática de código C#.
-3. **Spec Conformance & Contract Test** — lint do OpenAPI e conformance de
-   rotas.
-4. **E2E Tests** — testes end-to-end com Playwright.
-5. **Deploy para Cloud Run** — todos os jobs acima devem passar (`needs`).
+> **Por que separado?** Em 2026-08-06 um outage crítico do GitHub Actions
+> impediu que qualquer workflow fosse disparado. O merge para `main` ficou
+> preso em "waiting for status", o job de deploy nunca rodou e produção ficou
+> desatualizada. Com o deploy no Cloud Build, a publicação em produção não
+> depende mais da disponibilidade dos runners do GitHub.
 
-### Secrets do GitHub Actions
+## Deploy automatizado (Cloud Build)
 
-O deploy usa Workload Identity Federation (WIF) para autenticar no GCP sem
-chaves de longa duração. Os seguintes secrets estão configurados no repositório
-GitHub:
+O trigger `deploy-main` (região `us-central1`) observa push na branch `main` do
+repositório `eduhza/responsabilimano` e executa o `cloudbuild.yaml`:
 
-| Secret | Descrição |
-|--------|-----------|
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Provider OIDC para WIF |
-| `GCP_SERVICE_ACCOUNT` | Service account de deploy (`github-deployer@...`) |
-| `GCP_PROJECT_ID` | `responsabilimano` |
-| `GCP_REGION` | `us-central1` |
-| `GCP_REPOSITORY` | `containers` (Artifact Registry) |
-| `GCP_SERVICE_NAME` | `responsabilimano-web` |
-
-### Comando executado pelo CI
-
-O workflow faz:
-
-1. `docker build` da imagem com tag `:<git-sha>`.
+1. `docker build` da imagem com as tags `:<commit-sha>` e `:latest`.
 2. `docker push` para o Artifact Registry.
 3. `gcloud run deploy` com:
    - `--image` apontando para a imagem recém-built.
    - `--region us-central1 --platform managed --allow-unauthenticated`.
    - `--service-account responsabilimano-run@responsabilimano.iam.gserviceaccount.com`.
    - `--add-cloudsql-instances responsabilimano:us-central1:responsabilimano-db`.
-   - `--set-env-vars ASPNETCORE_ENVIRONMENT=Production,FeatureManagement__CheckIns=true`.
+   - `--set-env-vars ASPNETCORE_ENVIRONMENT=Production,FeatureManagement__CheckIns=true,FeatureManagement__Dashboard=true`.
    - `--set-secrets` mapeando `ConnectionStrings__DefaultConnection`,
      `Cron__Secret` e `EmailSettings__SmtpPassword` do Secret Manager.
 
+O build roda como `cloudbuild-deployer@responsabilimano.iam.gserviceaccount.com`,
+que tem `run.admin`, `artifactregistry.writer`, `secretmanager.secretAccessor`,
+`logging.logWriter` e `iam.serviceAccountUser` sobre a SA de runtime.
+
 > O deploy só ocorre em push/merge para `main`. A branch `develop` roda build e
-> testes mas não publica em produção.
+> testes no GitHub Actions, mas não publica em produção.
+
+> **Atenção:** o trigger dispara no push, sem aguardar o resultado do CI do
+> GitHub. Isso é intencional (resiliência a outages), mas significa que a
+> proteção de branch da `main` é o que garante que só código testado chegue lá.
+> Não faça bypass das rules sem necessidade.
+
+### Acompanhar / disparar builds
+
+```bash
+# Últimos builds
+gcloud builds list --region us-central1 --limit 5
+
+# Logs de um build
+gcloud builds log <BUILD_ID> --region us-central1
+
+# Disparar o trigger manualmente numa branch
+gcloud builds triggers run deploy-main --branch main --region us-central1
+```
+
+### Deploy manual via Cloud Build (sem GitHub)
+
+Roda o mesmo `cloudbuild.yaml` a partir do código local — útil se o GitHub
+estiver indisponível:
+
+```bash
+gcloud builds submit --config cloudbuild.yaml \
+  --region us-central1 \
+  --service-account projects/responsabilimano/serviceAccounts/cloudbuild-deployer@responsabilimano.iam.gserviceaccount.com \
+  --substitutions=_TAG=manual-$(date +%Y%m%d-%H%M%S)
+```
 
 ---
 
-## Deploy manual (passo a passo)
+## Deploy manual com Docker local (passo a passo)
 
-Use este procedimento para recuperação de desastre ou quando o CI/CD estiver
-indisponível.
+Use este procedimento para recuperação de desastre, quando nem o Cloud Build
+estiver disponível. Na maioria dos casos o `gcloud builds submit` acima é
+preferível, por usar exatamente a mesma receita do deploy automatizado.
 
 ### 1. Autenticar no GCP
 
