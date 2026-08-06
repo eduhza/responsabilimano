@@ -1,0 +1,33 @@
+.checkin-editor__period {
+    margin-top: 0.5rem;
+    color: var(--rm-muted-fg);
+}
+
+.checkin-editor__section {
+    margin-top: 2rem;
+    font-size: 1.125rem;
+}
+
+.checkin-editor__metrics {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.checkin-editor__feelings {
+    margin-top: 1rem;
+}
+
+.checkin-editor__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+@media (min-width: 640px) {
+    .checkin-editor__metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+}

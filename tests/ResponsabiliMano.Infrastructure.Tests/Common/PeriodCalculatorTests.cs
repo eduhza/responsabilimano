@@ -48,4 +48,59 @@ public class PeriodCalculatorTests
         var now = Start.AddDays(elapsedDays);
         Assert.Equal(expected, PeriodCalculator.CurrentPeriod(Start, ProjectFrequency.Monthly, now));
     }
+
+    [Theory]
+    [InlineData(ProjectFrequency.Daily, 1, 0, 1)]
+    [InlineData(ProjectFrequency.Daily, 2, 1, 2)]
+    [InlineData(ProjectFrequency.Weekly, 1, 0, 1)]
+    [InlineData(ProjectFrequency.Weekly, 2, 7, 2)]
+    [InlineData(ProjectFrequency.Biweekly, 2, 14, 2)]
+    public void PeriodStart_IgnoresTimeOfDay_ForNonMonthly(ProjectFrequency frequency, int period, int expectedOffsetDays, int expectedPeriod)
+    {
+        var start = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc);
+        var startOfPeriod = PeriodCalculator.PeriodStart(start, frequency, period);
+        Assert.Equal(Start.AddDays(expectedOffsetDays).Date, startOfPeriod.Date);
+        Assert.Equal(DateTimeKind.Utc, startOfPeriod.Kind);
+        Assert.Equal(expectedPeriod, PeriodCalculator.CurrentPeriod(start, frequency, startOfPeriod));
+    }
+
+    [Fact]
+    public void PeriodStart_Monthly_HandlesShortMonths()
+    {
+        var start = new DateTime(2026, 1, 31, 8, 0, 0, DateTimeKind.Utc);
+
+        // Period 1 starts Jan 31.
+        Assert.Equal(new DateTime(2026, 1, 31, 0, 0, 0, DateTimeKind.Utc), PeriodCalculator.PeriodStart(start, ProjectFrequency.Monthly, 1));
+
+        // February has no 31st, so period 2 starts on the 1st of March.
+        Assert.Equal(new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), PeriodCalculator.PeriodStart(start, ProjectFrequency.Monthly, 2));
+
+        // March has a 31st.
+        Assert.Equal(new DateTime(2026, 3, 31, 0, 0, 0, DateTimeKind.Utc), PeriodCalculator.PeriodStart(start, ProjectFrequency.Monthly, 3));
+    }
+
+    [Fact]
+    public void PeriodEnd_ReturnsEndOfDayBeforeNextPeriod()
+    {
+        var start = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc);
+        var nextStart = new DateTime(2026, 1, 8, 0, 0, 0, DateTimeKind.Utc);
+
+        var end = PeriodCalculator.PeriodEnd(start, ProjectFrequency.Weekly, 1);
+
+        Assert.Equal(nextStart.AddTicks(-1), end);
+        Assert.Equal(DateTimeKind.Utc, end.Kind);
+    }
+
+    [Fact]
+    public void PeriodEnd_ClampsToProjectEnd()
+    {
+        var start = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc);
+        var projectEnd = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc);
+        var clampEnd = projectEnd.Date.AddDays(1).AddTicks(-1);
+
+        var end = PeriodCalculator.PeriodEnd(start, ProjectFrequency.Weekly, 2, projectEnd);
+
+        Assert.Equal(clampEnd, end);
+        Assert.Equal(DateTimeKind.Utc, end.Kind);
+    }
 }
