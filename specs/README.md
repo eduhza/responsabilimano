@@ -50,6 +50,7 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | S5.3 | Produção — Domínio, Deploy Manual e Backup do Banco | done |
 | D1 | Fundação: FluentUI + Tema + Layout | draft |
 | D2 | Telas Auth + Home com FluentUI | draft |
+| S6.1 | Painel global do usuário (`/dashboard`) | in-progress |
 
 > As specs de produto (`S*`/`X*`) nascem `draft`; o PM aprova (muda para
 > `approved`) no Gate 1, uma de cada vez, antes de implementar.

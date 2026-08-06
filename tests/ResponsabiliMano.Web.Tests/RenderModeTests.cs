@@ -23,6 +23,7 @@ public class RenderModeTests
         typeof(InvitationAccept),
         typeof(CheckIn),
         typeof(Dashboard),
+        typeof(GlobalDashboard),
         // Home became interactive (spec RT1) so it re-queries on navigation and can
         // receive live updates (spec RT2). It only reads auth state — never sets the
         // cookie — so ADR-0003's static-page constraint does not apply to it.

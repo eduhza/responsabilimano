@@ -24,8 +24,9 @@ tags:
       respond 404 while the flag is off (spec R7).
   - name: Dashboard
     description: >
-      Aggregated dashboard data for a project (Sprint 4, spec S4.1). Gated behind
-      the Dashboard feature flag; responds 404 while the flag is off (spec R7).
+      Aggregated dashboard data, per project (Sprint 4, spec S4.1) and account-wide
+      (spec S6.1). Gated behind the Dashboard feature flag; responds 404 while the
+      flag is off (spec R7).
   - name: Cron
     description: Scheduler-only jobs (/api/cron), authenticated by a shared secret header.
 
@@ -331,6 +332,24 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { description: 'Project not found, or the Dashboard feature is disabled' }
 
+  /api/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: >
+        Get the caller's account-wide panel: consolidated counters plus one summary
+        per project (spec S6.1). Behind the Dashboard feature flag: 404 while off.
+      operationId: getGlobalDashboard
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Consolidated data for every project the caller participates in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GlobalDashboardResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: 'The Dashboard feature is disabled' }
+
   /api/cron/checkins/dispatch:
     post:
       tags: [Cron]
@@ -623,6 +642,48 @@ components:
         submittedAt: { type: string, format: date-time }
         value: { type: number }
         averageValue: { type: [number, 'null'] }
+
+    GlobalDashboardResponse:
+      type: object
+      properties:
+        totalProjects: { type: integer }
+        activeProjects: { type: integer }
+        totalCheckIns:
+          type: integer
+          description: Check-ins the caller submitted across every project
+        currentStreak:
+          type: integer
+          description: Caller's best current streak among their projects (not a sum)
+        bestStreak: { type: integer }
+        openCheckIns:
+          type: integer
+          description: Active projects whose current period the caller has not filled in
+        projects:
+          type: array
+          items: { $ref: '#/components/schemas/GlobalProjectSummary' }
+    GlobalProjectSummary:
+      type: object
+      properties:
+        projectId: { type: string, format: uuid }
+        name: { type: string }
+        icon: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/ProjectStatus' }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        frequency: { $ref: '#/components/schemas/ProjectFrequency' }
+        creatorName: { type: string }
+        partnerName: { type: [string, 'null'] }
+        currentPeriod:
+          type: integer
+          description: 1-based current period, or 0 when the project has not started
+        totalPeriods: { type: integer }
+        checkInsSubmitted: { type: integer }
+        checkInPending: { type: boolean }
+        latestFeeling:
+          oneOf:
+            - $ref: '#/components/schemas/Feeling'
+            - type: 'null'
+        goalCount: { type: integer }
     MessageResponse:
       type: object
       properties:

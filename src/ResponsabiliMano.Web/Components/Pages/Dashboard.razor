@@ -12,7 +12,7 @@
 @using Microsoft.FeatureManagement
 @implements IAsyncDisposable
 
-<PageTitle>@Localizer["DashboardTitle"]</PageTitle>
+<PageTitle>@Localizer["ProjectDashboardTitle"]</PageTitle>
 
 @if (_loading)
 {
@@ -42,8 +42,15 @@ else if (_dashboard is not null)
 
     <div class="dash__head">
         <div>
-            <h1 class="dash__title">@Localizer["DashboardTitle"]</h1>
-            <p class="dash__subtitle">@_dashboard.ProjectName</p>
+            <h1 class="dash__title">@Localizer["ProjectDashboardTitle"]</h1>
+            @* Scoped to this project only: the account-wide numbers live on /dashboard. *@
+            <p class="dash__subtitle">
+                @_dashboard.ProjectName
+                @if (_dashboard.CurrentPeriod > 0 && _dashboard.TotalPeriods > 0)
+                {
+                    <span> · @Localizer["ProjectDashboardProgress", Math.Min(_dashboard.CurrentPeriod, _dashboard.TotalPeriods), _dashboard.TotalPeriods]</span>
+                }
+            </p>
         </div>
         <div class="dash__legend">
             @for (var i = 0; i < _dashboard.Participants.Count; i++)

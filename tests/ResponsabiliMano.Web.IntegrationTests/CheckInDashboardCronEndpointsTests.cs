@@ -88,6 +88,31 @@ public class CheckInDashboardCronEndpointsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetGlobalDashboard_Success_ReturnsOnlyTheCallersProjects()
+    {
+        var (creator, _, project) = await SeedHelper.SeedActiveProjectAsync(_fixture);
+        var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
+        var client = _fixture.AuthenticatedClient(cookie);
+
+        var response = await client.GetAsync("/api/dashboard");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("totalProjects").GetInt32() >= 1);
+        var ids = body.GetProperty("projects").EnumerateArray()
+            .Select(p => p.GetProperty("projectId").GetGuid())
+            .ToList();
+        Assert.Contains(project.Id, ids);
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboard_Anonymous_Returns401()
+    {
+        var response = await _fixture.Client.GetAsync("/api/dashboard");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CronDispatch_WithoutSecret_Returns401()
     {
         var response = await _fixture.Client.PostAsync("/api/cron/checkins/dispatch", null);
