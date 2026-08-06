@@ -136,4 +136,11 @@ public class DashboardFlagOffTests : IAsyncLifetime
         var response = await _fixture.Client.GetAsync($"/api/projects/{Guid.NewGuid()}/dashboard");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetGlobalDashboard_FeatureFlagOff_Returns404()
+    {
+        var response = await _fixture.Client.GetAsync("/api/dashboard");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

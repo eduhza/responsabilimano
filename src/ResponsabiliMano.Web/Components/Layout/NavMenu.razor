@@ -1,14 +1,27 @@
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IFeatureManager FeatureManager
+@using Microsoft.FeatureManagement
 
 <AuthorizeView>
     <Authorized>
         <nav class="nav">
-            @* Painel and Check-in live under a project, so there is no global
-               destination yet: they render as placeholders until there is one. *@
-            <span class="nav__link nav__link--disabled" aria-disabled="true">
-                <RmIcon Name="layout-dashboard" Size="1.125rem" />
-                <span>@Localizer["NavDashboard"]</span>
-            </span>
+            @* Painel is the account-wide panel (spec S6.1), so it is a real
+               destination whenever the Dashboard flag is on. Check-in still lives
+               under a project, so it stays a placeholder. *@
+            @if (_dashboardEnabled)
+            {
+                <NavLink href="/dashboard" class="nav__link">
+                    <RmIcon Name="layout-dashboard" Size="1.125rem" />
+                    <span>@Localizer["NavDashboard"]</span>
+                </NavLink>
+            }
+            else
+            {
+                <span class="nav__link nav__link--disabled" aria-disabled="true">
+                    <RmIcon Name="layout-dashboard" Size="1.125rem" />
+                    <span>@Localizer["NavDashboard"]</span>
+                </span>
+            }
 
             <NavLink href="/projects" Match="NavLinkMatch.All" class="nav__link">
                 <RmIcon Name="folder" Size="1.125rem" />
@@ -63,3 +76,12 @@
         </nav>
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    private bool _dashboardEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dashboardEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard);
+    }
+}

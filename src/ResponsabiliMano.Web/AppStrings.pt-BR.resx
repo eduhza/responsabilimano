@@ -411,12 +411,6 @@
   <data name="FeelingVeryHappy" xml:space="preserve">
     <value>Muito bem</value>
   </data>
-  <data name="DashboardTitle" xml:space="preserve">
-    <value>Dashboard</value>
-  </data>
-  <data name="DashboardButton" xml:space="preserve">
-    <value>Dashboard</value>
-  </data>
   <data name="DashboardGoalSelector" xml:space="preserve">
     <value>Selecionar meta</value>
   </data>
@@ -716,5 +710,62 @@
   </data>
   <data name="DashboardCompareText" xml:space="preserve">
     <value>Você e {0} lado a lado</value>
+  </data>
+  <data name="GlobalDashboardTitle" xml:space="preserve">
+    <value>Painel</value>
+  </data>
+  <data name="GlobalDashboardSubtitle" xml:space="preserve">
+    <value>Visão geral de todos os seus projetos.</value>
+  </data>
+  <data name="GlobalActiveProjects" xml:space="preserve">
+    <value>Projetos ativos</value>
+  </data>
+  <data name="GlobalOfTotalProjects" xml:space="preserve">
+    <value>de {0} no total</value>
+  </data>
+  <data name="GlobalTotalCheckIns" xml:space="preserve">
+    <value>Check-ins feitos</value>
+  </data>
+  <data name="GlobalTotalCheckInsCaption" xml:space="preserve">
+    <value>somando todos os projetos</value>
+  </data>
+  <data name="GlobalOpenCheckIns" xml:space="preserve">
+    <value>Check-ins abertos</value>
+  </data>
+  <data name="GlobalOpenCheckInsCaption" xml:space="preserve">
+    <value>no período atual</value>
+  </data>
+  <data name="GlobalOpenCheckInsNudge" xml:space="preserve">
+    <value>Aguardando você neste período: {0} check-in(s).</value>
+  </data>
+  <data name="GlobalStreak" xml:space="preserve">
+    <value>Sequência</value>
+  </data>
+  <data name="GlobalProjectsSection" xml:space="preserve">
+    <value>Seus projetos</value>
+  </data>
+  <data name="GlobalCheckInPending" xml:space="preserve">
+    <value>check-in pendente</value>
+  </data>
+  <data name="GlobalCheckInsSubmitted" xml:space="preserve">
+    <value>seus check-ins: {0}</value>
+  </data>
+  <data name="GlobalPeriodProgress" xml:space="preserve">
+    <value>Período {0} de {1}</value>
+  </data>
+  <data name="GlobalNotStarted" xml:space="preserve">
+    <value>Ainda não começou</value>
+  </data>
+  <data name="GlobalEmptyTitle" xml:space="preserve">
+    <value>Nada para acompanhar ainda</value>
+  </data>
+  <data name="GlobalEmptyDescription" xml:space="preserve">
+    <value>Crie seu primeiro projeto para ver aqui o resumo de todos eles.</value>
+  </data>
+  <data name="ProjectDashboardTitle" xml:space="preserve">
+    <value>Evolução lado a lado</value>
+  </data>
+  <data name="ProjectDashboardProgress" xml:space="preserve">
+    <value>Período {0} de {1}</value>
   </data>
 </root>

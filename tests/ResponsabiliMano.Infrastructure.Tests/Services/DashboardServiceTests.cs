@@ -295,4 +295,159 @@ public class DashboardServiceTests : IDisposable
         Assert.Equal("h", sleepSeries.Unit);
         Assert.Equal(GoalDataType.Integer, sleepSeries.DataType);
     }
+
+    [Fact]
+    public async Task GetDashboardAsync_ReportsProjectProgress()
+    {
+        var creator = SeedUser("Alice", "alice@example.com");
+        // Started 30 days ago, ends in 30: weekly period 5 of 9.
+        var (project, _) = SeedProject(creator.Id);
+
+        var service = CreateService();
+        var result = await service.GetDashboardAsync(project.Id, creator.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal(5, result!.CurrentPeriod);
+        Assert.Equal(9, result.TotalPeriods);
+    }
+
+    // --- Account-wide panel (spec S6.1) ---
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_ReturnsEmptyPayload_WhenUserHasNoProjects()
+    {
+        var user = SeedUser("Loner", "loner@example.com");
+
+        var result = await CreateService().GetGlobalDashboardAsync(user.Id);
+
+        Assert.Equal(0, result.TotalProjects);
+        Assert.Equal(0, result.ActiveProjects);
+        Assert.Equal(0, result.TotalCheckIns);
+        Assert.Equal(0, result.OpenCheckIns);
+        Assert.Empty(result.Projects);
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_OnlyIncludesProjectsTheUserParticipatesIn()
+    {
+        var alice = SeedUser("Alice", "alice@example.com");
+        var bob = SeedUser("Bob", "bob@example.com");
+        var stranger = SeedUser("Stranger", "stranger@example.com");
+
+        var (mine, _) = SeedProject(alice.Id, name: "Mine");
+        var (shared, _) = SeedProject(bob.Id, alice.Id, name: "Shared");
+        SeedProject(stranger.Id, name: "Theirs");
+
+        var result = await CreateService().GetGlobalDashboardAsync(alice.Id);
+
+        Assert.Equal(2, result.TotalProjects);
+        Assert.Equal(
+            new[] { mine.Id, shared.Id }.OrderBy(id => id),
+            result.Projects.Select(p => p.ProjectId).OrderBy(id => id));
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_AggregatesCountersAcrossProjects()
+    {
+        var alice = SeedUser("Alice", "alice@example.com");
+        var bob = SeedUser("Bob", "bob@example.com");
+
+        var (summer, summerGoal) = SeedProject(alice.Id, bob.Id, name: "Summer");
+        var (running, runningGoal) = SeedProject(alice.Id, bob.Id, name: "Running");
+
+        SeedCheckIn(summer.Id, alice.Id, 1, Feeling.Happy, (summerGoal.Id, 80m));
+        SeedCheckIn(summer.Id, alice.Id, 2, Feeling.VeryHappy, (summerGoal.Id, 79m));
+        SeedCheckIn(running.Id, alice.Id, 1, Feeling.Sad, (runningGoal.Id, 5m));
+        // The partner's check-ins belong to the partner's panel, not Alice's counters.
+        SeedCheckIn(summer.Id, bob.Id, 1, Feeling.Neutral, (summerGoal.Id, 90m));
+
+        var result = await CreateService().GetGlobalDashboardAsync(alice.Id);
+
+        Assert.Equal(2, result.TotalProjects);
+        Assert.Equal(2, result.ActiveProjects);
+        Assert.Equal(3, result.TotalCheckIns);
+
+        var summerCard = result.Projects.Single(p => p.Name == "Summer");
+        Assert.Equal(2, summerCard.CheckInsSubmitted);
+        Assert.Equal(Feeling.VeryHappy, summerCard.LatestFeeling);
+        Assert.Equal("Alice", summerCard.CreatorName);
+        Assert.Equal("Bob", summerCard.PartnerName);
+        Assert.Equal(1, summerCard.GoalCount);
+        Assert.Equal(5, summerCard.CurrentPeriod);
+        Assert.Equal(9, summerCard.TotalPeriods);
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_FlagsOnlyTheProjectsMissingTheCurrentPeriod()
+    {
+        var alice = SeedUser("Alice", "alice@example.com");
+        var (filled, filledGoal) = SeedProject(alice.Id, name: "Filled");
+        var (owed, _) = SeedProject(alice.Id, name: "Owed");
+
+        // Period 5 is current for the default 30-days-ago start.
+        SeedCheckIn(filled.Id, alice.Id, 5, Feeling.Happy, (filledGoal.Id, 80m));
+
+        var result = await CreateService().GetGlobalDashboardAsync(alice.Id);
+
+        Assert.False(result.Projects.Single(p => p.ProjectId == filled.Id).CheckInPending);
+        Assert.True(result.Projects.Single(p => p.ProjectId == owed.Id).CheckInPending);
+        Assert.Equal(1, result.OpenCheckIns);
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_DoesNotAskForCheckInsOnInactiveOrUnstartedProjects()
+    {
+        var alice = SeedUser("Alice", "alice@example.com");
+
+        var pending = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Pending",
+            CreatorId = alice.Id,
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Frequency = ProjectFrequency.Weekly,
+            Status = ProjectStatus.Pending
+        };
+        var future = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Future",
+            CreatorId = alice.Id,
+            StartDate = DateTime.UtcNow.AddDays(10),
+            EndDate = DateTime.UtcNow.AddDays(80),
+            Frequency = ProjectFrequency.Weekly,
+            Status = ProjectStatus.Active
+        };
+        _context.Projects.AddRange(pending, future);
+        _context.SaveChanges();
+
+        var result = await CreateService().GetGlobalDashboardAsync(alice.Id);
+
+        Assert.Equal(0, result.OpenCheckIns);
+        Assert.Equal(1, result.ActiveProjects);
+        Assert.All(result.Projects, p => Assert.False(p.CheckInPending));
+        // A project that has not started yet has no current period to show.
+        Assert.Equal(0, result.Projects.Single(p => p.ProjectId == future.Id).CurrentPeriod);
+    }
+
+    [Fact]
+    public async Task GetGlobalDashboardAsync_StreakIsTheBestAcrossProjectsNotTheSum()
+    {
+        var alice = SeedUser("Alice", "alice@example.com");
+        var (three, threeGoal) = SeedProject(alice.Id, name: "Three in a row");
+        var (two, twoGoal) = SeedProject(alice.Id, name: "Two in a row");
+
+        SeedCheckIn(three.Id, alice.Id, 3, Feeling.Happy, (threeGoal.Id, 1m));
+        SeedCheckIn(three.Id, alice.Id, 4, Feeling.Happy, (threeGoal.Id, 1m));
+        SeedCheckIn(three.Id, alice.Id, 5, Feeling.Happy, (threeGoal.Id, 1m));
+        SeedCheckIn(two.Id, alice.Id, 4, Feeling.Happy, (twoGoal.Id, 1m));
+        SeedCheckIn(two.Id, alice.Id, 5, Feeling.Happy, (twoGoal.Id, 1m));
+
+        var result = await CreateService().GetGlobalDashboardAsync(alice.Id);
+
+        Assert.Equal(3, result.CurrentStreak);
+        Assert.Equal(3, result.BestStreak);
+        Assert.Equal(5, result.TotalCheckIns);
+    }
 }

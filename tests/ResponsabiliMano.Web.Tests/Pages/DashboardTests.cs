@@ -11,6 +11,7 @@ using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Web;
 using ResponsabiliMano.Web.Components.Pages;
+using ResponsabiliMano.Web.Tests.TestHelpers;
 
 namespace ResponsabiliMano.Web.Tests.Pages;
 
@@ -56,7 +57,7 @@ public class DashboardTests : TestContext
         var cut = RenderComponent<Dashboard>(p => p.Add(x => x.ProjectId, Guid.NewGuid()));
 
         Assert.Contains("ProjectNotFound", cut.Markup);
-        Assert.DoesNotContain("DashboardTitle", cut.Markup);
+        Assert.DoesNotContain("ProjectDashboardTitle", cut.Markup);
     }
 
     [Fact]
@@ -105,6 +106,8 @@ public class DashboardTests : TestContext
         _dashboardService.Result = new DashboardResponse(
             projectId,
             "Diet Project",
+            2,
+            10,
             [
                 new DashboardParticipant(user1Id, "Alice", Feeling.Happy),
                 new DashboardParticipant(user2Id, "Bob", null)
@@ -128,6 +131,11 @@ public class DashboardTests : TestContext
         Assert.Contains("DashboardNoCheckIns", cut.Markup);
         Assert.Contains("BackToProject", cut.Markup);
         Assert.Contains("DashboardAverages", cut.Markup);
+        // Project-scoped framing (spec S6.1): comparison title plus this project's
+        // progress, and none of the account-wide counters.
+        Assert.Contains("ProjectDashboardTitle", cut.Markup);
+        Assert.Contains("ProjectDashboardProgress", cut.Markup);
+        Assert.DoesNotContain("GlobalDashboardTitle", cut.Markup);
     }
 
     [Fact]
@@ -142,6 +150,8 @@ public class DashboardTests : TestContext
         _dashboardService.Result = new DashboardResponse(
             projectId,
             "Multi Goal Project",
+            1,
+            8,
             [new DashboardParticipant(user1Id, "Alice", Feeling.Neutral)],
             [
                 new DashboardMetricSeries(goal1Id, "Weight", "kg", GoalDataType.Decimal, null, []),
@@ -156,114 +166,4 @@ public class DashboardTests : TestContext
         Assert.Equal(2, cut.FindAll(".rm-segmented__item").Count);
     }
 
-    // --- Fakes ---
-
-    private sealed class FakeProjectService : IProjectService
-    {
-        public Task<(int Current, int Best)> GetStreakAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-            => Task.FromResult((0, 0));
-
-        public Task<Project> CreateProjectAsync(
-            Guid creatorId, string name, DateTime startDate, DateTime endDate,
-            ProjectFrequency frequency, IEnumerable<GoalFieldInput> goals,
-            string? icon = null, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<ProjectInvitation> InvitePartnerAsync(
-            Guid projectId, Guid inviterUserId, string partnerEmail, string baseUrl,
-            CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<Project?> AcceptInvitationAsync(string token, Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<Project?> GetInvitationProjectAsync(string token, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<Project?> GetProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<List<Project>> GetUserProjectsAsync(Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task ApproveProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task<ProjectChangeRequest> ProposeChangeAsync(
-            Guid projectId, Guid userId, ChangeRequestType type, string payloadJson,
-            CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-
-        public Task RespondToChangeRequestAsync(
-            Guid projectId, Guid changeRequestId, Guid userId, bool approve,
-            CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
-    }
-
-    private sealed class FakeFeatureManager : IFeatureManager
-    {
-        public bool Enabled { get; set; }
-        public Task<bool> IsEnabledAsync(string feature) => Task.FromResult(Enabled);
-        public Task<bool> IsEnabledAsync<TContext>(string feature, TContext context) where TContext : notnull => Task.FromResult(Enabled);
-        public IAsyncEnumerable<string> GetFeatureNamesAsync() => AsyncEnumerable.Empty<string>();
-    }
-
-    private sealed class FakeDashboardService : IDashboardService
-    {
-        public DashboardResponse? Result { get; set; }
-        public TaskCompletionSource<DashboardResponse?>? ResultTask { get; set; }
-        public Exception? Exception { get; set; }
-
-        public Task<DashboardResponse?> GetDashboardAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-        {
-            if (Exception is not null) return Task.FromException<DashboardResponse?>(Exception);
-            if (ResultTask is not null) return ResultTask.Task;
-            return Task.FromResult(Result);
-        }
-    }
-
-    private sealed class FakeAuthStateProvider : AuthenticationStateProvider
-    {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var identity = new System.Security.Claims.ClaimsIdentity(
-                [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier,
-                    "00000000-0000-0000-0000-000000000001")],
-                "TestAuth");
-            return Task.FromResult(new AuthenticationState(new System.Security.Claims.ClaimsPrincipal(identity)));
-        }
-    }
-
-    private sealed class FakeJSRuntime : IJSRuntime
-    {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
-        {
-            if (typeof(TValue) == typeof(IJSObjectReference))
-                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
-            return default;
-        }
-
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
-        {
-            if (typeof(TValue) == typeof(IJSObjectReference))
-                return new ValueTask<TValue>((TValue)(object)new FakeJSModuleReference());
-            return default;
-        }
-    }
-
-    private sealed class FakeJSModuleReference : IJSObjectReference
-    {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => default;
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
-        public ValueTask InvokeVoidAsync(string identifier, object?[]? args) => default;
-        public ValueTask InvokeVoidAsync(string identifier, CancellationToken cancellationToken, object?[]? args) => default;
-        public ValueTask DisposeAsync() => default;
-    }
-
-    private sealed class PassthroughLocalizer : IStringLocalizer<AppStrings>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
-    }
 }

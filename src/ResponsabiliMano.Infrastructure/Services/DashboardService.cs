@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
@@ -71,7 +72,99 @@ public sealed class DashboardService : IDashboardService
             "Dashboard built for project {ProjectId} requested by user {UserId}",
             projectId, userId);
 
-        return new DashboardResponse(project.Id, project.Name, participants, metrics);
+        return new DashboardResponse(
+            project.Id,
+            project.Name,
+            PeriodCalculator.CurrentPeriod(project.StartDate, project.Frequency, DateTime.UtcNow),
+            PeriodCalculator.CurrentPeriod(project.StartDate, project.Frequency, project.EndDate),
+            participants,
+            metrics);
+    }
+
+    public async Task<GlobalDashboardResponse> GetGlobalDashboardAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // Two queries, never one per project: the panel polls every few seconds
+        // (spec RT2) and a user can carry any number of projects.
+        var projects = await _context.Projects
+            .AsNoTracking()
+            .Include(p => p.Goals)
+            .Include(p => p.Creator)
+            .Include(p => p.Partner)
+            .Where(p => p.CreatorId == userId || p.PartnerId == userId)
+            .OrderByDescending(p => p.StartDate)
+            .ToListAsync(cancellationToken);
+
+        if (projects.Count == 0)
+        {
+            return new GlobalDashboardResponse(0, 0, 0, 0, 0, 0, []);
+        }
+
+        var projectIds = projects.Select(p => p.Id).ToList();
+
+        var myCheckIns = await _context.CheckIns
+            .AsNoTracking()
+            .Where(c => c.UserId == userId && projectIds.Contains(c.ProjectId))
+            .Select(c => new { c.ProjectId, c.PeriodNumber, c.Feeling })
+            .ToListAsync(cancellationToken);
+
+        var byProject = myCheckIns
+            .GroupBy(c => c.ProjectId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var now = DateTime.UtcNow;
+        var summaries = new List<GlobalProjectSummary>(projects.Count);
+        var currentStreak = 0;
+        var bestStreak = 0;
+
+        foreach (var project in projects)
+        {
+            var mine = byProject.GetValueOrDefault(project.Id, []);
+
+            var currentPeriod = PeriodCalculator.CurrentPeriod(project.StartDate, project.Frequency, now);
+            // The end date lands inside the last period, so the same calculation
+            // over it yields how many periods the project has in total.
+            var totalPeriods = PeriodCalculator.CurrentPeriod(project.StartDate, project.Frequency, project.EndDate);
+
+            var streak = StreakCalculator.FromPeriods(mine.Select(c => c.PeriodNumber));
+            currentStreak = Math.Max(currentStreak, streak.Current);
+            bestStreak = Math.Max(bestStreak, streak.Best);
+
+            var pending = project.Status == ProjectStatus.Active
+                && currentPeriod > 0
+                && mine.All(c => c.PeriodNumber != currentPeriod);
+
+            summaries.Add(new GlobalProjectSummary(
+                project.Id,
+                project.Name,
+                project.Icon,
+                project.Status,
+                project.StartDate,
+                project.EndDate,
+                project.Frequency,
+                project.Creator.Name,
+                project.Partner?.Name,
+                currentPeriod,
+                totalPeriods,
+                mine.Count,
+                pending,
+                mine.Count == 0 ? null : mine.MaxBy(c => c.PeriodNumber)!.Feeling,
+                project.Goals.Count));
+        }
+
+        _logger.LogInformation(
+            "Global dashboard built for user {UserId} over {ProjectCount} projects",
+            userId, projects.Count);
+
+        return new GlobalDashboardResponse(
+            summaries.Count,
+            summaries.Count(s => s.Status == ProjectStatus.Active),
+            myCheckIns.Count,
+            currentStreak,
+            bestStreak,
+            summaries.Count(s => s.CheckInPending),
+            summaries);
     }
 
     private async Task<List<CheckInSnapshot>> LoadCheckInsAsync(
