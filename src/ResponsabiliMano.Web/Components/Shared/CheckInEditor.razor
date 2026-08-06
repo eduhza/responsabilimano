@@ -1,0 +1,177 @@
+@inject ICheckInService CheckInService
+@inject IStringLocalizer<AppStrings> Localizer
+@inject ILogger<CheckInEditor> Logger
+@using ResponsabiliMano.Core.Entities
+
+@if (_success || Form.AlreadySubmitted)
+{
+    <RmEmptyState Icon="check-circle"
+                  Title="@(_success ? Localizer["CheckInSuccess"].Value : Localizer["CheckInAlreadyDone"].Value)">
+        <RmButton Href="@($"/projects/{Form.Project.Id}")" Variant="outline">
+            @(SuccessButtonLabel ?? Localizer["BackToProject"])
+        </RmButton>
+    </RmEmptyState>
+}
+else
+{
+    <p class="checkin-editor__period">@Localizer["CheckInPeriodLabel", Form.PeriodNumber]</p>
+
+    <h2 class="checkin-editor__section">@Localizer["CheckInMetricsTitle"]</h2>
+    <div class="checkin-editor__metrics">
+        @foreach (var entry in _metrics)
+        {
+            <RmCard Flat="true" Class="checkin-editor__metric">
+                <RmField Label="@entry.Goal.Label">
+                    <Hint>
+                        @entry.Goal.Unit
+                        @if (entry.Goal.MinValue is not null || entry.Goal.MaxValue is not null)
+                        {
+                            <text> · @entry.Goal.MinValue?.ToString("0.##") … @entry.Goal.MaxValue?.ToString("0.##")</text>
+                        }
+                        @if (entry.Goal.TargetValue is not null)
+                        {
+                            <text> · @Localizer["GoalTargetValueLabel"]: @entry.Goal.TargetValue?.ToString("0.##")</text>
+                        }
+                    </Hint>
+                    <ChildContent>
+                        <input type="number" step="any" class="rm-input rm-tabular"
+                               min="@entry.Goal.MinValue?.ToString("0.##")"
+                               max="@entry.Goal.MaxValue?.ToString("0.##")"
+                               value="@entry.Value"
+                               @onchange="e => entry.Value = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null" />
+                    </ChildContent>
+                </RmField>
+            </RmCard>
+        }
+    </div>
+
+    <h2 class="checkin-editor__section">@Localizer["CheckInFeelingTitle"]</h2>
+    <RmCard Class="checkin-editor__feelings">
+        <div class="feeling-selector" role="radiogroup" aria-label="@Localizer["CheckInFeelingTitle"]">
+            @foreach (var feeling in Feelings)
+            {
+                var current = feeling;
+                <button type="button"
+                        class="feeling-button @(_feeling == current ? "selected" : string.Empty)"
+                        aria-pressed="@(_feeling == current)"
+                        title="@FeelingText(current)"
+                        @onclick="() => _feeling = current">
+                    <FeelingFace Feeling="current" Size="44" />
+                    <span class="feeling-label">@FeelingText(current)</span>
+                </button>
+            }
+        </div>
+    </RmCard>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <RmAlert Tone="danger" Class="mt-3">@_error</RmAlert>
+    }
+
+    <div class="checkin-editor__actions">
+        <RmButton Href="@($"/projects/{Form.Project.Id}")" Variant="outline">@Localizer["Cancel"]</RmButton>
+        <RmButton Disabled="_submitting" @onclick="HandleSubmit">
+            @(_submitting ? Localizer["Processing"] : Localizer["CheckInSubmitButton"])
+        </RmButton>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CheckInForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Guid UserId { get; set; }
+
+    /// <summary>
+    /// Rótulo do botão exibido no estado de sucesso. Quando nulo, usa BackToProject.
+    /// </summary>
+    [Parameter]
+    public string? SuccessButtonLabel { get; set; }
+
+    /// <summary>
+    /// Disparado após o check-in ser registrado com sucesso.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSubmitted { get; set; }
+
+    private static readonly Feeling[] Feelings =
+        [Feeling.VerySad, Feeling.Sad, Feeling.Neutral, Feeling.Happy, Feeling.VeryHappy];
+
+    private Guid _lastProjectId;
+    private Feeling _feeling = Feeling.Neutral;
+    private readonly List<MetricEntry> _metrics = new();
+    private bool _submitting;
+    private bool _success;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        if (_lastProjectId != Form.Project.Id)
+        {
+            _lastProjectId = Form.Project.Id;
+            _success = false;
+            _error = null;
+            _feeling = Feeling.Neutral;
+            _metrics.Clear();
+            _metrics.AddRange(Form.Project.Goals.Select(g => new MetricEntry(g)));
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+
+        try
+        {
+            if (_metrics.Any(m => m.Value is null))
+            {
+                _error = Localizer["CheckInMissingValues"];
+                return;
+            }
+
+            var metrics = _metrics
+                .Select(m => new CheckInMetricInput(m.Goal.Id, m.Value!.Value))
+                .ToList();
+
+            await CheckInService.SubmitCheckInAsync(Form.Project.Id, UserId, _feeling, metrics);
+            _success = true;
+            await OnSubmitted.InvokeAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to submit check-in for project {ProjectId}", Form.Project.Id);
+            _error = Localizer["CheckInError"];
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private string FeelingText(Feeling feeling) => feeling switch
+    {
+        Feeling.VerySad => Localizer["FeelingVerySad"],
+        Feeling.Sad => Localizer["FeelingSad"],
+        Feeling.Neutral => Localizer["FeelingNeutral"],
+        Feeling.Happy => Localizer["FeelingHappy"],
+        Feeling.VeryHappy => Localizer["FeelingVeryHappy"],
+        _ => feeling.ToString()
+    };
+
+    private sealed class MetricEntry
+    {
+        public MetricEntry(GoalField goal) => Goal = goal;
+        public GoalField Goal { get; }
+        public decimal? Value { get; set; }
+    }
+}

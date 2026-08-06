@@ -23,6 +23,15 @@ public interface ICheckInService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Loads the current-period check-in form for every active project the caller
+    /// participates in that has already started and has not ended. The list is
+    /// unsorted; callers are expected to order it for their own UI.
+    /// </summary>
+    Task<IReadOnlyList<CheckInForm>> GetCheckInFormsForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Persists a check-in (and its metrics) for the caller's current period.
     /// </summary>
     /// <exception cref="ArgumentException">Project/metric invalid (400).</exception>
@@ -42,4 +51,8 @@ public interface ICheckInService
 public sealed record CheckInMetricInput(Guid GoalFieldId, decimal Value);
 
 /// <summary>The state a check-in form needs to render for the current period.</summary>
-public sealed record CheckInForm(Project Project, int PeriodNumber, bool AlreadySubmitted);
+public sealed record CheckInForm(
+    Project Project,
+    int PeriodNumber,
+    bool AlreadySubmitted,
+    DateTime PeriodEnd = default);

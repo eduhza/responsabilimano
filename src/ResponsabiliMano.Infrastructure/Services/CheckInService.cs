@@ -38,7 +38,58 @@ public sealed class CheckInService : ICheckInService
             c => c.ProjectId == projectId && c.UserId == userId && c.PeriodNumber == period,
             cancellationToken);
 
-        return new CheckInForm(project, period, alreadySubmitted);
+        var periodEnd = period >= 1
+            ? PeriodCalculator.PeriodEnd(project.StartDate, project.Frequency, period, project.EndDate)
+            : DateTime.MinValue;
+
+        return new CheckInForm(project, period, alreadySubmitted, periodEnd);
+    }
+
+    public async Task<IReadOnlyList<CheckInForm>> GetCheckInFormsForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        var projects = await _context.Projects
+            .AsNoTracking()
+            .Include(p => p.Goals)
+            .Where(p => p.Status == ProjectStatus.Active
+                && p.StartDate.Date <= now.Date
+                && p.EndDate.Date >= now.Date
+                && (p.CreatorId == userId || p.PartnerId == userId))
+            .ToListAsync(cancellationToken);
+
+        if (projects.Count == 0)
+            return [];
+
+        var projectIds = projects.Select(p => p.Id).ToList();
+
+        var submittedPeriods = await _context.CheckIns
+            .AsNoTracking()
+            .Where(c => c.UserId == userId && projectIds.Contains(c.ProjectId))
+            .Select(c => new { c.ProjectId, c.PeriodNumber })
+            .ToListAsync(cancellationToken);
+
+        var submittedSet = new HashSet<(Guid ProjectId, int Period)>(
+            submittedPeriods.Select(c => (c.ProjectId, c.PeriodNumber)));
+
+        var forms = new List<CheckInForm>(projects.Count);
+
+        foreach (var project in projects)
+        {
+            var period = PeriodCalculator.CurrentPeriod(project.StartDate, project.Frequency, now);
+            if (period < 1)
+                continue;
+
+            var alreadySubmitted = submittedSet.Contains((project.Id, period));
+            var periodEnd = PeriodCalculator.PeriodEnd(
+                project.StartDate, project.Frequency, period, project.EndDate);
+
+            forms.Add(new CheckInForm(project, period, alreadySubmitted, periodEnd));
+        }
+
+        return forms;
     }
 
     public async Task<CheckIn> SubmitCheckInAsync(

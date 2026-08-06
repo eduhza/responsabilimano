@@ -38,6 +38,7 @@ public class CheckInServiceTests : IDisposable
         Guid? partnerId = null,
         ProjectStatus status = ProjectStatus.Active,
         DateTime? startDate = null,
+        DateTime? endDate = null,
         decimal? min = null,
         decimal? max = null)
     {
@@ -48,7 +49,7 @@ public class CheckInServiceTests : IDisposable
             CreatorId = creatorId,
             PartnerId = partnerId,
             StartDate = startDate ?? DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
+            EndDate = endDate ?? DateTime.UtcNow.AddDays(30),
             Frequency = ProjectFrequency.Weekly,
             Status = status
         };
@@ -222,5 +223,85 @@ public class CheckInServiceTests : IDisposable
         Assert.True(form!.AlreadySubmitted);
         Assert.Equal(1, form.PeriodNumber);
         Assert.Single(form.Project.Goals);
+    }
+
+    [Fact]
+    public async Task GetCheckInFormsForUserAsync_ReturnsOnlyActiveStartedInWindowProjects()
+    {
+        var creator = SeedUser();
+        var now = DateTime.UtcNow;
+
+        var activeInWindow = SeedProject(creator.Id, startDate: now.AddDays(-7), endDate: now.AddDays(21));
+        var pending = SeedProject(creator.Id, status: ProjectStatus.Pending);
+        var notStarted = SeedProject(creator.Id, startDate: now.AddDays(7));
+        var ended = SeedProject(creator.Id, startDate: now.AddDays(-60), endDate: now.AddDays(-1));
+
+        var service = CreateService();
+        var forms = await service.GetCheckInFormsForUserAsync(creator.Id);
+
+        Assert.Single(forms);
+        Assert.Equal(activeInWindow.project.Id, forms[0].Project.Id);
+    }
+
+    [Fact]
+    public async Task GetCheckInFormsForUserAsync_FlagsAlreadySubmittedAndReturnsPeriodEnd()
+    {
+        var creator = SeedUser();
+        var now = DateTime.UtcNow;
+        var (project, goal) = SeedProject(creator.Id, startDate: now.AddDays(-7), endDate: now.AddDays(21));
+
+        var service = CreateService();
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) });
+
+        var forms = await service.GetCheckInFormsForUserAsync(creator.Id);
+
+        Assert.Single(forms);
+        Assert.True(forms[0].AlreadySubmitted);
+        Assert.True(forms[0].PeriodNumber > 0);
+        Assert.Single(forms[0].Project.Goals);
+        Assert.True(forms[0].PeriodEnd > now);
+        Assert.True(forms[0].PeriodEnd <= project.EndDate.Date.AddDays(1).AddTicks(-1));
+    }
+
+    [Fact]
+    public async Task GetCheckInFormsForUserAsync_IncludesProjectsWhereUserIsPartner()
+    {
+        var creator = SeedUser("creator@example.com");
+        var partner = SeedUser("partner@example.com");
+        var now = DateTime.UtcNow;
+        var (project, _) = SeedProject(creator.Id, partnerId: partner.Id, startDate: now.AddDays(-7), endDate: now.AddDays(21));
+
+        var service = CreateService();
+        var forms = await service.GetCheckInFormsForUserAsync(partner.Id);
+
+        Assert.Single(forms);
+        Assert.Equal(project.Id, forms[0].Project.Id);
+    }
+
+    [Fact]
+    public async Task GetCheckInFormsForUserAsync_ReturnsEmpty_WhenUserHasNoProjects()
+    {
+        var user = SeedUser();
+        var service = CreateService();
+
+        var forms = await service.GetCheckInFormsForUserAsync(user.Id);
+
+        Assert.Empty(forms);
+    }
+
+    [Fact]
+    public async Task GetCheckInFormAsync_IncludesPeriodEnd()
+    {
+        var creator = SeedUser();
+        var now = DateTime.UtcNow;
+        var (project, _) = SeedProject(creator.Id, startDate: now.AddDays(-7), endDate: now.AddDays(21));
+
+        var service = CreateService();
+        var form = await service.GetCheckInFormAsync(project.Id, creator.Id);
+
+        Assert.NotNull(form);
+        Assert.True(form!.PeriodEnd > now);
+        Assert.True(form.PeriodEnd <= project.EndDate.Date.AddDays(1).AddTicks(-1));
     }
 }

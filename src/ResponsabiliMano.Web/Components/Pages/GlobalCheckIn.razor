@@ -1,0 +1,194 @@
+@page "/checkin"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject ICheckInService CheckInService
+@inject IFeatureManager FeatureManager
+@inject IStringLocalizer<AppStrings> Localizer
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject ILogger<GlobalCheckIn> Logger
+@using Microsoft.FeatureManagement
+
+<PageTitle>@Localizer["CheckInTitle"]</PageTitle>
+
+@if (_loading)
+{
+    <div class="skeleton gcheckin__skeleton gcheckin__skeleton--head"></div>
+    <div class="skeleton gcheckin__skeleton gcheckin__skeleton--tabs"></div>
+    <div class="skeleton gcheckin__skeleton gcheckin__skeleton--body"></div>
+}
+else if (!_available)
+{
+    <RmEmptyState Icon="alert-circle"
+                  Title="@Localizer["NotFoundTitle"].Value"
+                  Description="@Localizer["NotFoundMessage"].Value">
+        <RmButton Href="/projects" Variant="outline">@Localizer["BackToHome"]</RmButton>
+    </RmEmptyState>
+}
+else if (_error is not null)
+{
+    <RmAlert Tone="danger">@_error</RmAlert>
+    <RmButton Href="/projects" Variant="outline" Class="mt-3">@Localizer["BackToHome"]</RmButton>
+}
+else if (_forms is { Count: 0 })
+{
+    <RmEmptyState Icon="clipboard-check"
+                  Title="@Localizer["GlobalCheckInEmptyTitle"]"
+                  Description="@Localizer["GlobalCheckInEmptyDescription"]">
+        <RmButton Href="/projects" Variant="outline">@Localizer["BackToHome"]</RmButton>
+    </RmEmptyState>
+}
+else
+{
+    <AutoRefresh IntervalSeconds="30" OnRefresh="RefreshAsync" />
+
+    <div class="gcheckin__head">
+        <div>
+            <h1 class="gcheckin__title">@Localizer["CheckInTitle"]</h1>
+            <p class="gcheckin__subtitle">@Localizer["GlobalCheckInSubtitle"]</p>
+        </div>
+        <RmButton Href="/projects/new" Variant="outline" Size="sm">
+            <RmIcon Name="plus" />
+            @Localizer["NavCreateProject"]
+        </RmButton>
+    </div>
+
+    <div class="gcheckin__tabs">
+        @foreach (var form in OrderedForms())
+        {
+            var (tone, text) = StatusFor(form);
+            var isActive = form.Project.Id == _selectedProjectId;
+            <button type="button"
+                    class="gcheckin__tab @(isActive ? "is-active" : string.Empty)"
+                    @onclick="() => SelectProject(form.Project.Id)">
+                <span class="gcheckin__tab-icon">@(form.Project.Icon ?? "🎯")</span>
+                <span class="gcheckin__tab-name">@form.Project.Name</span>
+                <RmBadge Tone="@tone" Dot="true">@text</RmBadge>
+            </button>
+        }
+    </div>
+
+    <div class="gcheckin__panel">
+        @if (_selectedForm is not null)
+        {
+            <CheckInEditor Form="_selectedForm"
+                           UserId="_currentUserId"
+                           SuccessButtonLabel="@Localizer["GoToProject"]"
+                           OnSubmitted="OnCheckInSubmitted" />
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<CheckInForm>? _forms;
+    private Guid _selectedProjectId;
+    private bool _loading = true;
+    private bool _available = true;
+    private string? _error;
+    private Guid _currentUserId;
+
+    private CheckInForm? _selectedForm => _forms?.FirstOrDefault(f => f.Project.Id == _selectedProjectId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns))
+        {
+            _available = false;
+            _loading = false;
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdStr = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userIdStr is null || !Guid.TryParse(userIdStr, out _currentUserId))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _forms = await LoadFormsAsync();
+            _selectedProjectId = _forms.FirstOrDefault()?.Project.Id ?? Guid.Empty;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load the global check-in list for user {UserId}", _currentUserId);
+            _error = Localizer["CheckInError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task<IReadOnlyList<CheckInForm>> LoadFormsAsync()
+        => await CheckInService.GetCheckInFormsForUserAsync(_currentUserId);
+
+    private async Task RefreshAsync()
+    {
+        if (!_available || _loading || _currentUserId == Guid.Empty)
+            return;
+
+        try
+        {
+            var latest = await LoadFormsAsync();
+            if (Signature(latest) == Signature(_forms))
+                return;
+
+            _forms = latest;
+            _selectedProjectId = _forms.FirstOrDefault(f => f.Project.Id == _selectedProjectId)?.Project.Id
+                                 ?? _forms.FirstOrDefault()?.Project.Id
+                                 ?? Guid.Empty;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh the global check-in list for user {UserId}", _currentUserId);
+        }
+    }
+
+    private async Task OnCheckInSubmitted()
+    {
+        // Refresh the list in the background so tabs update to "Done" and resort,
+        // but keep the currently selected tab (the editor holds its own success state).
+        await RefreshAsync();
+    }
+
+    private void SelectProject(Guid projectId)
+    {
+        _selectedProjectId = projectId;
+    }
+
+    private static string Signature(IReadOnlyList<CheckInForm>? forms) =>
+        forms is null
+            ? string.Empty
+            : string.Join("|", forms.Select(f =>
+                $"{f.Project.Id}:{f.PeriodNumber}:{f.AlreadySubmitted}:{f.PeriodEnd:O}"));
+
+    private IEnumerable<CheckInForm> OrderedForms()
+    {
+        if (_forms is null)
+            return [];
+
+        return _forms
+            .OrderBy(f => f.AlreadySubmitted)
+            .ThenBy(f => f.PeriodEnd);
+    }
+
+    private (string Tone, string Text) StatusFor(CheckInForm form)
+    {
+        if (form.AlreadySubmitted)
+            return ("primary", Localizer["CheckInDone"]);
+
+        var days = (form.PeriodEnd.Date - DateTime.UtcNow.Date).Days;
+
+        return days switch
+        {
+            < 0 => ("destructive", Localizer["CheckInOverdue"]),
+            0 => ("partner", Localizer["CheckInDueToday"]),
+            1 => ("partner", Localizer["CheckInDueTomorrow"]),
+            _ => ("muted", Localizer["CheckInDueIn", days])
+        };
+    }
+}

@@ -768,4 +768,31 @@
   <data name="ProjectDashboardProgress" xml:space="preserve">
     <value>Period {0} of {1}</value>
   </data>
+  <data name="GoToProject" xml:space="preserve">
+    <value>Go to Project</value>
+  </data>
+  <data name="GlobalCheckInSubtitle" xml:space="preserve">
+    <value>Select a project and submit your check-in.</value>
+  </data>
+  <data name="GlobalCheckInEmptyTitle" xml:space="preserve">
+    <value>No pending check-ins</value>
+  </data>
+  <data name="GlobalCheckInEmptyDescription" xml:space="preserve">
+    <value>All your projects are up to date.</value>
+  </data>
+  <data name="CheckInOverdue" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="CheckInDueToday" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="CheckInDueTomorrow" xml:space="preserve">
+    <value>Tomorrow</value>
+  </data>
+  <data name="CheckInDueIn" xml:space="preserve">
+    <value>In {0} days</value>
+  </data>
+  <data name="CheckInDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
 </root>

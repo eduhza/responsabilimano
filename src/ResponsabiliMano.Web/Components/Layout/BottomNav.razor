@@ -28,8 +28,14 @@
                     </RmButton>
                 </div>
 
-                @* Check-in needs a project, so it has no slot here: the bar keeps four
-                   real destinations around the FAB instead of a dead placeholder. *@
+                @if (_checkInsEnabled)
+                {
+                    <NavLink href="/checkin" class="bottom-nav__item">
+                        <RmIcon Name="clipboard-check" Size="1.25rem" />
+                        <span>@Localizer["NavCheckIn"]</span>
+                    </NavLink>
+                }
+
                 <NavLink href="/profile" class="bottom-nav__item">
                     <RmIcon Name="user" Size="1.25rem" />
                     <span>@Localizer["NavProfile"]</span>
@@ -57,9 +63,11 @@
 
 @code {
     private bool _dashboardEnabled;
+    private bool _checkInsEnabled;
 
     protected override async Task OnInitializedAsync()
     {
         _dashboardEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard);
+        _checkInsEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns);
     }
 }

@@ -131,6 +131,49 @@ internal sealed class FakeJSModuleReference : IJSObjectReference
     public ValueTask DisposeAsync() => default;
 }
 
+/// <summary>Check-in stub. Allows tests to set forms for the global page and
+/// tracks submissions.</summary>
+internal sealed class FakeCheckInService : ICheckInService
+{
+    public CheckInForm? Form { get; set; }
+    public List<CheckInForm> UserForms { get; set; } = [];
+    public TaskCompletionSource<IReadOnlyList<CheckInForm>>? FormsTask { get; set; }
+    public Exception? Exception { get; set; }
+    public List<(Guid ProjectId, Guid UserId, Feeling Feeling, IReadOnlyCollection<CheckInMetricInput> Metrics)> Submissions { get; } = [];
+
+    public Task<CheckInForm?> GetCheckInFormAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (Exception is not null) return Task.FromException<CheckInForm?>(Exception);
+        return Task.FromResult(Form);
+    }
+
+    public Task<IReadOnlyList<CheckInForm>> GetCheckInFormsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (Exception is not null) return Task.FromException<IReadOnlyList<CheckInForm>>(Exception);
+        if (FormsTask is not null) return FormsTask.Task;
+        return Task.FromResult<IReadOnlyList<CheckInForm>>(UserForms);
+    }
+
+    public Task<CheckIn> SubmitCheckInAsync(
+        Guid projectId,
+        Guid userId,
+        Feeling feeling,
+        IReadOnlyCollection<CheckInMetricInput> metrics,
+        CancellationToken cancellationToken = default)
+    {
+        Submissions.Add((projectId, userId, feeling, metrics));
+        return Task.FromResult(new CheckIn
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = userId,
+            Feeling = feeling,
+            PeriodNumber = 1,
+            SubmittedAt = DateTime.UtcNow
+        });
+    }
+}
+
 /// <summary>
 /// Echoes resource keys instead of translations, so assertions can target the key
 /// and stay independent of the copy.

@@ -6,8 +6,8 @@
     <Authorized>
         <nav class="nav">
             @* Painel is the account-wide panel (spec S6.1), so it is a real
-               destination whenever the Dashboard flag is on. Check-in still lives
-               under a project, so it stays a placeholder. *@
+               destination whenever the Dashboard flag is on. Check-in is now a
+               global page under its own flag, so it becomes a real link too. *@
             @if (_dashboardEnabled)
             {
                 <NavLink href="/dashboard" class="nav__link">
@@ -28,10 +28,20 @@
                 <span>@Localizer["NavProjects"]</span>
             </NavLink>
 
-            <span class="nav__link nav__link--disabled" aria-disabled="true">
-                <RmIcon Name="check-circle" Size="1.125rem" />
-                <span>@Localizer["NavCheckIn"]</span>
-            </span>
+            @if (_checkInsEnabled)
+            {
+                <NavLink href="/checkin" class="nav__link">
+                    <RmIcon Name="check-circle" Size="1.125rem" />
+                    <span>@Localizer["NavCheckIn"]</span>
+                </NavLink>
+            }
+            else
+            {
+                <span class="nav__link nav__link--disabled" aria-disabled="true">
+                    <RmIcon Name="check-circle" Size="1.125rem" />
+                    <span>@Localizer["NavCheckIn"]</span>
+                </span>
+            }
 
             <NavLink href="/profile" class="nav__link">
                 <RmIcon Name="user" Size="1.125rem" />
@@ -79,9 +89,11 @@
 
 @code {
     private bool _dashboardEnabled;
+    private bool _checkInsEnabled;
 
     protected override async Task OnInitializedAsync()
     {
         _dashboardEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.Dashboard);
+        _checkInsEnabled = await FeatureManager.IsEnabledAsync(FeatureFlags.CheckIns);
     }
 }
