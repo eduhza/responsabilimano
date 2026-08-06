@@ -1,0 +1,56 @@
+# Deploy da ResponsabiliMano para Cloud Run via Google Cloud Build.
+#
+# O deploy foi movido do GitHub Actions para o Cloud Build para que a publicacao
+# em producao nao dependa da disponibilidade dos runners do GitHub. O CI (build,
+# testes, CodeQL, contract tests) continua no GitHub Actions.
+#
+# Disparo automatico: trigger "deploy-main" em push para a branch main.
+# Disparo manual:
+#   gcloud builds submit --config cloudbuild.yaml --substitutions=_TAG=manual-$(date +%Y%m%d-%H%M%S)
+
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: containers
+  _SERVICE: responsabilimano-web
+  _SQL_INSTANCE: responsabilimano-db
+  _TAG: latest
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${_TAG}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:latest
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${_TAG}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --service-account=responsabilimano-run@${PROJECT_ID}.iam.gserviceaccount.com
+      - --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}
+      - --set-env-vars=ASPNETCORE_ENVIRONMENT=Production,FeatureManagement__CheckIns=true,FeatureManagement__Dashboard=true
+      - --set-secrets=ConnectionStrings__DefaultConnection=connection-string:latest,Cron__Secret=cron-secret:latest,EmailSettings__SmtpPassword=email-smtp-password:latest
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s
