@@ -214,6 +214,14 @@
     color: var(--rm-muted-fg);
 }
 
+.cr__summary {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--rm-fg);
+    white-space: pre-line;
+    line-height: 1.5;
+}
+
 .cr__actions {
     display: flex;
     gap: 0.5rem;

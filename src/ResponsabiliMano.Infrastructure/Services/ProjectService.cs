@@ -278,6 +278,7 @@ public sealed class ProjectService : IProjectService
     {
         var project = await _context.Projects
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Metrics)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project is null)
@@ -327,28 +328,67 @@ public sealed class ProjectService : IProjectService
 
             case ChangeRequestType.Goals:
                 var goalsPayload = DeserializePayload<GoalsPayload>(changeRequest);
-                _context.GoalFields.RemoveRange(project.Goals);
-                project.Goals.Clear();
-                foreach (var g in goalsPayload.Goals)
-                {
-                    var goalField = new GoalField
-                    {
-                        Id = Guid.NewGuid(),
-                        ProjectId = project.Id,
-                        Label = g.Label,
-                        DataType = g.DataType,
-                        Unit = g.Unit,
-                        MinValue = g.MinValue,
-                        MaxValue = g.MaxValue,
-                        TargetValue = g.TargetValue
-                    };
-                    _context.GoalFields.Add(goalField);
-                    project.Goals.Add(goalField);
-                }
+                ApplyGoalChanges(project, goalsPayload);
                 break;
 
             default:
                 throw new InvalidOperationException($"Unsupported change request type '{changeRequest.Type}'.");
+        }
+    }
+
+    private void ApplyGoalChanges(Project project, GoalsPayload goalsPayload)
+    {
+        var requestedGoals = goalsPayload.Goals ?? new List<GoalPayloadItem>();
+        var existingByLabel = project.Goals.ToDictionary(
+            g => g.Label,
+            g => g,
+            StringComparer.OrdinalIgnoreCase);
+
+        var processedLabels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var requested in requestedGoals)
+        {
+            processedLabels.Add(requested.Label);
+
+            if (existingByLabel.TryGetValue(requested.Label, out var existing))
+            {
+                // Preserve the existing goal (and its check-in history) while
+                // updating its definition to the requested values.
+                existing.DataType = requested.DataType;
+                existing.Unit = requested.Unit;
+                existing.MinValue = requested.MinValue;
+                existing.MaxValue = requested.MaxValue;
+                existing.TargetValue = requested.TargetValue;
+            }
+            else
+            {
+                var goalField = new GoalField
+                {
+                    Id = Guid.NewGuid(),
+                    ProjectId = project.Id,
+                    Label = requested.Label,
+                    DataType = requested.DataType,
+                    Unit = requested.Unit,
+                    MinValue = requested.MinValue,
+                    MaxValue = requested.MaxValue,
+                    TargetValue = requested.TargetValue
+                };
+                _context.GoalFields.Add(goalField);
+                project.Goals.Add(goalField);
+            }
+        }
+
+        // Remove only goals that are no longer requested and have no check-in
+        // history. If a goal has historical data we keep it to preserve metrics.
+        var goalsToRemove = project.Goals
+            .Where(g => !processedLabels.Contains(g.Label))
+            .Where(g => !g.Metrics.Any())
+            .ToList();
+
+        foreach (var goal in goalsToRemove)
+        {
+            project.Goals.Remove(goal);
+            _context.GoalFields.Remove(goal);
         }
     }
 
