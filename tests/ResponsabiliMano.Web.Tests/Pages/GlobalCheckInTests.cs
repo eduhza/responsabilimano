@@ -177,30 +177,54 @@ public class GlobalCheckInTests : TestContext
         Assert.Empty(_checkInService.Submissions);
     }
 
-    private static CheckInForm Form(string name, bool alreadySubmitted = false, DateTime? periodEnd = null) =>
-        new(
-            new Project
+    private static CheckInForm Form(string name, bool alreadySubmitted = false, DateTime? periodEnd = null)
+    {
+        var goal = new GoalField
+        {
+            Id = Guid.NewGuid(),
+            Label = "Weight",
+            DataType = GoalDataType.Decimal,
+            Unit = "kg"
+        };
+
+        var project = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Icon = "🎯",
+            CreatorId = FakeAuthStateProvider.UserId,
+            StartDate = DateTime.UtcNow.AddDays(-7),
+            EndDate = DateTime.UtcNow.AddDays(21),
+            Frequency = ProjectFrequency.Weekly,
+            Status = ProjectStatus.Active,
+            Goals = [goal]
+        };
+
+        Core.Entities.CheckIn? existing = null;
+        if (alreadySubmitted)
+        {
+            var checkInId = Guid.NewGuid();
+            existing = new Core.Entities.CheckIn
             {
-                Id = Guid.NewGuid(),
-                Name = name,
-                Icon = "🎯",
-                CreatorId = FakeAuthStateProvider.UserId,
-                StartDate = DateTime.UtcNow.AddDays(-7),
-                EndDate = DateTime.UtcNow.AddDays(21),
-                Frequency = ProjectFrequency.Weekly,
-                Status = ProjectStatus.Active,
-                Goals =
+                Id = checkInId,
+                ProjectId = project.Id,
+                UserId = FakeAuthStateProvider.UserId,
+                Feeling = Feeling.Happy,
+                PeriodNumber = 1,
+                SubmittedAt = DateTime.UtcNow,
+                Metrics =
                 [
-                    new GoalField
+                    new CheckInMetric
                     {
                         Id = Guid.NewGuid(),
-                        Label = "Weight",
-                        DataType = GoalDataType.Decimal,
-                        Unit = "kg"
+                        CheckInId = checkInId,
+                        GoalFieldId = goal.Id,
+                        Value = 70
                     }
                 ]
-            },
-            1,
-            alreadySubmitted,
-            periodEnd ?? DateTime.UtcNow.AddDays(7));
+            };
+        }
+
+        return new CheckInForm(project, 1, alreadySubmitted, periodEnd ?? DateTime.UtcNow.AddDays(7), existing);
+    }
 }

@@ -35,7 +35,7 @@ else
 
     <h1 class="checkin__title">@Localizer["CheckInTitle"]</h1>
 
-    <CheckInEditor Form="_form" UserId="_currentUserId" SuccessButtonLabel="@Localizer["BackToProject"]" />
+    <CheckInEditor Form="_form" UserId="_currentUserId" SuccessButtonLabel="@Localizer["BackToProject"]" OnSubmitted="OnSubmitted" />
 }
 
 @code {
@@ -79,6 +79,21 @@ else
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task OnSubmitted()
+    {
+        if (_form is null)
+            return;
+
+        try
+        {
+            _form = await CheckInService.GetCheckInFormAsync(ProjectId, _currentUserId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _available = false;
         }
     }
 }

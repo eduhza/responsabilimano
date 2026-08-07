@@ -1,16 +1,55 @@
 @inject ICheckInService CheckInService
 @inject IStringLocalizer<AppStrings> Localizer
 @inject ILogger<CheckInEditor> Logger
+@inject NavigationManager Navigation
 @using ResponsabiliMano.Core.Entities
 
-@if (_success || Form.AlreadySubmitted)
+@if (_success)
 {
     <RmEmptyState Icon="check-circle"
-                  Title="@(_success ? Localizer["CheckInSuccess"].Value : Localizer["CheckInAlreadyDone"].Value)">
+                  Title="@(_successIsUpdate ? Localizer["CheckInUpdateSuccess"].Value : Localizer["CheckInSuccess"].Value)">
         <RmButton Href="@($"/projects/{Form.Project.Id}")" Variant="outline">
             @(SuccessButtonLabel ?? Localizer["BackToProject"])
         </RmButton>
     </RmEmptyState>
+}
+else if (Form.AlreadySubmitted && !_editing)
+{
+    <div class="checkin-editor__summary">
+        <h2 class="checkin-editor__summary-title">@Localizer["CheckInSummaryTitle"]</h2>
+
+        <RmCard Class="checkin-editor__summary-card">
+            <div class="checkin-editor__summary-feeling">
+                <span class="checkin-editor__summary-label">@Localizer["CheckInSummaryFeelingLabel"]</span>
+                <FeelingFace Feeling="Form.Existing!.Feeling" Size="32" />
+                <span class="checkin-editor__summary-feeling-text">@FeelingText(Form.Existing.Feeling)</span>
+            </div>
+
+            <h3 class="checkin-editor__summary-values-title">@Localizer["CheckInSummaryValuesTitle"]</h3>
+            <dl class="checkin-editor__summary-values">
+                @foreach (var goal in Form.Project.Goals)
+                {
+                    var value = Form.Existing.Metrics.FirstOrDefault(m => m.GoalFieldId == goal.Id)?.Value;
+                    <dt>@goal.Label</dt>
+                    <dd>
+                        @DecimalInput.ToDisplay(value, goal.DataType)
+                        <span class="checkin-editor__summary-unit">@goal.Unit</span>
+                    </dd>
+                }
+            </dl>
+        </RmCard>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <RmAlert Tone="danger" Class="mt-3">@_error</RmAlert>
+        }
+
+        <div class="checkin-editor__summary-actions">
+            <RmButton Href="@($"/projects/{Form.Project.Id}")" Variant="outline">@(SuccessButtonLabel ?? Localizer["BackToProject"])</RmButton>
+            <RmButton Variant="outline" @onclick="EnterEditMode">@Localizer["CheckInEditButton"]</RmButton>
+            <RmButton Variant="destructive" @onclick="PromptDeleteAsync">@Localizer["CheckInDeleteButton"]</RmButton>
+        </div>
+    </div>
 }
 else
 {
@@ -72,12 +111,19 @@ else
     }
 
     <div class="checkin-editor__actions">
-        <RmButton Href="@($"/projects/{Form.Project.Id}")" Variant="outline">@Localizer["Cancel"]</RmButton>
+        <RmButton Variant="outline" @onclick="CancelEdit">@Localizer["Cancel"]</RmButton>
         <RmButton Disabled="_submitting" @onclick="HandleSubmit">
-            @(_submitting ? Localizer["Processing"] : Localizer["CheckInSubmitButton"])
+            @(_submitting ? Localizer["Processing"] : (Form.AlreadySubmitted ? Localizer["CheckInSaveButton"] : Localizer["CheckInSubmitButton"]))
         </RmButton>
     </div>
 }
+
+<RmConfirmDialog @ref="_confirmDialog"
+                 Title="@Localizer["CheckInDeleteConfirmTitle"]"
+                 Message="@Localizer["CheckInDeleteConfirmMessage"]"
+                 ConfirmText="@Localizer["CheckInDeleteButton"]"
+                 CancelText="@Localizer["Cancel"]"
+                 ConfirmVariant="destructive" />
 
 @code {
     [Parameter, EditorRequired]
@@ -93,7 +139,7 @@ else
     public string? SuccessButtonLabel { get; set; }
 
     /// <summary>
-    /// Disparado após o check-in ser registrado com sucesso.
+    /// Disparado após o check-in ser registrado, editado ou excluído com sucesso.
     /// </summary>
     [Parameter]
     public EventCallback OnSubmitted { get; set; }
@@ -106,7 +152,10 @@ else
     private readonly List<MetricEntry> _metrics = new();
     private bool _submitting;
     private bool _success;
+    private bool _successIsUpdate;
+    private bool _editing;
     private string? _error;
+    private RmConfirmDialog _confirmDialog = default!;
 
     protected override void OnParametersSet()
     {
@@ -114,10 +163,49 @@ else
         {
             _lastProjectId = Form.Project.Id;
             _success = false;
+            _editing = !Form.AlreadySubmitted || Form.Existing is null;
             _error = null;
-            _feeling = Feeling.Neutral;
-            _metrics.Clear();
-            _metrics.AddRange(Form.Project.Goals.Select(g => new MetricEntry(g)));
+            InitFromExisting();
+        }
+        else if (!_success)
+        {
+            _editing = !Form.AlreadySubmitted || Form.Existing is null;
+            _error = null;
+            InitFromExisting();
+        }
+    }
+
+    private void InitFromExisting()
+    {
+        _feeling = Form.Existing?.Feeling ?? Feeling.Neutral;
+        _metrics.Clear();
+
+        foreach (var goal in Form.Project.Goals)
+        {
+            var value = Form.Existing?.Metrics.FirstOrDefault(m => m.GoalFieldId == goal.Id)?.Value;
+            _metrics.Add(new MetricEntry(goal) { Value = value });
+        }
+    }
+
+    private void EnterEditMode()
+    {
+        _editing = true;
+        _success = false;
+        _error = null;
+        InitFromExisting();
+    }
+
+    private void CancelEdit()
+    {
+        if (Form.AlreadySubmitted)
+        {
+            _editing = false;
+            _error = null;
+            InitFromExisting();
+        }
+        else
+        {
+            Navigation.NavigateTo($"/projects/{Form.Project.Id}");
         }
     }
 
@@ -134,8 +222,6 @@ else
                 return;
             }
 
-            // Same rule the service enforces (GoalValueRules), run here so the message
-            // lands next to the offending field and in the user's language.
             foreach (var metric in _metrics)
             {
                 metric.Error = GoalValueRules.Validate(
@@ -152,8 +238,28 @@ else
                 .Select(m => new CheckInMetricInput(m.Goal.Id, m.Value!.Value))
                 .ToList();
 
-            await CheckInService.SubmitCheckInAsync(Form.Project.Id, UserId, _feeling, metrics);
-            _success = true;
+            if (Form.AlreadySubmitted)
+            {
+                var updated = await CheckInService.UpdateCurrentCheckInAsync(
+                    Form.Project.Id, UserId, _feeling, metrics);
+
+                if (updated is null)
+                {
+                    _error = Localizer["ProjectNotFound"];
+                    return;
+                }
+
+                _success = true;
+                _successIsUpdate = true;
+            }
+            else
+            {
+                await CheckInService.SubmitCheckInAsync(
+                    Form.Project.Id, UserId, _feeling, metrics);
+                _success = true;
+                _successIsUpdate = false;
+            }
+
             await OnSubmitted.InvokeAsync();
         }
         catch (GoalValueException ex)
@@ -168,9 +274,64 @@ else
         {
             _error = ex.Message;
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _error = ex.Message;
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to submit check-in for project {ProjectId}", Form.Project.Id);
+            _error = Localizer["CheckInError"];
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private async Task PromptDeleteAsync()
+    {
+        _error = null;
+
+        try
+        {
+            var confirmed = await _confirmDialog.ShowAsync();
+            if (!confirmed)
+                return;
+
+            _submitting = true;
+
+            var deleted = await CheckInService.DeleteCurrentCheckInAsync(Form.Project.Id, UserId);
+
+            _submitting = false;
+
+            if (!deleted)
+            {
+                _error = Localizer["ProjectNotFound"];
+                return;
+            }
+
+            await OnSubmitted.InvokeAsync();
+        }
+        catch (GoalValueException ex)
+        {
+            _error = GoalValueMessage(ex.Error, ex.GoalLabel, ex.MinValue, ex.MaxValue, ex.DataType);
+        }
+        catch (ArgumentException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete check-in for project {ProjectId}", Form.Project.Id);
             _error = Localizer["CheckInError"];
         }
         finally

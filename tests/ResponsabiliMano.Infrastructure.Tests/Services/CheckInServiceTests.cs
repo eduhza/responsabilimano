@@ -305,4 +305,183 @@ public class CheckInServiceTests : IDisposable
         Assert.True(form!.PeriodEnd > now);
         Assert.True(form.PeriodEnd <= project.EndDate.Date.AddDays(1).AddTicks(-1));
     }
+
+    [Fact]
+    public async Task GetCheckInFormAsync_ReturnsExistingCheckIn()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 80m) });
+
+        var form = await service.GetCheckInFormAsync(project.Id, creator.Id);
+
+        Assert.NotNull(form);
+        Assert.True(form!.AlreadySubmitted);
+        Assert.NotNull(form.Existing);
+        Assert.Equal(Feeling.Happy, form.Existing!.Feeling);
+        Assert.Single(form.Existing.Metrics);
+    }
+
+    [Fact]
+    public async Task UpdateCurrentCheckInAsync_ReturnsNull_WhenProjectNotFound()
+    {
+        var service = CreateService();
+        var result = await service.UpdateCurrentCheckInAsync(
+            Guid.NewGuid(), Guid.NewGuid(), Feeling.Happy, []);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateCurrentCheckInAsync_Throws_WhenUserNotParticipant()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.UpdateCurrentCheckInAsync(
+            project.Id, Guid.NewGuid(), Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) }));
+    }
+
+    [Theory]
+    [InlineData(ProjectStatus.Pending)]
+    [InlineData(ProjectStatus.Finished)]
+    [InlineData(ProjectStatus.Cancelled)]
+    public async Task UpdateCurrentCheckInAsync_Throws_WhenProjectNotActive(ProjectStatus status)
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, status: status);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateCurrentCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) }));
+    }
+
+    [Fact]
+    public async Task UpdateCurrentCheckInAsync_Throws_WhenNoCurrentCheckIn()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateCurrentCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) }));
+    }
+
+    [Fact]
+    public async Task UpdateCurrentCheckInAsync_Throws_WhenCheckInBelongsToAnotherUser()
+    {
+        var creator = SeedUser("creator@example.com");
+        var partner = SeedUser("partner@example.com");
+        var (project, goal) = SeedProject(creator.Id, partnerId: partner.Id);
+        var service = CreateService();
+
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.UpdateCurrentCheckInAsync(
+            project.Id, partner.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 2m) }));
+    }
+
+    [Fact]
+    public async Task UpdateCurrentCheckInAsync_Persists_CorrectedValues()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, min: 0, max: 100);
+        var service = CreateService();
+
+        var checkIn = await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 80m) });
+
+        var updated = await service.UpdateCurrentCheckInAsync(
+            project.Id, creator.Id, Feeling.Neutral, new[] { new CheckInMetricInput(goal.Id, 95m) });
+
+        Assert.NotNull(updated);
+        Assert.Equal(checkIn.Id, updated!.Id);
+        Assert.Equal(Feeling.Neutral, updated.Feeling);
+        Assert.NotNull(updated.UpdatedAt);
+
+        var stored = await _context.CheckIns.Include(c => c.Metrics).SingleAsync();
+        Assert.Equal(checkIn.Id, stored.Id);
+        Assert.Equal(Feeling.Neutral, stored.Feeling);
+        Assert.Equal(95m, Assert.Single(stored.Metrics).Value);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentCheckInAsync_ReturnsFalse_WhenProjectNotFound()
+    {
+        var service = CreateService();
+        var result = await service.DeleteCurrentCheckInAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task DeleteCurrentCheckInAsync_Throws_WhenUserNotParticipant()
+    {
+        var creator = SeedUser();
+        var (project, _) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DeleteCurrentCheckInAsync(
+            project.Id, Guid.NewGuid()));
+    }
+
+    [Theory]
+    [InlineData(ProjectStatus.Pending)]
+    public async Task DeleteCurrentCheckInAsync_Throws_WhenProjectNotActive(ProjectStatus status)
+    {
+        var creator = SeedUser();
+        var (project, _) = SeedProject(creator.Id, status: status);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteCurrentCheckInAsync(
+            project.Id, creator.Id));
+    }
+
+    [Fact]
+    public async Task DeleteCurrentCheckInAsync_Throws_WhenNoCurrentCheckIn()
+    {
+        var creator = SeedUser();
+        var (project, _) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteCurrentCheckInAsync(
+            project.Id, creator.Id));
+    }
+
+    [Fact]
+    public async Task DeleteCurrentCheckInAsync_Throws_WhenCheckInBelongsToAnotherUser()
+    {
+        var creator = SeedUser("creator@example.com");
+        var partner = SeedUser("partner@example.com");
+        var (project, goal) = SeedProject(creator.Id, partnerId: partner.Id);
+        var service = CreateService();
+
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DeleteCurrentCheckInAsync(
+            project.Id, partner.Id));
+    }
+
+    [Fact]
+    public async Task DeleteCurrentCheckInAsync_RemovesCheckInAndMetrics()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id);
+        var service = CreateService();
+
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) });
+
+        var deleted = await service.DeleteCurrentCheckInAsync(project.Id, creator.Id);
+
+        Assert.True(deleted);
+        Assert.Equal(0, await _context.CheckIns.CountAsync());
+        Assert.Equal(0, await _context.CheckInMetrics.CountAsync());
+    }
 }

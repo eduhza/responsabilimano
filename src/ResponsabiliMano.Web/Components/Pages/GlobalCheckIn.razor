@@ -164,7 +164,7 @@ else
         forms is null
             ? string.Empty
             : string.Join("|", forms.Select(f =>
-                $"{f.Project.Id}:{f.PeriodNumber}:{f.AlreadySubmitted}:{f.PeriodEnd:O}"));
+                $"{f.Project.Id}:{f.PeriodNumber}:{f.AlreadySubmitted}:{f.PeriodEnd:O}:{f.Existing?.Id}:{f.Existing?.UpdatedAt?.ToString("O") ?? ""}"));
 
     private IEnumerable<CheckInForm> OrderedForms()
     {
