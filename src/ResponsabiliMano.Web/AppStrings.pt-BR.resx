@@ -360,6 +360,33 @@
   <data name="ChangeRequestSummaryNoGoals" xml:space="preserve">
     <value>Nenhuma meta informada.</value>
   </data>
+  <data name="ChangeRequestDiffAdded" xml:space="preserve">
+    <value>Adicionado</value>
+  </data>
+  <data name="ChangeRequestDiffChanged" xml:space="preserve">
+    <value>Alterado</value>
+  </data>
+  <data name="ChangeRequestDiffRemoved" xml:space="preserve">
+    <value>Removido</value>
+  </data>
+  <data name="ChangeRequestDiffBefore" xml:space="preserve">
+    <value>Antes</value>
+  </data>
+  <data name="ChangeRequestDiffAfter" xml:space="preserve">
+    <value>Depois</value>
+  </data>
+  <data name="ChangeRequestDiffType" xml:space="preserve">
+    <value>Tipo</value>
+  </data>
+  <data name="ChangeRequestDiffUnit" xml:space="preserve">
+    <value>Unidade</value>
+  </data>
+  <data name="ChangeRequestDiffTarget" xml:space="preserve">
+    <value>Meta</value>
+  </data>
+  <data name="ChangeRequestDiffRange" xml:space="preserve">
+    <value>Intervalo</value>
+  </data>
   <data name="InvitationTitle" xml:space="preserve">
     <value>Convite para Projeto</value>
   </data>
