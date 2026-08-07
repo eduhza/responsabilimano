@@ -1,0 +1,270 @@
+@using System.Text.Json
+@using Microsoft.Extensions.Localization
+@using ResponsabiliMano.Core.Entities
+@using ResponsabiliMano.Core.Enums
+
+<div class="goal-change-diff">
+    @foreach (var diff in _diffs)
+    {
+        <div class="goal-change-diff__item goal-change-diff__item--@KindClass(diff.Kind)">
+            <div class="goal-change-diff__header">
+                <span class="goal-change-diff__badge">
+                    <RmIcon Name="@BadgeIcon(diff.Kind)" Size="0.875rem" />
+                    @BadgeText(diff.Kind)
+                </span>
+                <span class="goal-change-diff__label">@diff.Label</span>
+            </div>
+
+            <div class="goal-change-diff__body">
+                @foreach (var field in diff.Fields)
+                {
+                    <div class="goal-change-diff__row @(field.IsChanged ? null : "goal-change-diff__row--unchanged")"
+                         data-field-changed="@field.IsChanged">
+                        <span class="goal-change-diff__field">@field.Name</span>
+
+                        @if (diff.Kind == GoalDiffKind.Changed)
+                        {
+                            <span class="goal-change-diff__value goal-change-diff__value--before"
+                                  title="@Localizer["ChangeRequestDiffBefore"]: @field.BeforeValue">@field.BeforeValue</span>
+                            <span class="goal-change-diff__arrow" aria-hidden="true">
+                                <RmIcon Name="arrow-right" Size="0.75rem" />
+                            </span>
+                            <span class="goal-change-diff__value goal-change-diff__value--after"
+                                  title="@Localizer["ChangeRequestDiffAfter"]: @field.AfterValue">@field.AfterValue</span>
+                        }
+                        else if (diff.Kind == GoalDiffKind.Added)
+                        {
+                            <span class="goal-change-diff__value goal-change-diff__value--after">@field.AfterValue</span>
+                        }
+                        else
+                        {
+                            <span class="goal-change-diff__value goal-change-diff__value--before">@field.BeforeValue</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<GoalField> CurrentGoals { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public string PayloadJson { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IStringLocalizer<AppStrings> Localizer { get; set; } = null!;
+
+    private List<GoalDiffItem> _diffs = new();
+
+    protected override void OnParametersSet()
+    {
+        _diffs = CalculateDiff();
+    }
+
+    private List<GoalDiffItem> CalculateDiff()
+    {
+        if (string.IsNullOrWhiteSpace(PayloadJson))
+            return new List<GoalDiffItem>();
+
+        GoalsPayload? payload;
+        try
+        {
+            payload = JsonSerializer.Deserialize<GoalsPayload>(PayloadJson);
+        }
+        catch
+        {
+            return new List<GoalDiffItem>();
+        }
+
+        if (payload?.Goals is null || payload.Goals.Count == 0)
+            return new List<GoalDiffItem>();
+
+        var currentByLabel = CurrentGoals.ToDictionary(g => g.Label, StringComparer.OrdinalIgnoreCase);
+        var proposedByLabel = payload.Goals.ToDictionary(g => g.Label, StringComparer.OrdinalIgnoreCase);
+
+        var orderedLabels = payload.Goals
+            .Select(g => g.Label)
+            .Concat(CurrentGoals.Where(g => !proposedByLabel.ContainsKey(g.Label)).Select(g => g.Label))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        var result = new List<GoalDiffItem>();
+
+        foreach (var label in orderedLabels)
+        {
+            var hasCurrent = currentByLabel.TryGetValue(label, out var current);
+            var hasProposed = proposedByLabel.TryGetValue(label, out var proposed);
+
+            GoalDiffKind kind;
+            if (hasCurrent && !hasProposed) kind = GoalDiffKind.Removed;
+            else if (!hasCurrent && hasProposed) kind = GoalDiffKind.Added;
+            else kind = GoalDiffKind.Changed;
+
+            var before = hasCurrent ? Map(current!) : null;
+            var after = hasProposed ? Map(proposed!) : null;
+
+            var item = new GoalDiffItem
+            {
+                Label = hasProposed ? proposed!.Label : current!.Label,
+                Kind = kind,
+                Fields = BuildFields(before, after)
+            };
+
+            if (kind == GoalDiffKind.Changed && !item.Fields.Any(f => f.IsChanged))
+                continue;
+
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    private List<DiffField> BuildFields(GoalValues? before, GoalValues? after)
+    {
+        return new List<DiffField>
+        {
+            new(
+                Localizer["ChangeRequestDiffType"],
+                before is null ? null : GetDataTypeText(before.DataType),
+                after is null ? null : GetDataTypeText(after.DataType)),
+            new(
+                Localizer["ChangeRequestDiffUnit"],
+                before?.Unit,
+                after?.Unit),
+            new(
+                Localizer["ChangeRequestDiffTarget"],
+                before is null ? null : FormatValue(before.TargetValue, before.Unit),
+                after is null ? null : FormatValue(after.TargetValue, after.Unit)),
+            new(
+                Localizer["ChangeRequestDiffRange"],
+                before is null ? null : FormatRange(before.MinValue, before.MaxValue, before.Unit),
+                after is null ? null : FormatRange(after.MinValue, after.MaxValue, after.Unit))
+        };
+    }
+
+    private static GoalValues Map(GoalField goal) => new()
+    {
+        DataType = goal.DataType,
+        Unit = goal.Unit,
+        MinValue = goal.MinValue,
+        MaxValue = goal.MaxValue,
+        TargetValue = goal.TargetValue
+    };
+
+    private static GoalValues Map(GoalPayloadItem goal) => new()
+    {
+        DataType = goal.DataType,
+        Unit = goal.Unit,
+        MinValue = goal.MinValue,
+        MaxValue = goal.MaxValue,
+        TargetValue = goal.TargetValue
+    };
+
+    private string FormatValue(decimal? value, string unit) =>
+        value.HasValue
+            ? $"{value.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} {unit}".Trim()
+            : "—";
+
+    private string FormatRange(decimal? min, decimal? max, string unit)
+    {
+        if (!min.HasValue && !max.HasValue)
+            return "—";
+
+        if (min.HasValue && max.HasValue)
+        {
+            var minText = min.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+            var maxText = max.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+            return $"{minText} a {maxText} {unit}".Trim();
+        }
+
+        var value = min ?? max;
+        return $"{value!.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} {unit}".Trim();
+    }
+
+    private string GetDataTypeText(GoalDataType dataType) => dataType switch
+    {
+        GoalDataType.Decimal => Localizer["DataTypeDecimal"].Value,
+        GoalDataType.Integer => Localizer["DataTypeInteger"].Value,
+        GoalDataType.Percent => Localizer["DataTypePercent"].Value,
+        _ => dataType.ToString()
+    };
+
+    private static string BadgeIcon(GoalDiffKind kind) => kind switch
+    {
+        GoalDiffKind.Added => "plus",
+        GoalDiffKind.Changed => "pencil",
+        GoalDiffKind.Removed => "trash",
+        _ => "circle"
+    };
+
+    private string BadgeText(GoalDiffKind kind) => kind switch
+    {
+        GoalDiffKind.Added => Localizer["ChangeRequestDiffAdded"].Value,
+        GoalDiffKind.Changed => Localizer["ChangeRequestDiffChanged"].Value,
+        GoalDiffKind.Removed => Localizer["ChangeRequestDiffRemoved"].Value,
+        _ => kind.ToString()
+    };
+
+    private static string KindClass(GoalDiffKind kind) => kind switch
+    {
+        GoalDiffKind.Added => "added",
+        GoalDiffKind.Changed => "changed",
+        GoalDiffKind.Removed => "removed",
+        _ => "changed"
+    };
+
+    private sealed class GoalDiffItem
+    {
+        public string Label { get; set; } = string.Empty;
+        public GoalDiffKind Kind { get; set; }
+        public List<DiffField> Fields { get; set; } = new();
+    }
+
+    private sealed class GoalValues
+    {
+        public GoalDataType DataType { get; set; }
+        public string Unit { get; set; } = string.Empty;
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public decimal? TargetValue { get; set; }
+    }
+
+    private sealed class DiffField
+    {
+        public DiffField(string name, string? before, string? after)
+        {
+            Name = name;
+            BeforeValue = before;
+            AfterValue = after;
+        }
+
+        public string Name { get; set; }
+        public string? BeforeValue { get; set; }
+        public string? AfterValue { get; set; }
+        public bool IsChanged => BeforeValue != AfterValue;
+    }
+
+    private enum GoalDiffKind
+    {
+        Added,
+        Changed,
+        Removed
+    }
+
+    private sealed class GoalsPayload
+    {
+        public List<GoalPayloadItem> Goals { get; set; } = new();
+    }
+
+    private sealed class GoalPayloadItem
+    {
+        public string Label { get; set; } = string.Empty;
+        public GoalDataType DataType { get; set; }
+        public string Unit { get; set; } = string.Empty;
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public decimal? TargetValue { get; set; }
+    }
+}

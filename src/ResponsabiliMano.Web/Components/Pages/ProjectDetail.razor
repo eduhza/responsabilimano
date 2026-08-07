@@ -175,7 +175,16 @@ else
                                 @(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)
                                 · @cr.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </p>
-                            <p class="cr__summary" data-test="change-request-summary">@GetChangeRequestSummary(cr)</p>
+                            @if (cr.Type == Core.Enums.ChangeRequestType.Goals)
+                            {
+                                <div class="cr__summary" data-test="change-request-summary">
+                                    <GoalChangeDiff CurrentGoals="_project.Goals" PayloadJson="@cr.PayloadJson" Localizer="Localizer" />
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="cr__summary" data-test="change-request-summary">@GetChangeRequestSummary(cr)</p>
+                            }
                         </div>
 
                         <RmBadge Tone="@CrTone(cr.Status)">@GetChangeRequestStatusText(cr.Status)</RmBadge>

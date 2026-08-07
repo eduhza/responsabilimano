@@ -1,0 +1,150 @@
+.goal-change-diff {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.goal-change-diff__item {
+    background: var(--rm-surface);
+    border: 1px solid var(--rm-border);
+    border-left-width: 3px;
+    border-radius: var(--rm-radius-md);
+    padding: 0.875rem 1rem;
+    overflow: hidden;
+}
+
+.goal-change-diff__item--added {
+    border-left-color: var(--rm-success);
+    background: color-mix(in srgb, var(--rm-success) 4%, var(--rm-surface));
+}
+
+.goal-change-diff__item--changed {
+    border-left-color: var(--rm-partner);
+    background: color-mix(in srgb, var(--rm-partner) 4%, var(--rm-surface));
+}
+
+.goal-change-diff__item--removed {
+    border-left-color: var(--rm-destructive);
+    background: color-mix(in srgb, var(--rm-destructive) 4%, var(--rm-surface));
+}
+
+.goal-change-diff__header {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 0.625rem;
+    flex-wrap: wrap;
+}
+
+.goal-change-diff__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.1875rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.goal-change-diff__item--added .goal-change-diff__badge {
+    background: color-mix(in srgb, var(--rm-success) 12%, transparent);
+    color: var(--rm-success);
+}
+
+.goal-change-diff__item--changed .goal-change-diff__badge {
+    background: color-mix(in srgb, var(--rm-partner) 12%, transparent);
+    color: var(--rm-partner);
+}
+
+.goal-change-diff__item--removed .goal-change-diff__badge {
+    background: color-mix(in srgb, var(--rm-destructive) 12%, transparent);
+    color: var(--rm-destructive);
+}
+
+.goal-change-diff__label {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--rm-fg);
+}
+
+.goal-change-diff__body {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.goal-change-diff__row {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr auto 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.8125rem;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid var(--rm-border);
+}
+
+.goal-change-diff__row:last-child {
+    border-bottom: none;
+}
+
+.goal-change-diff__row--unchanged {
+    opacity: 0.75;
+}
+
+.goal-change-diff__field {
+    color: var(--rm-muted-fg);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.goal-change-diff__value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.goal-change-diff__value--before {
+    color: var(--rm-muted-fg);
+    text-align: right;
+}
+
+.goal-change-diff__value--after {
+    color: var(--rm-fg);
+    font-weight: 500;
+}
+
+.goal-change-diff__arrow {
+    color: var(--rm-muted-fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.goal-change-diff__item--added .goal-change-diff__row,
+.goal-change-diff__item--removed .goal-change-diff__row {
+    grid-template-columns: 4.5rem 1fr;
+}
+
+.goal-change-diff__item--added .goal-change-diff__value--after {
+    color: var(--rm-success);
+}
+
+.goal-change-diff__item--removed .goal-change-diff__value--before {
+    text-decoration: line-through;
+    color: var(--rm-destructive);
+}
+
+@media (max-width: 480px) {
+    .goal-change-diff__row {
+        grid-template-columns: 4.5rem 1fr auto 1fr;
+        gap: 0.25rem;
+    }
+
+    .goal-change-diff__value,
+    .goal-change-diff__arrow {
+        font-size: 0.75rem;
+    }
+}
