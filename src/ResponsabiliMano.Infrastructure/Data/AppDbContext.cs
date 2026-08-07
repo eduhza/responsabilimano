@@ -107,6 +107,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Feeling).HasColumnName("feeling");
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.Property(e => e.PeriodNumber).HasColumnName("period_number");
             entity.HasOne(e => e.Project).WithMany(p => p.CheckIns).HasForeignKey(e => e.ProjectId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);

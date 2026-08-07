@@ -9,6 +9,7 @@ public class CheckIn
     public Guid UserId { get; set; }
     public Feeling Feeling { get; set; }
     public DateTime SubmittedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public int PeriodNumber { get; set; }
 
     public Project Project { get; set; } = null!;
