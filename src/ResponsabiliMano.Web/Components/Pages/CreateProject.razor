@@ -114,11 +114,11 @@
 
                         <div class="goal__grid">
                             <RmField Label="@Localizer["GoalFieldLabel"]" Class="goal__span-2">
-                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Label" />
+                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Goal.Label" />
                             </RmField>
 
                             <RmField Label="@Localizer["GoalDataTypeLabel"]">
-                                <InputSelect class="rm-select" @bind-Value="_model.Goals[index].DataType">
+                                <InputSelect class="rm-select" @bind-Value="_model.Goals[index].Goal.DataType">
                                     <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
                                     <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
                                     <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
@@ -126,29 +126,74 @@
                             </RmField>
 
                             <RmField Label="@Localizer["GoalUnitLabel"]">
-                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Unit" />
+                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Goal.Unit" />
                             </RmField>
 
-                            @* RmNumberInput, not InputNumber: the framework control posts and
-                               parses in invariant format with thousands separators allowed, so
-                               "3,6" became 36 (spec X2). *@
                             <RmField Label="@Localizer["GoalMinValueLabel"]">
-                                <RmNumberInput DataType="_model.Goals[index].DataType"
-                                               @bind-Value="_model.Goals[index].MinValue"
+                                <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                               @bind-Value="_model.Goals[index].Goal.MinValue"
                                                aria-label="@Localizer["GoalMinValueLabel"]" />
                             </RmField>
 
                             <RmField Label="@Localizer["GoalMaxValueLabel"]">
-                                <RmNumberInput DataType="_model.Goals[index].DataType"
-                                               @bind-Value="_model.Goals[index].MaxValue"
+                                <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                               @bind-Value="_model.Goals[index].Goal.MaxValue"
                                                aria-label="@Localizer["GoalMaxValueLabel"]" />
                             </RmField>
+                        </div>
 
-                            <RmField Label="@Localizer["GoalTargetValueLabel"]">
-                                <RmNumberInput DataType="_model.Goals[index].DataType"
-                                               @bind-Value="_model.Goals[index].TargetValue"
-                                               aria-label="@Localizer["GoalTargetValueLabel"]" />
-                            </RmField>
+                        <div class="goal__targets">
+                            <RmCard Flat="true" Class="goal__target">
+                                <h3 class="goal__target-title">@Localizer["GoalCreatorTargetTitle"]</h3>
+                                <div class="goal__target-grid">
+                                    <RmField Label="@Localizer["GoalBaselineLabel"]">
+                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                       @bind-Value="_model.Goals[index].CreatorTarget.Baseline"
+                                                       aria-label="@Localizer["GoalBaselineLabel"]" />
+                                    </RmField>
+
+                                    <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                       @bind-Value="_model.Goals[index].CreatorTarget.TargetValue"
+                                                       aria-label="@Localizer["GoalTargetValueLabel"]" />
+                                    </RmField>
+
+                                    <RmField Label="@Localizer["GoalDirectionLabel"]">
+                                        <InputSelect class="rm-select" @bind-Value="_model.Goals[index].CreatorTarget.Direction">
+                                            <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                            <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                                        </InputSelect>
+                                    </RmField>
+                                </div>
+                            </RmCard>
+
+                            <RmCard Flat="true" Class="goal__target">
+                                <h3 class="goal__target-title">@Localizer["GoalSuggestedPartnerTargetTitle"]</h3>
+                                <div class="goal__target-grid">
+                                    <RmField Label="@Localizer["GoalBaselineLabel"]">
+                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                       @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Baseline"
+                                                       aria-label="@Localizer["GoalBaselineLabel"]" />
+                                    </RmField>
+
+                                    <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                       @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.TargetValue"
+                                                       aria-label="@Localizer["GoalTargetValueLabel"]" />
+                                    </RmField>
+
+                                    <RmField Label="@Localizer["GoalDirectionLabel"]">
+                                        <InputSelect class="rm-select" @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Direction">
+                                            <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                            <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                                        </InputSelect>
+                                    </RmField>
+                                </div>
+                            </RmCard>
                         </div>
                     </RmCard>
                 }
@@ -176,7 +221,7 @@
 
                 @if (!string.IsNullOrEmpty(_error))
                 {
-                    <RmAlert Tone="danger">@_error</RmAlert>
+                    <RmAlert Tone="danger" Class="mt-3">@_error</RmAlert>
                 }
             </div>
 
@@ -232,7 +277,7 @@
     {
         if (_model.Goals.Count == 0)
         {
-            _model.Goals.Add(new GoalFieldRequest());
+            _model.Goals.Add(CreateDefaultGoalRequest());
         }
 
         _model.Icon ??= IconChoices[0];
@@ -240,8 +285,27 @@
 
     private void AddGoal()
     {
-        _model.Goals.Add(new GoalFieldRequest());
+        _model.Goals.Add(CreateDefaultGoalRequest());
     }
+
+    private static CreateProjectGoalRequest CreateDefaultGoalRequest()
+    {
+        var creator = new GoalTargetRequest();
+        return new CreateProjectGoalRequest
+        {
+            Goal = new GoalFieldRequest(),
+            CreatorTarget = creator,
+            SuggestedPartnerTarget = Copy(creator)
+        };
+    }
+
+    private static GoalTargetRequest Copy(GoalTargetRequest source) =>
+        new()
+        {
+            Baseline = source.Baseline,
+            TargetValue = source.TargetValue,
+            Direction = source.Direction
+        };
 
     private void RemoveGoal(int index)
     {
@@ -268,7 +332,21 @@
             }
 
             var goals = _model.Goals.Select(g => new GoalFieldInput(
-                g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
+                g.Goal.Label,
+                g.Goal.DataType,
+                g.Goal.Unit,
+                g.Goal.MinValue,
+                g.Goal.MaxValue,
+                new GoalTargetInput(
+                    g.CreatorTarget.Baseline,
+                    g.CreatorTarget.TargetValue,
+                    g.CreatorTarget.Direction),
+                g.SuggestedPartnerTarget is null
+                    ? null
+                    : new GoalTargetInput(
+                        g.SuggestedPartnerTarget.Baseline,
+                        g.SuggestedPartnerTarget.TargetValue,
+                        g.SuggestedPartnerTarget.Direction)));
 
             var project = await ProjectService.CreateProjectAsync(
                 userId, _model.Name, _model.StartDate, _model.EndDate,
@@ -280,13 +358,11 @@
         catch (GoalValueException ex)
         {
             _error = GoalValueMessage(ex.Error, ex.GoalLabel, ex.MinValue, ex.MaxValue, ex.DataType);
-            // Validation failures live on the review step, so stay there to show them.
             _step = Steps.Length - 1;
         }
         catch (ArgumentException ex)
         {
             _error = ex.Message;
-            // Validation failures live on the review step, so stay there to show them.
             _step = Steps.Length - 1;
         }
         catch (Exception ex)
@@ -308,6 +384,7 @@
         GoalValueError.PercentOutOfRange => Localizer["GoalValuePercentOutOfRange", label],
         GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
         GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
+        GoalValueError.TargetInconsistentWithDirection => Localizer["GoalValueTargetInconsistent", label],
         _ => Localizer["GoalValueInvalid", label]
     };
 }

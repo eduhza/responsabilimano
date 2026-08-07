@@ -62,7 +62,15 @@ public class ProjectEndpointsTests : IAsyncLifetime
             StartDate = DateTime.UtcNow.AddDays(1),
             EndDate = DateTime.UtcNow.AddDays(31),
             Frequency = 1,
-            Goals = new[] { new { Label = "Steps", DataType = 0, Unit = "count", TargetValue = 10000m } }
+            Goals = new[]
+            {
+                new
+                {
+                    Goal = new { Label = "Steps", DataType = 0, Unit = "count" },
+                    CreatorTarget = new { Baseline = (decimal?)null, TargetValue = 10000m, Direction = 2 },
+                    SuggestedPartnerTarget = (object?)null
+                }
+            }
         };
 
         var response = await client.PostAsJsonAsync("/api/projects", request);
@@ -99,7 +107,15 @@ public class ProjectEndpointsTests : IAsyncLifetime
             StartDate = DateTime.UtcNow.AddDays(1),
             EndDate = DateTime.UtcNow.AddDays(31),
             Frequency = 1,
-            Goals = new[] { new { Label = "Steps", DataType = 0, Unit = "count", TargetValue = 10000m } }
+            Goals = new[]
+            {
+                new
+                {
+                    Goal = new { Label = "Steps", DataType = 0, Unit = "count" },
+                    CreatorTarget = new { Baseline = (decimal?)null, TargetValue = 10000m, Direction = 2 },
+                    SuggestedPartnerTarget = (object?)null
+                }
+            }
         };
 
         var response = await _fixture.Client.PostAsJsonAsync("/api/projects", request);

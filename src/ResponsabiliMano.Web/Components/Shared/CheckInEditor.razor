@@ -67,9 +67,16 @@ else
                         {
                             <text> · @DecimalInput.ToDisplay(entry.Goal.MinValue, entry.Goal.DataType) … @DecimalInput.ToDisplay(entry.Goal.MaxValue, entry.Goal.DataType)</text>
                         }
-                        @if (entry.Goal.TargetValue is not null)
+                        @{
+                            var target = entry.Goal.Targets.FirstOrDefault(t => t.UserId == UserId);
+                        }
+                        @if (target is not null)
                         {
-                            <text> · @Localizer["GoalTargetValueLabel"]: @DecimalInput.ToDisplay(entry.Goal.TargetValue, entry.Goal.DataType)</text>
+                            <text> · @Localizer["GoalTargetValueLabel"]: @DecimalInput.ToDisplay(target.TargetValue, entry.Goal.DataType)</text>
+                            @if (target.Baseline is not null)
+                            {
+                                <text> · @Localizer["GoalBaselineLabel"]: @DecimalInput.ToDisplay(target.Baseline, entry.Goal.DataType)</text>
+                            }
                         }
                     </Hint>
                     <ChildContent>

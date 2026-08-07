@@ -26,6 +26,7 @@ public sealed class CheckInService : ICheckInService
     {
         var project = await _context.Projects
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project is null)
@@ -60,6 +61,7 @@ public sealed class CheckInService : ICheckInService
         var projects = await _context.Projects
             .AsNoTracking()
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .Where(p => p.Status == ProjectStatus.Active
                 && p.StartDate.Date <= now.Date
                 && p.EndDate.Date >= now.Date
@@ -107,6 +109,7 @@ public sealed class CheckInService : ICheckInService
     {
         var project = await _context.Projects
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project is null)
@@ -159,6 +162,7 @@ public sealed class CheckInService : ICheckInService
     {
         var project = await _context.Projects
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project is null)

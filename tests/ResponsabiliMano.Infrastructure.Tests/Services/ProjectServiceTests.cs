@@ -57,8 +57,14 @@ public class ProjectServiceTests : IDisposable
         return project;
     }
 
-    private static GoalFieldInput Goal(string label = "Steps", string unit = "count")
-        => new(label, GoalDataType.Integer, unit, null, null, null);
+    private static GoalFieldInput Goal(
+        string label = "Steps",
+        string unit = "count",
+        decimal? targetValue = null,
+        decimal? baseline = null,
+        GoalDirection direction = GoalDirection.Reach)
+        => new(label, GoalDataType.Integer, unit, null, null,
+            new GoalTargetInput(baseline, targetValue, direction));
 
     // ---------- CreateProjectAsync ----------
 
@@ -84,7 +90,8 @@ public class ProjectServiceTests : IDisposable
             DateTime.UtcNow,
             DateTime.UtcNow.AddDays(10),
             ProjectFrequency.Weekly,
-            new[] { new GoalFieldInput("  Steps  ", GoalDataType.Integer, "  count  ", 0, 100, 50) });
+            new[] { new GoalFieldInput("  Steps  ", GoalDataType.Integer, "  count  ", 0, 100,
+                new GoalTargetInput(null, 50, GoalDirection.Reach)) });
 
         Assert.Equal("My Project", project.Name);
         Assert.Equal(ProjectStatus.Pending, project.Status);
@@ -102,7 +109,7 @@ public class ProjectServiceTests : IDisposable
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateProjectAsync(
             Guid.NewGuid(), "P", DateTime.UtcNow, DateTime.UtcNow.AddDays(5),
-            ProjectFrequency.Daily, new[] { new GoalFieldInput("  ", GoalDataType.Integer, "count", null, null, null) }));
+            ProjectFrequency.Daily, new[] { new GoalFieldInput("  ", GoalDataType.Integer, "count", null, null, new GoalTargetInput(null, null, GoalDirection.Reach)) }));
     }
 
     [Fact]
@@ -112,7 +119,7 @@ public class ProjectServiceTests : IDisposable
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateProjectAsync(
             Guid.NewGuid(), "P", DateTime.UtcNow, DateTime.UtcNow.AddDays(5),
-            ProjectFrequency.Daily, new[] { new GoalFieldInput("Label", GoalDataType.Integer, " ", null, null, null) }));
+            ProjectFrequency.Daily, new[] { new GoalFieldInput("Label", GoalDataType.Integer, " ", null, null, new GoalTargetInput(null, null, GoalDirection.Reach)) }));
     }
 
     // ---------- InvitePartnerAsync ----------
@@ -244,6 +251,7 @@ public class ProjectServiceTests : IDisposable
 
         Assert.NotNull(result);
         Assert.Equal(partner.Id, result!.PartnerId);
+        Assert.Equal(ProjectStatus.Active, result.Status);
         var refreshed = await _context.ProjectInvitations.FirstAsync(i => i.Id == invitation.Id);
         Assert.NotNull(refreshed.AcceptedAt);
     }
@@ -587,7 +595,7 @@ public class ProjectServiceTests : IDisposable
         {
             Goals = new[]
             {
-                new { Label = "New Goal", DataType = GoalDataType.Decimal, Unit = "kg", MinValue = (decimal?)0, MaxValue = (decimal?)100, TargetValue = (decimal?)50 }
+                new { Label = "New Goal", DataType = GoalDataType.Decimal, Unit = "kg", MinValue = (decimal?)0, MaxValue = (decimal?)100 }
             }
         });
         var cr = SeedChangeRequest(project.Id, creator.Id, ChangeRequestType.Goals, payload);
@@ -645,8 +653,8 @@ public class ProjectServiceTests : IDisposable
         {
             Goals = new[]
             {
-                new { Label = "Weight", DataType = GoalDataType.Decimal, Unit = "kg", MinValue = (decimal?)60, MaxValue = (decimal?)120, TargetValue = (decimal?)90 },
-                new { Label = "Steps", DataType = GoalDataType.Integer, Unit = "count", MinValue = (decimal?)null, MaxValue = (decimal?)null, TargetValue = (decimal?)10000 }
+                new { Label = "Weight", DataType = GoalDataType.Decimal, Unit = "kg", MinValue = (decimal?)60, MaxValue = (decimal?)120 },
+                new { Label = "Steps", DataType = GoalDataType.Integer, Unit = "count", MinValue = (decimal?)null, MaxValue = (decimal?)null }
             }
         });
         var cr = SeedChangeRequest(project.Id, creator.Id, ChangeRequestType.Goals, payload);
@@ -657,7 +665,7 @@ public class ProjectServiceTests : IDisposable
 
         var goals = await _context.GoalFields.Where(g => g.ProjectId == project.Id).ToListAsync();
         Assert.Equal(2, goals.Count);
-        Assert.Contains(goals, g => g.Label == "Weight" && g.Unit == "kg" && g.TargetValue == 90m);
+        Assert.Contains(goals, g => g.Label == "Weight" && g.Unit == "kg");
         Assert.Contains(goals, g => g.Label == "Steps" && g.Unit == "count");
 
         var metrics = await _context.CheckInMetrics.Where(m => m.GoalFieldId == existingGoal.Id).ToListAsync();

@@ -482,6 +482,10 @@ components:
       type: integer
       description: '0=Decimal, 1=Integer, 2=Percent'
       enum: [0, 1, 2]
+    GoalDirection:
+      type: integer
+      description: '0=Decrease, 1=Increase, 2=Reach, 3=Maintain'
+      enum: [0, 1, 2, 3]
     ChangeRequestType:
       type: integer
       description: '0=EndDate, 1=Frequency, 2=Goals'
@@ -534,7 +538,23 @@ components:
         unit: { type: string, maxLength: 50 }
         minValue: { type: [number, 'null'] }
         maxValue: { type: [number, 'null'] }
+    GoalTargetRequest:
+      type: object
+      required: [direction]
+      properties:
+        baseline: { type: [number, 'null'] }
         targetValue: { type: [number, 'null'] }
+        direction: { $ref: '#/components/schemas/GoalDirection' }
+    CreateProjectGoalFieldRequest:
+      type: object
+      required: [goal, creatorTarget]
+      properties:
+        goal: { $ref: '#/components/schemas/GoalFieldRequest' }
+        creatorTarget: { $ref: '#/components/schemas/GoalTargetRequest' }
+        suggestedPartnerTarget:
+          oneOf:
+            - $ref: '#/components/schemas/GoalTargetRequest'
+            - type: 'null'
     CreateProjectRequest:
       type: object
       required: [name, startDate, endDate, frequency, goals]
@@ -546,7 +566,7 @@ components:
         goals:
           type: array
           minItems: 1
-          items: { $ref: '#/components/schemas/GoalFieldRequest' }
+          items: { $ref: '#/components/schemas/CreateProjectGoalFieldRequest' }
     InvitePartnerRequest:
       type: object
       required: [partnerEmail]
@@ -611,7 +631,18 @@ components:
               unit: { type: string }
               minValue: { type: [number, 'null'] }
               maxValue: { type: [number, 'null'] }
-              targetValue: { type: [number, 'null'] }
+              targets:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      oneOf:
+                        - { type: string, format: uuid }
+                        - type: 'null'
+                    baseline: { type: [number, 'null'] }
+                    targetValue: { type: [number, 'null'] }
+                    direction: { $ref: '#/components/schemas/GoalDirection' }
         changeRequests:
           type: array
           items:
@@ -679,7 +710,15 @@ components:
         label: { type: string }
         unit: { type: string }
         dataType: { $ref: '#/components/schemas/GoalDataType' }
-        targetValue: { type: [number, 'null'] }
+        targets:
+          type: array
+          items:
+            type: object
+            properties:
+              userId: { type: string, format: uuid }
+              baseline: { type: [number, 'null'] }
+              targetValue: { type: [number, 'null'] }
+              direction: { $ref: '#/components/schemas/GoalDirection' }
         series:
           type: array
           items: { $ref: '#/components/schemas/DashboardSeriesEntry' }
