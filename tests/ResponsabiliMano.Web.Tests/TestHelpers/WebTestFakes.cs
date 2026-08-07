@@ -80,7 +80,7 @@ internal sealed class FakeProjectService : IProjectService
         => throw new NotImplementedException();
 
     public Task ApproveProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+        => Task.CompletedTask;
 
     public Task<ProjectChangeRequest> ProposeChangeAsync(
         Guid projectId, Guid userId, ChangeRequestType type, string payloadJson,

@@ -214,7 +214,7 @@ paths:
   /api/projects/{id}/approve:
     post:
       tags: [Projects]
-      summary: Approve the project (antiforgery disabled)
+      summary: Accept all pending goal targets for the caller (antiforgery disabled)
       operationId: approveProject
       security:
         - cookieAuth: []
@@ -222,10 +222,81 @@ paths:
         - $ref: '#/components/parameters/ProjectId'
       responses:
         '200':
-          description: Project approved
+          description: Pending goal targets accepted
           content:
             application/json:
               schema: { $ref: '#/components/schemas/MessageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/goal-negotiation:
+    get:
+      tags: [Projects]
+      summary: Get the goal negotiation state for the project
+      operationId: getGoalNegotiation
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Negotiation state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoalNegotiationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/goal-targets/{targetId}/accept:
+    post:
+      tags: [Projects]
+      summary: Accept a goal target (antiforgery disabled)
+      operationId: acceptGoalTarget
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: targetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Goal target accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/projects/{id}/goal-targets/{targetId}/proposals:
+    post:
+      tags: [Projects]
+      summary: Propose a new value for a goal target (antiforgery disabled)
+      operationId: proposeGoalTarget
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: targetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GoalProposalRequest' }
+      responses:
+        '201':
+          description: Proposal created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoalProposalCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -498,6 +569,14 @@ components:
       type: integer
       description: '0=Pending, 1=Approved, 2=Rejected'
       enum: [0, 1, 2]
+    GoalTargetStatus:
+      type: integer
+      description: '0=Draft, 1=PendingAcceptance, 2=Accepted'
+      enum: [0, 1, 2]
+    GoalProposalStatus:
+      type: integer
+      description: '0=Pending, 1=Accepted, 2=Rejected, 3=Superseded'
+      enum: [0, 1, 2, 3]
     Feeling:
       type: integer
       description: '1=VerySad, 2=Sad, 3=Neutral, 4=Happy, 5=VeryHappy'
@@ -545,6 +624,55 @@ components:
         baseline: { type: [number, 'null'] }
         targetValue: { type: [number, 'null'] }
         direction: { $ref: '#/components/schemas/GoalDirection' }
+    GoalProposalRequest:
+      type: object
+      required: [direction]
+      properties:
+        baseline: { type: [number, 'null'] }
+        targetValue: { type: [number, 'null'] }
+        direction: { $ref: '#/components/schemas/GoalDirection' }
+        comment: { type: [string, 'null'], maxLength: 500 }
+    GoalProposalCreated:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/GoalProposalStatus' }
+    GoalNegotiationResponse:
+      type: object
+      properties:
+        acceptedCount: { type: integer }
+        totalCount: { type: integer }
+        creatorId: { type: string, format: uuid }
+        partnerId: { type: [string, 'null'], format: uuid }
+        goals:
+          type: array
+          items: { $ref: '#/components/schemas/GoalNegotiationGoal' }
+    GoalNegotiationGoal:
+      type: object
+      properties:
+        goalFieldId: { type: string, format: uuid }
+        label: { type: string }
+        dataType: { $ref: '#/components/schemas/GoalDataType' }
+        unit: { type: string }
+        minValue: { type: [number, 'null'] }
+        maxValue: { type: [number, 'null'] }
+        creatorTarget: { $ref: '#/components/schemas/GoalNegotiationTarget' }
+        partnerTarget: { $ref: '#/components/schemas/GoalNegotiationTarget' }
+    GoalNegotiationTarget:
+      type: object
+      properties:
+        goalTargetId: { type: string, format: uuid }
+        userId: { type: [string, 'null'], format: uuid }
+        baseline: { type: [number, 'null'] }
+        targetValue: { type: [number, 'null'] }
+        direction: { $ref: '#/components/schemas/GoalDirection' }
+        status: { $ref: '#/components/schemas/GoalTargetStatus' }
+        acceptedByCreator: { type: boolean }
+        acceptedByPartner: { type: boolean }
+        lastProposedByUserId: { type: [string, 'null'], format: uuid }
+        lastProposedAt: { type: [string, 'null'], format: date-time }
+        lastProposerName: { type: [string, 'null'] }
+        lastComment: { type: [string, 'null'] }
     CreateProjectGoalFieldRequest:
       type: object
       required: [goal, creatorTarget]
@@ -643,6 +771,14 @@ components:
                     baseline: { type: [number, 'null'] }
                     targetValue: { type: [number, 'null'] }
                     direction: { $ref: '#/components/schemas/GoalDirection' }
+                    status: { $ref: '#/components/schemas/GoalTargetStatus' }
+                    acceptedByCreator: { type: boolean }
+                    acceptedByPartner: { type: boolean }
+                    lastProposedByUserId:
+                      oneOf:
+                        - { type: string, format: uuid }
+                        - type: 'null'
+                    lastProposedAt: { type: [string, 'null'], format: date-time }
         changeRequests:
           type: array
           items:
