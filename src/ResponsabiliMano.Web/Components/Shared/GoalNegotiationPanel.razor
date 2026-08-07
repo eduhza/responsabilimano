@@ -1,0 +1,156 @@
+@using ResponsabiliMano.Core.Enums
+@using ResponsabiliMano.Core.Services
+@inject IGoalNegotiationService GoalNegotiationService
+
+<AutoRefresh IntervalSeconds="5" OnRefresh="RefreshAsync" />
+@inject IProjectService ProjectService
+@inject IStringLocalizer<AppStrings> Localizer
+@inject ILogger<GoalNegotiationPanel> Logger
+
+<div class="negotiation">
+    <div class="negotiation__header">
+        <div class="negotiation__summary">
+            <h2 class="negotiation__title">@Localizer["GoalNegotiationTitle"]</h2>
+            <p class="negotiation__counter">@Localizer["GoalNegotiationCounter", _negotiation.AcceptedCount, _negotiation.TotalCount]</p>
+        </div>
+
+        @if (_canAcceptAll)
+        {
+            <RmButton Size="sm" Disabled="_loading" @onclick="HandleAcceptAll">
+                <RmIcon Name="check" />
+                @Localizer["AcceptAllButton"]
+            </RmButton>
+        }
+
+        <div class="negotiation__progress"
+             role="progressbar"
+             aria-valuenow="@_negotiation.AcceptedCount"
+             aria-valuemax="@_negotiation.TotalCount">
+            <div class="negotiation__progress-bar" style="width: @ProgressPercent%"></div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <RmAlert Tone="@_statusTone" Class="mt-3">@_statusMessage</RmAlert>
+    }
+
+    <div class="negotiation__goals">
+        @foreach (var goal in _negotiation.Goals)
+        {
+            <RmCard Flat="true" Class="negotiation__goal">
+                <div class="negotiation__goal-header">
+                    <span class="negotiation__goal-label">@goal.Label</span>
+                    <span class="negotiation__goal-meta">@GetDataTypeText(goal.DataType) · @goal.Unit</span>
+                </div>
+
+                <div class="negotiation__targets">
+                    <GoalNegotiationTargetRow
+                        ProjectId="ProjectId"
+                        Negotiation="_negotiation"
+                        Goal="goal"
+                        Target="goal.CreatorTarget"
+                        IsCreator="true"
+                        CurrentUserId="CurrentUserId"
+                        OnChanged="RefreshAsync" />
+
+                    <GoalNegotiationTargetRow
+                        ProjectId="ProjectId"
+                        Negotiation="_negotiation"
+                        Goal="goal"
+                        Target="goal.PartnerTarget"
+                        IsCreator="false"
+                        CurrentUserId="CurrentUserId"
+                        OnChanged="RefreshAsync" />
+                </div>
+            </RmCard>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid ProjectId { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid CurrentUserId { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private GoalNegotiation _negotiation = new(0, 0, Guid.Empty, null, []);
+    private bool _loading;
+    private string? _statusMessage;
+    private string _statusTone = "info";
+
+    private int ProgressPercent => _negotiation.TotalCount == 0
+        ? 0
+        : 100 * _negotiation.AcceptedCount / _negotiation.TotalCount;
+
+    private bool _canAcceptAll => _negotiation.TotalCount > 0
+        && _negotiation.AcceptedCount < _negotiation.TotalCount
+        && _negotiation.PartnerId is not null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+
+        try
+        {
+            _negotiation = await GoalNegotiationService.GetNegotiationAsync(ProjectId, CurrentUserId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load goal negotiation for project {ProjectId}", ProjectId);
+            _statusMessage = Localizer["GoalNegotiationLoadError"];
+            _statusTone = "danger";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        _statusMessage = null;
+        await LoadAsync();
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task HandleAcceptAll()
+    {
+        _loading = true;
+        _statusMessage = null;
+
+        try
+        {
+            await ProjectService.ApproveProjectAsync(ProjectId, CurrentUserId);
+            await RefreshAsync();
+            _statusMessage = Localizer["AcceptAllSuccess"];
+            _statusTone = "success";
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = ex.Message;
+            _statusTone = "danger";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetDataTypeText(GoalDataType dataType) => dataType switch
+    {
+        GoalDataType.Decimal => Localizer["DataTypeDecimal"],
+        GoalDataType.Integer => Localizer["DataTypeInteger"],
+        GoalDataType.Percent => Localizer["DataTypePercent"],
+        _ => dataType.ToString()
+    };
+}

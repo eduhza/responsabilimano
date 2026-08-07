@@ -42,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICheckInService, CheckInService>();
         services.AddScoped<ICheckInNotificationService, CheckInNotificationService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IGoalNegotiationService, GoalNegotiationService>();
 
         return services;
     }

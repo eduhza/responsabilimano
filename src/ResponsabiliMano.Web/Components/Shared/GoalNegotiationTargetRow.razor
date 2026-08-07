@@ -1,0 +1,245 @@
+@using ResponsabiliMano.Core.Common
+@using ResponsabiliMano.Core.Enums
+@using ResponsabiliMano.Core.Services
+@inject IGoalNegotiationService GoalNegotiationService
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="negotiation__target @(_editing ? "negotiation__target--editing" : null)">
+    <div class="negotiation__target-main">
+        <div class="negotiation__target-identity">
+            <RmAvatar Name="@_proposerName" Tone="@_proposerTone" Size="sm" />
+            <div>
+                <p class="negotiation__target-title">@_title</p>
+                @if (Target.LastProposedAt is not null)
+                {
+                    <p class="negotiation__target-meta">
+                        @Target.LastProposedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                        @if (!string.IsNullOrWhiteSpace(Target.LastComment))
+                        {
+                            <span class="negotiation__target-comment" data-test="goal-target-comment">"@Target.LastComment"</span>
+                        }
+                    </p>
+                }
+            </div>
+        </div>
+
+        <div class="negotiation__target-value">
+            <span class="rm-display rm-tabular">
+                @DecimalInput.ToDisplay(Target.TargetValue, Goal.DataType)
+                <span class="negotiation__unit">@Goal.Unit</span>
+            </span>
+            @if (Target.Baseline is not null)
+            {
+                <span class="negotiation__baseline">
+                    (@Localizer["GoalBaselineLabel"] @DecimalInput.ToDisplay(Target.Baseline, Goal.DataType))
+                </span>
+            }
+        </div>
+
+        <div class="negotiation__target-status">
+            @if (Target.Status == GoalTargetStatus.Accepted)
+            {
+                <RmBadge Tone="primary"><RmIcon Name="check" Size="0.75rem" /> @Localizer["GoalTargetStatusAccepted"]</RmBadge>
+            }
+            else
+            {
+                <RmBadge Tone="partner">@Localizer["GoalTargetStatusPending"]</RmBadge>
+            }
+        </div>
+
+        @if (!_editing && _projectHasPartner)
+        {
+            <div class="negotiation__target-actions">
+                @if (_canAccept)
+                {
+                    <RmButton Size="sm" Disabled="_loading" @onclick="HandleAccept">
+                        <RmIcon Name="check" />
+                        @Localizer["AcceptButton"]
+                    </RmButton>
+                }
+                @if (_canAdjust)
+                {
+                    <RmButton Size="sm" Variant="outline" Disabled="_loading" @onclick="() => _editing = true">
+                        <RmIcon Name="pencil" />
+                        @Localizer["AdjustButton"]
+                    </RmButton>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_editing)
+    {
+        <div class="negotiation__target-form">
+            <div class="negotiation__target-fields">
+                <RmField Label="@Localizer["GoalBaselineLabel"]" For="@($"baseline-{Target.GoalTargetId}")">
+                    <RmNumberInput Id="@($"baseline-{Target.GoalTargetId}")"
+                                   DataType="Goal.DataType"
+                                   @bind-Value="_form.Baseline" />
+                </RmField>
+
+                <RmField Label="@Localizer["GoalTargetLabel"]" For="@($"target-{Target.GoalTargetId}")">
+                    <RmNumberInput Id="@($"target-{Target.GoalTargetId}")"
+                                   DataType="Goal.DataType"
+                                   @bind-Value="_form.TargetValue" />
+                </RmField>
+
+                <RmField Label="@Localizer["GoalDirectionLabel"]" For="@($"direction-{Target.GoalTargetId}")">
+                    <select id="@($"direction-{Target.GoalTargetId}")" class="rm-select" @bind="_form.Direction">
+                        <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                        <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                        <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                        <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                    </select>
+                </RmField>
+            </div>
+
+            <RmField Label="@Localizer["GoalProposalCommentLabel"]" For="@($"comment-{Target.GoalTargetId}")">
+                <textarea id="@($"comment-{Target.GoalTargetId}")"
+                          class="rm-input"
+                          rows="2"
+                          maxlength="500"
+                          @bind="_form.Comment"></textarea>
+            </RmField>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <RmAlert Tone="danger" Class="mt-2">@_error</RmAlert>
+            }
+
+            <div class="negotiation__form-actions">
+                <RmButton Size="sm" Disabled="_loading" @onclick="HandlePropose">
+                    @Localizer["ProposeButton"]
+                </RmButton>
+                <RmButton Size="sm" Variant="outline" Disabled="_loading" @onclick="CancelEdit">
+                    @Localizer["Cancel"]
+                </RmButton>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid ProjectId { get; set; }
+
+    [Parameter, EditorRequired]
+    public GoalNegotiation Negotiation { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public GoalNegotiationGoal Goal { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public GoalNegotiationTarget Target { get; set; } = default!;
+
+    [Parameter]
+    public bool IsCreator { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid CurrentUserId { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool _editing;
+    private bool _loading;
+    private string? _error;
+    private GoalProposalForm _form = new();
+
+    private bool _isCurrentUserCreator => CurrentUserId == Negotiation.CreatorId;
+    private bool _isMine => (IsCreator && _isCurrentUserCreator) || (!IsCreator && CurrentUserId == Negotiation.PartnerId);
+    private bool _projectHasPartner => Negotiation.PartnerId is not null;
+
+    private bool _canAccept => _projectHasPartner
+        && Target.Status != GoalTargetStatus.Accepted
+        && Target.LastProposedByUserId != CurrentUserId
+        && (_isCurrentUserCreator ? !Target.AcceptedByCreator : !Target.AcceptedByPartner);
+
+    private bool _canAdjust => _isMine;
+
+    private string _title => _isMine ? Localizer["ProjectGoalTargetMine"] : Localizer["ProjectGoalTargetPartner"];
+
+    private string? _proposerName => Target.LastProposerName;
+
+    private string _proposerTone => Target.LastProposedByUserId == CurrentUserId ? "you-soft" : "partner-soft";
+
+    protected override void OnParametersSet()
+    {
+        _form = new GoalProposalForm
+        {
+            Baseline = Target.Baseline,
+            TargetValue = Target.TargetValue,
+            Direction = Target.Direction,
+            Comment = null
+        };
+    }
+
+    private async Task HandleAccept()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            await GoalNegotiationService.AcceptTargetAsync(ProjectId, Target.GoalTargetId, CurrentUserId);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandlePropose()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            if (_form.Comment is not null && _form.Comment.Length > 500)
+            {
+                _error = Localizer["GoalProposalCommentTooLong"];
+                return;
+            }
+
+            await GoalNegotiationService.ProposeTargetAsync(
+                ProjectId,
+                Target.GoalTargetId,
+                CurrentUserId,
+                _form.TargetValue,
+                _form.Baseline,
+                _form.Direction,
+                _form.Comment);
+
+            _editing = false;
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _editing = false;
+        _error = null;
+    }
+
+    private sealed class GoalProposalForm
+    {
+        public decimal? Baseline { get; set; }
+        public decimal? TargetValue { get; set; }
+        public GoalDirection Direction { get; set; }
+        public string? Comment { get; set; }
+    }
+}

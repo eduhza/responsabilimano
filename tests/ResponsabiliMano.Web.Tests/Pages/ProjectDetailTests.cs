@@ -13,6 +13,7 @@ using ResponsabiliMano.Core.Services;
 using ResponsabiliMano.Web;
 using ResponsabiliMano.Web.Components.Pages;
 using ResponsabiliMano.Web.Tests.TestHelpers;
+using ResponsabiliMano.Web.Tests.WebTestFakes;
 
 namespace ResponsabiliMano.Web.Tests.Pages;
 
@@ -29,6 +30,7 @@ public class ProjectDetailTests : TestContext
     public ProjectDetailTests()
     {
         Services.AddSingleton<IProjectService>(_projectService);
+        Services.AddSingleton<IGoalNegotiationService>(new FakeGoalNegotiationService());
         Services.AddSingleton<IFeatureManager>(_featureManager);
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton<IStringLocalizer<AppStrings>>(new ProjectDetailLocalizer());

@@ -166,14 +166,14 @@ public class ProjectEndpointsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ApproveProject_NoPartner_Returns409()
+    public async Task ApproveProject_NoPartner_ReturnsOk()
     {
         var (creator, project) = await SeedHelper.SeedPendingProjectAsync(_fixture);
         var cookie = await _fixture.LoginAsync(creator.Email, "Password123!");
         var client = _fixture.AuthenticatedClient(cookie);
 
         var response = await client.PostAsync($"/api/projects/{project.Id}/approve", null);
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

@@ -53,20 +53,20 @@ public static class SeedData
     private static Project BuildSummerProject(User ana, User bruno, DateTime now)
     {
         var weight = NewGoalField("Peso", GoalDataType.Decimal, "kg", 40, 200);
-        AddTarget(weight, ana.Id, 68.9m, 65.0m, GoalDirection.Decrease);
-        AddTarget(weight, bruno.Id, 92.0m, 87.8m, GoalDirection.Decrease);
+        AddTarget(weight, ana.Id, ana.Id, 68.9m, 65.0m, GoalDirection.Decrease, GoalTargetStatus.Accepted, true, true);
+        AddTarget(weight, bruno.Id, bruno.Id, 92.0m, 87.8m, GoalDirection.Decrease, GoalTargetStatus.Accepted, true, true);
 
         var workouts = NewGoalField("Adesão aos treinos", GoalDataType.Percent, "%", 0, 100);
-        AddTarget(workouts, ana.Id, null, 90m, GoalDirection.Reach);
-        AddTarget(workouts, bruno.Id, null, 90m, GoalDirection.Reach);
+        AddTarget(workouts, ana.Id, ana.Id, null, 90m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+        AddTarget(workouts, bruno.Id, bruno.Id, null, 90m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
 
         var diet = NewGoalField("Adesão à dieta", GoalDataType.Percent, "%", 0, 100);
-        AddTarget(diet, ana.Id, null, 85m, GoalDirection.Reach);
-        AddTarget(diet, bruno.Id, null, 85m, GoalDirection.Reach);
+        AddTarget(diet, ana.Id, ana.Id, null, 85m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+        AddTarget(diet, bruno.Id, bruno.Id, null, 85m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
 
         var water = NewGoalField("Água por dia", GoalDataType.Decimal, "L", 0, 6);
-        AddTarget(water, ana.Id, null, 2.5m, GoalDirection.Reach);
-        AddTarget(water, bruno.Id, null, 2.5m, GoalDirection.Reach);
+        AddTarget(water, ana.Id, ana.Id, null, 2.5m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+        AddTarget(water, bruno.Id, bruno.Id, null, 2.5m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
 
         var project = new Project
         {
@@ -175,16 +175,24 @@ public static class SeedData
         };
 
         if (creatorId is not null && target is not null)
-            AddTarget(goal, creatorId, null, target, GoalDirection.Reach);
+            AddTarget(goal, creatorId, creatorId.Value, null, target, GoalDirection.Reach, GoalTargetStatus.PendingAcceptance, true, false);
 
-        if (partnerId is not null && target is not null)
-            AddTarget(goal, partnerId, null, target, GoalDirection.Reach);
+        if (partnerId is not null && creatorId is not null && target is not null)
+            AddTarget(goal, partnerId, creatorId.Value, null, target, GoalDirection.Reach, GoalTargetStatus.PendingAcceptance, true, false);
 
         return goal;
     }
 
     private static void AddTarget(
-        GoalField goal, Guid? userId, decimal? baseline, decimal? target, GoalDirection direction)
+        GoalField goal,
+        Guid? userId,
+        Guid proposedByUserId,
+        decimal? baseline,
+        decimal? target,
+        GoalDirection direction,
+        GoalTargetStatus status,
+        bool acceptedByCreator,
+        bool acceptedByPartner)
     {
         goal.Targets.Add(new GoalTarget
         {
@@ -192,7 +200,12 @@ public static class SeedData
             UserId = userId,
             Baseline = baseline,
             TargetValue = target,
-            Direction = direction
+            Direction = direction,
+            Status = status,
+            AcceptedByCreator = acceptedByCreator,
+            AcceptedByPartner = acceptedByPartner,
+            LastProposedByUserId = proposedByUserId,
+            LastProposedAt = DateTime.UtcNow
         });
     }
 

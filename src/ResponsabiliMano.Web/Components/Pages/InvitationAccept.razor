@@ -71,11 +71,6 @@ else if (_project is not null)
             }
         </div>
 
-        @if (!string.IsNullOrEmpty(_statusMessage))
-        {
-            <RmAlert Tone="@_statusTone" Class="mt-3">@_statusMessage</RmAlert>
-        }
-
         @if (!_accepted)
         {
             <RmButton Disabled="_actionLoading" @onclick="HandleAcceptInvitation" Class="mt-3">
@@ -83,31 +78,16 @@ else if (_project is not null)
                 @(_actionLoading ? Localizer["Processing"] : Localizer["AcceptInvitationButton"])
             </RmButton>
         }
-        else if (_project.Status == Core.Enums.ProjectStatus.Pending)
-        {
-            <RmCard Class="accept__approve">
-                <div>
-                    <h2 class="accept__approve-title">@Localizer["ApproveProjectTitle"]</h2>
-                    <p class="accept__approve-text">@Localizer["ApproveProjectDescription"]</p>
-                </div>
-                <div class="accept__approve-actions">
-                    <RmButton Href="@($"/projects/{_project.Id}")" Variant="outline">@Localizer["ProposeChangeButton"]</RmButton>
-                    <RmButton Disabled="_actionLoading" @onclick="HandleApproveProject">@Localizer["ApproveButton"]</RmButton>
-                </div>
-            </RmCard>
-        }
         else
         {
+            <h2 class="accept__section">@Localizer["GoalNegotiationTitle"]</h2>
+            <GoalNegotiationPanel ProjectId="_project.Id" CurrentUserId="_currentUserId" OnChanged="RefreshProjectAsync" />
+
             <RmButton Href="@($"/projects/{_project.Id}")" Variant="outline" Class="mt-3">
                 @Localizer["ViewProjectDetails"]
             </RmButton>
         }
 
-        <RmConfirmDialog @ref="_confirmDialog"
-                         Title="@Localizer["ConfirmApproveTitle"]"
-                         Message="@Localizer["ConfirmApproveMessage"]"
-                         ConfirmText="@Localizer["ApproveButton"]"
-                         CancelText="@Localizer["Cancel"]" />
     </div>
 }
 
@@ -121,10 +101,6 @@ else if (_project is not null)
     private bool _accepted;
     private bool _actionLoading;
     private string? _error;
-    private string? _statusMessage;
-    private string _statusTone = "info";
-
-    private RmConfirmDialog? _confirmDialog;
 
     protected override async Task OnInitializedAsync()
     {
@@ -200,30 +176,19 @@ else if (_project is not null)
         }
     }
 
-    private async Task HandleApproveProject()
+    private async Task RefreshProjectAsync()
     {
-        if (_confirmDialog is null || !await _confirmDialog.ShowAsync())
+        var projectId = _project?.Id;
+        if (projectId is null)
             return;
-
-        _actionLoading = true;
-        _statusMessage = null;
 
         try
         {
-            if (_project is null) return;
-            await ProjectService.ApproveProjectAsync(_project.Id, _currentUserId);
-            _project = await ProjectService.GetProjectAsync(_project.Id, _currentUserId);
-            _statusMessage = Localizer["ProjectApprovedSuccess"];
-            _statusTone = "success";
+            _project = await ProjectService.GetProjectAsync(projectId.Value, _currentUserId);
         }
         catch (Exception ex)
         {
-            _statusMessage = ex.Message;
-            _statusTone = "danger";
-        }
-        finally
-        {
-            _actionLoading = false;
+            Logger.LogError(ex, "Failed to refresh project {ProjectId}", projectId.Value);
         }
     }
 

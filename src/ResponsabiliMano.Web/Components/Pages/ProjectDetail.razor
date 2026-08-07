@@ -111,19 +111,7 @@ else
         <RmAlert Tone="@_statusTone" Class="mt-3">@_statusMessage</RmAlert>
     }
 
-    @if (_project.Status == Core.Enums.ProjectStatus.Pending && _project.PartnerId is not null)
-    {
-        <RmCard Class="detail__approve">
-            <div>
-                <h2 class="detail__approve-title">@Localizer["ApproveProjectTitle"]</h2>
-                <p class="detail__approve-text">@Localizer["ApproveProjectDescription"]</p>
-            </div>
-            <RmButton Disabled="_actionLoading" @onclick="HandleApproveProject">
-                <RmIcon Name="handshake" />
-                @Localizer["ApproveButton"]
-            </RmButton>
-        </RmCard>
-    }
+
 
     <div class="tabs" role="tablist">
         @foreach (var tab in Tabs)
@@ -140,31 +128,38 @@ else
 
     @if (_tab == 0)
     {
-        <div class="goals">
-            @foreach (var goal in _project.Goals)
-            {
-                var mine = GetTargetFor(goal, _currentUserId);
-                var partner = GetPartnerTargetFor(goal);
-                <RmCard Flat="true" Class="goal-tile">
-                    <p class="goal-tile__label">@goal.Label</p>
-                    <p class="goal-tile__target rm-display rm-tabular">
-                        @TargetText(mine, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
-                    </p>
-                    <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetMine"]</p>
-                    @if (partner is not null)
-                    {
-                        <p class="goal-tile__partner-target rm-display rm-tabular">
-                            @TargetText(partner, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
+        @if (_project.PartnerId is not null)
+        {
+            <GoalNegotiationPanel ProjectId="ProjectId" CurrentUserId="_currentUserId" OnChanged="RefreshAsync" />
+        }
+        else
+        {
+            <div class="goals">
+                @foreach (var goal in _project.Goals)
+                {
+                    var mine = GetTargetFor(goal, _currentUserId);
+                    var partner = GetPartnerTargetFor(goal);
+                    <RmCard Flat="true" Class="goal-tile">
+                        <p class="goal-tile__label">@goal.Label</p>
+                        <p class="goal-tile__target rm-display rm-tabular">
+                            @TargetText(mine, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
                         </p>
-                        <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetPartner"]</p>
-                    }
-                    @if (goal.MinValue is not null || goal.MaxValue is not null)
-                    {
-                        <p class="goal-tile__range">@DecimalInput.ToDisplay(goal.MinValue, goal.DataType) … @DecimalInput.ToDisplay(goal.MaxValue, goal.DataType) @goal.Unit</p>
-                    }
-                </RmCard>
-            }
-        </div>
+                        <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetMine"]</p>
+                        @if (partner is not null)
+                        {
+                            <p class="goal-tile__partner-target rm-display rm-tabular">
+                                @TargetText(partner, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
+                            </p>
+                            <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetPartner"]</p>
+                        }
+                        @if (goal.MinValue is not null || goal.MaxValue is not null)
+                        {
+                            <p class="goal-tile__range">@DecimalInput.ToDisplay(goal.MinValue, goal.DataType) … @DecimalInput.ToDisplay(goal.MaxValue, goal.DataType) @goal.Unit</p>
+                        }
+                    </RmCard>
+                }
+            </div>
+        }
     }
     else if (_tab == 1)
     {
@@ -229,7 +224,6 @@ else
                         @onchange="e => _proposeType = Enum.Parse<ChangeRequestType>(e.Value?.ToString() ?? string.Empty)">
                     <option value="@ChangeRequestType.EndDate">@Localizer["ChangeTypeEndDate"]</option>
                     <option value="@ChangeRequestType.Frequency">@Localizer["ChangeTypeFrequency"]</option>
-                    <option value="@ChangeRequestType.Goals">@Localizer["ChangeTypeGoals"]</option>
                 </select>
             </RmField>
 
@@ -254,56 +248,7 @@ else
                     </select>
                 </RmField>
             }
-            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
-            {
-                <div class="rm-stack mt-3">
-                    @for (var i = 0; i < _proposeGoals.Count; i++)
-                    {
-                        var index = i;
-                        <RmCard Flat="true">
-                            <div class="propose__goal-grid">
-                                <RmField Label="@Localizer["GoalFieldLabel"]" Class="propose__span-2">
-                                    <input class="rm-input" value="@_proposeGoals[index].Label"
-                                           @onchange="e => _proposeGoals[index].Label = e.Value?.ToString() ?? string.Empty" />
-                                </RmField>
 
-                                <RmField Label="@Localizer["GoalDataTypeLabel"]">
-                                    <select class="rm-select" value="@_proposeGoals[index].DataType"
-                                            @onchange="e => _proposeGoals[index].DataType = Enum.Parse<GoalDataType>(e.Value?.ToString() ?? string.Empty)">
-                                        <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
-                                        <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
-                                        <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
-                                    </select>
-                                </RmField>
-
-                                <RmField Label="@Localizer["GoalUnitLabel"]">
-                                    <input class="rm-input" value="@_proposeGoals[index].Unit"
-                                           @onchange="e => _proposeGoals[index].Unit = e.Value?.ToString() ?? string.Empty" />
-                                </RmField>
-
-                                <RmField Label="@Localizer["GoalMinValueLabel"]">
-                                    <RmNumberInput DataType="_proposeGoals[index].DataType"
-                                                   Value="_proposeGoals[index].MinValue"
-                                                   ValueChanged="value => _proposeGoals[index].MinValue = value"
-                                                   aria-label="@Localizer["GoalMinValueLabel"]" />
-                                </RmField>
-
-                                <RmField Label="@Localizer["GoalMaxValueLabel"]">
-                                    <RmNumberInput DataType="_proposeGoals[index].DataType"
-                                                   Value="_proposeGoals[index].MaxValue"
-                                                   ValueChanged="value => _proposeGoals[index].MaxValue = value"
-                                                   aria-label="@Localizer["GoalMaxValueLabel"]" />
-                                </RmField>
-                            </div>
-                        </RmCard>
-                    }
-
-                    <RmButton Variant="outline" @onclick="AddProposeGoal">
-                        <RmIcon Name="plus" />
-                        @Localizer["AddGoalButton"]
-                    </RmButton>
-                </div>
-            }
 
             @if (!string.IsNullOrEmpty(_proposeError))
             {
@@ -347,7 +292,6 @@ else
     private Core.Enums.ChangeRequestType _proposeType = Core.Enums.ChangeRequestType.EndDate;
     private DateTime? _proposeEndDate;
     private Core.Enums.ProjectFrequency _proposeFrequency = Core.Enums.ProjectFrequency.Weekly;
-    private List<GoalFieldRequest> _proposeGoals = new();
 
     private (int Index, string Icon, string Label)[] Tabs =>
     [
@@ -377,14 +321,6 @@ else
             {
                 _proposeEndDate = _project.EndDate;
                 _proposeFrequency = _project.Frequency;
-                _proposeGoals = _project.Goals.Select(g => new GoalFieldRequest
-                {
-                    Label = g.Label,
-                    DataType = g.DataType,
-                    Unit = g.Unit,
-                    MinValue = g.MinValue,
-                    MaxValue = g.MaxValue
-                }).ToList();
 
                 if (_project.Status == Core.Enums.ProjectStatus.Active)
                 {
@@ -405,7 +341,7 @@ else
     // Live updates (spec RT2): re-query on a timer and refresh only the display-side
     // state (status, partner, goals, change requests, streak) when the project's
     // signature changes. Deliberately does NOT touch the propose-change form fields
-    // (_proposeType/_proposeEndDate/_proposeFrequency/_proposeGoals) so a partner's
+    // (_proposeType/_proposeEndDate/_proposeFrequency) so a partner's
     // action never wipes what the user is typing.
     private async Task RefreshAsync()
     {
@@ -436,13 +372,8 @@ else
 
     private static string ProjectSignature(Core.Entities.Project p) =>
         $"{p.Status}|{p.PartnerId}|{p.Partner?.Name}|{p.EndDate:O}|{p.Frequency}|" +
-        string.Join(",", p.Goals.OrderBy(g => g.Id).Select(g => $"{g.Id}:{g.Label}:{string.Join("-", g.Targets.OrderBy(t => t.UserId).Select(t => $"{t.UserId}:{t.TargetValue}:{t.Direction}"))}")) + "|" +
+        string.Join(",", p.Goals.OrderBy(g => g.Id).Select(g => $"{g.Id}:{g.Label}:{string.Join("-", g.Targets.OrderBy(t => t.UserId).Select(t => $"{t.UserId}:{t.TargetValue}:{t.Direction}:{t.Status}"))}")) + "|" +
         string.Join(",", p.ChangeRequests.OrderBy(c => c.Id).Select(c => $"{c.Id}:{c.Status}"));
-
-    private void AddProposeGoal()
-    {
-        _proposeGoals.Add(new GoalFieldRequest());
-    }
 
     private async Task<bool> ConfirmAsync(string title, string message, string action)
     {
@@ -457,29 +388,6 @@ else
         return await _confirmDialog.ShowAsync();
     }
 
-    private async Task HandleApproveProject()
-    {
-        var confirmed = await ConfirmAsync(
-            Localizer["ConfirmApproveTitle"],
-            Localizer["ApproveProjectDescription"],
-            Localizer["ApproveButton"]);
-
-        if (!confirmed)
-            return;
-
-        await ExecuteAction(async () =>
-        {
-            await ProjectService.ApproveProjectAsync(ProjectId, _currentUserId);
-            _statusMessage = Localizer["ProjectApprovedSuccess"];
-            _statusTone = "success";
-            _project = await ProjectService.GetProjectAsync(ProjectId, _currentUserId);
-            if (_project is not null && _project.Status == Core.Enums.ProjectStatus.Active)
-            {
-                _streak = await ProjectService.GetStreakAsync(ProjectId, _currentUserId);
-            }
-        });
-    }
-
     private async Task HandleProposeChange()
     {
         await ExecuteAction(async () =>
@@ -491,8 +399,6 @@ else
                 request.NewEndDate = _proposeEndDate;
             else if (_proposeType == Core.Enums.ChangeRequestType.Frequency)
                 request.NewFrequency = _proposeFrequency;
-            else if (_proposeType == Core.Enums.ChangeRequestType.Goals)
-                request.Goals = _proposeGoals;
 
             var payloadJson = request.ToPayloadJson();
             await ProjectService.ProposeChangeAsync(ProjectId, _currentUserId, _proposeType, payloadJson);

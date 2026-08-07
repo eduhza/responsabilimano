@@ -14,14 +14,20 @@ public sealed class ProjectService : IProjectService
 {
     private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly IGoalNegotiationService _goalNegotiationService;
     private readonly ILogger<ProjectService> _logger;
 
     private static readonly TimeSpan InvitationLifetime = TimeSpan.FromDays(7);
 
-    public ProjectService(AppDbContext context, IEmailService emailService, ILogger<ProjectService> logger)
+    public ProjectService(
+        AppDbContext context,
+        IEmailService emailService,
+        IGoalNegotiationService goalNegotiationService,
+        ILogger<ProjectService> logger)
     {
         _context = context;
         _emailService = emailService;
+        _goalNegotiationService = goalNegotiationService;
         _logger = logger;
     }
 
@@ -72,10 +78,10 @@ public sealed class ProjectService : IProjectService
                 MaxValue = Normalize(goal.DataType, goal.MaxValue)
             };
 
-            AddTarget(goalField, creatorId, goal.CreatorTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
+            AddTarget(goalField, creatorId, creatorId, goal.CreatorTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
 
             var partnerTarget = goal.SuggestedPartnerTarget ?? goal.CreatorTarget;
-            AddTarget(goalField, null, partnerTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
+            AddTarget(goalField, null, creatorId, partnerTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
 
             project.Goals.Add(goalField);
         }
@@ -88,19 +94,26 @@ public sealed class ProjectService : IProjectService
     private static void AddTarget(
         GoalField goalField,
         Guid? userId,
+        Guid proposedByUserId,
         GoalTargetInput input,
         string label,
         GoalDataType dataType,
         decimal? minValue,
         decimal? maxValue)
     {
+        var now = DateTime.UtcNow;
         var target = new GoalTarget
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Baseline = Normalize(dataType, input.Baseline),
             TargetValue = Normalize(dataType, input.TargetValue),
-            Direction = input.Direction
+            Direction = input.Direction,
+            Status = GoalTargetStatus.PendingAcceptance,
+            AcceptedByCreator = true,
+            AcceptedByPartner = false,
+            LastProposedByUserId = proposedByUserId,
+            LastProposedAt = now
         };
 
         if (GoalValueRules.ValidateTarget(dataType, minValue, maxValue, target.Baseline, target.TargetValue, target.Direction) is { } error)
@@ -181,7 +194,6 @@ public sealed class ProjectService : IProjectService
 
         invitation.AcceptedAt = DateTime.UtcNow;
         invitation.Project.PartnerId = userId;
-        invitation.Project.Status = ProjectStatus.Active;
 
         foreach (var target in invitation.Project.Goals.SelectMany(g => g.Targets).Where(t => t.UserId is null))
         {
@@ -259,20 +271,7 @@ public sealed class ProjectService : IProjectService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
-
-        if (project is null)
-            throw new ArgumentException("Project not found.");
-
-        if (project.CreatorId != userId && project.PartnerId != userId)
-            throw new UnauthorizedAccessException("You are not a participant of this project.");
-
-        if (project.PartnerId is null)
-            throw new InvalidOperationException("Project has no partner yet.");
-
-        project.Status = ProjectStatus.Active;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _goalNegotiationService.AcceptAllPendingAsync(projectId, userId, cancellationToken);
     }
 
     public async Task<ProjectChangeRequest> ProposeChangeAsync(
@@ -294,11 +293,11 @@ public sealed class ProjectService : IProjectService
         if (project.Status is ProjectStatus.Finished or ProjectStatus.Cancelled)
             throw new InvalidOperationException("Cannot propose changes to a finished or cancelled project.");
 
-        var hasPending = await _context.ProjectChangeRequests
-            .AnyAsync(cr => cr.ProjectId == projectId && cr.Status == ChangeRequestStatus.Pending, cancellationToken);
+        var hasPendingOfType = await _context.ProjectChangeRequests
+            .AnyAsync(cr => cr.ProjectId == projectId && cr.Type == type && cr.Status == ChangeRequestStatus.Pending, cancellationToken);
 
-        if (hasPending)
-            throw new InvalidOperationException("There is already a pending change request for this project.");
+        if (hasPendingOfType)
+            throw new InvalidOperationException($"There is already a pending {type} change request for this project.");
 
         var changeRequest = new ProjectChangeRequest
         {

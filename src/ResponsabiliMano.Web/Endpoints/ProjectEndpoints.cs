@@ -20,6 +20,9 @@ public static class ProjectEndpoints
         group.MapPost("/{id:guid}/invite", InviteAsync).DisableAntiforgery();
         group.MapGet("/{id:guid}", GetAsync);
         group.MapPost("/{id:guid}/approve", ApproveAsync).DisableAntiforgery();
+        group.MapGet("/{id:guid}/goal-negotiation", GetNegotiationAsync);
+        group.MapPost("/{id:guid}/goal-targets/{targetId:guid}/accept", AcceptGoalTargetAsync).DisableAntiforgery();
+        group.MapPost("/{id:guid}/goal-targets/{targetId:guid}/proposals", CreateGoalProposalAsync).DisableAntiforgery();
         group.MapPost("/{id:guid}/change-requests", ProposeChangeAsync).DisableAntiforgery();
         group.MapPost("/{id:guid}/change-requests/{crId:guid}/respond", RespondToChangeAsync).DisableAntiforgery();
 
@@ -149,7 +152,7 @@ public static class ProjectEndpoints
         return await EndpointHelpers.ExecuteAsync(async () =>
         {
             await projectService.ApproveProjectAsync(id, userId, cancellationToken);
-            return Results.Ok(new { message = "Project approved." });
+            return Results.Ok(new { message = "Goals accepted." });
         });
     }
 
@@ -181,6 +184,46 @@ public static class ProjectEndpoints
         {
             await projectService.RespondToChangeRequestAsync(id, crId, userId, approve, cancellationToken);
             return Results.Ok(new { message = approve ? "Change request approved." : "Change request rejected." });
+        });
+    }
+
+    private static async Task<IResult> GetNegotiationAsync(
+        Guid id, HttpContext httpContext, IGoalNegotiationService goalNegotiationService, CancellationToken cancellationToken)
+    {
+        if (!httpContext.TryGetAuthenticatedUserId(out var userId))
+            return Results.Unauthorized();
+
+        return await EndpointHelpers.ExecuteAsync(async () =>
+        {
+            var negotiation = await goalNegotiationService.GetNegotiationAsync(id, userId, cancellationToken);
+            return Results.Ok(negotiation);
+        });
+    }
+
+    private static async Task<IResult> AcceptGoalTargetAsync(
+        Guid id, Guid targetId, HttpContext httpContext, IGoalNegotiationService goalNegotiationService, CancellationToken cancellationToken)
+    {
+        if (!httpContext.TryGetAuthenticatedUserId(out var userId))
+            return Results.Unauthorized();
+
+        return await EndpointHelpers.ExecuteAsync(async () =>
+        {
+            await goalNegotiationService.AcceptTargetAsync(id, targetId, userId, cancellationToken);
+            return Results.Ok(new { message = "Goal target accepted." });
+        });
+    }
+
+    private static async Task<IResult> CreateGoalProposalAsync(
+        Guid id, Guid targetId, HttpContext httpContext, CreateGoalProposalRequest request, IGoalNegotiationService goalNegotiationService, CancellationToken cancellationToken)
+    {
+        if (!httpContext.TryGetAuthenticatedUserId(out var userId))
+            return Results.Unauthorized();
+
+        return await EndpointHelpers.ExecuteAsync(async () =>
+        {
+            var proposal = await goalNegotiationService.ProposeTargetAsync(
+                id, targetId, userId, request.TargetValue, request.Baseline, request.Direction, request.Comment, cancellationToken);
+            return Results.Created($"/api/projects/{id}/goal-targets/{targetId}/proposals/{proposal.Id}", new { proposal.Id, proposal.Status });
         });
     }
 }
