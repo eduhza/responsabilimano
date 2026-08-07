@@ -105,7 +105,7 @@ public static class ProjectEndpoints
                 Goals = project.Goals.Select(g => new { g.Id, g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue }),
                 ChangeRequests = project.ChangeRequests.Select(cr => new
                 {
-                    cr.Id, cr.Type, cr.Status, cr.CreatedAt, cr.RequestedByUserId
+                    cr.Id, cr.Type, cr.Status, cr.CreatedAt, cr.RequestedByUserId, cr.PayloadJson
                 })
             });
         });

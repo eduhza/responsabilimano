@@ -71,8 +71,10 @@ internal sealed class FakeProjectService : IProjectService
     public Task<Project?> GetInvitationProjectAsync(string token, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
 
+    public Project? Result { get; set; }
+
     public Task<Project?> GetProjectAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+        => Task.FromResult(Result);
 
     public Task<List<Project>> GetUserProjectsAsync(Guid userId, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();

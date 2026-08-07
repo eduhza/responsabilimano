@@ -339,6 +339,27 @@
   <data name="ChangeRequestRejectedSuccess" xml:space="preserve">
     <value>Change request rejected.</value>
   </data>
+  <data name="ChangeRequestSummaryEndDate" xml:space="preserve">
+    <value>New end date: {0:MM/dd/yyyy}</value>
+  </data>
+  <data name="ChangeRequestSummaryFrequency" xml:space="preserve">
+    <value>New frequency: {0}</value>
+  </data>
+  <data name="ChangeRequestSummaryGoals" xml:space="preserve">
+    <value>Proposed goals:</value>
+  </data>
+  <data name="ChangeRequestSummaryGoalLine" xml:space="preserve">
+    <value>{0}: {1} {2}</value>
+  </data>
+  <data name="ChangeRequestSummaryGoalMeta" xml:space="preserve">
+    <value>Type: {0} · Unit: {1}</value>
+  </data>
+  <data name="ChangeRequestSummaryGoalRange" xml:space="preserve">
+    <value>Range: {0} to {1} {2}</value>
+  </data>
+  <data name="ChangeRequestSummaryNoGoals" xml:space="preserve">
+    <value>No goals provided.</value>
+  </data>
   <data name="InvitationTitle" xml:space="preserve">
     <value>Project Invitation</value>
   </data>

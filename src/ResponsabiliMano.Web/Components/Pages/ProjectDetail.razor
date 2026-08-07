@@ -8,6 +8,7 @@
 @inject IFeatureManager FeatureManager
 @inject ILogger<ProjectDetail> Logger
 @using Microsoft.FeatureManagement
+@using System.Text.Json
 
 <PageTitle>@Localizer["ProjectDetailTitle"]</PageTitle>
 
@@ -83,7 +84,7 @@ else
                     </RmIconTile>
                     <div class="quick__text">
                         <p class="quick__title">@Localizer["DashboardCompareTitle"]</p>
-                        <p class="quick__sub">@Localizer["DashboardCompareText", _project.Partner?.Name ?? Localizer["NoPartnerYet"].Value]</p>
+                        <p class="quick__sub" data-test="dashboard-compare-text">@Localizer["DashboardCompareText", GetDashboardComparePartnerName()]</p>
                     </div>
                     <RmIcon Name="chevron-right" Class="quick__chevron" />
                 </a>
@@ -174,6 +175,7 @@ else
                                 @(cr.RequestedByUserId == _project.CreatorId ? _project.Creator?.Name : _project.Partner?.Name)
                                 · @cr.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </p>
+                            <p class="cr__summary" data-test="change-request-summary">@GetChangeRequestSummary(cr)</p>
                         </div>
 
                         <RmBadge Tone="@CrTone(cr.Status)">@GetChangeRequestStatusText(cr.Status)</RmBadge>
@@ -573,4 +575,122 @@ else
         Core.Enums.ChangeRequestStatus.Rejected => Localizer["ChangeRequestStatusRejected"],
         _ => status.ToString()
     };
+
+    private string GetDashboardComparePartnerName()
+    {
+        if (_project is null)
+            return Localizer["NoPartnerYet"].Value;
+
+        if (_currentUserId == _project.CreatorId)
+            return _project.Partner?.Name ?? Localizer["NoPartnerYet"].Value;
+
+        return _project.Creator?.Name ?? Localizer["NoPartnerYet"].Value;
+    }
+
+    private string GetChangeRequestSummary(Core.Entities.ProjectChangeRequest cr)
+    {
+        if (string.IsNullOrWhiteSpace(cr.PayloadJson))
+            return string.Empty;
+
+        try
+        {
+            return cr.Type switch
+            {
+                Core.Enums.ChangeRequestType.EndDate => GetEndDateSummary(cr.PayloadJson),
+                Core.Enums.ChangeRequestType.Frequency => GetFrequencySummary(cr.PayloadJson),
+                Core.Enums.ChangeRequestType.Goals => GetGoalsSummary(cr.PayloadJson),
+                _ => string.Empty
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to summarize change request {ChangeRequestId} payload", cr.Id);
+            return string.Empty;
+        }
+    }
+
+    private string GetEndDateSummary(string payloadJson)
+    {
+        var payload = JsonSerializer.Deserialize<EndDateSummaryPayload>(payloadJson);
+        return payload is null
+            ? string.Empty
+            : Localizer["ChangeRequestSummaryEndDate", payload.EndDate].Value;
+    }
+
+    private string GetFrequencySummary(string payloadJson)
+    {
+        var payload = JsonSerializer.Deserialize<FrequencySummaryPayload>(payloadJson);
+        if (payload is null)
+            return string.Empty;
+
+        var freqText = GetFrequencyText(payload.Frequency);
+        return Localizer["ChangeRequestSummaryFrequency", freqText].Value;
+    }
+
+    private string GetGoalsSummary(string payloadJson)
+    {
+        var payload = JsonSerializer.Deserialize<GoalsSummaryPayload>(payloadJson);
+        if (payload is null || payload.Goals is null || payload.Goals.Count == 0)
+            return Localizer["ChangeRequestSummaryNoGoals"].Value;
+
+        var lines = new List<string> { Localizer["ChangeRequestSummaryGoals"].Value };
+
+        foreach (var goal in payload.Goals)
+        {
+            var targetText = goal.TargetValue.HasValue
+                ? goal.TargetValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                : "—";
+
+            var summary = Localizer["ChangeRequestSummaryGoalLine", goal.Label, targetText, goal.Unit ?? string.Empty].Value;
+
+            var dataTypeText = goal.DataType switch
+            {
+                Core.Enums.GoalDataType.Decimal => Localizer["DataTypeDecimal"].Value,
+                Core.Enums.GoalDataType.Integer => Localizer["DataTypeInteger"].Value,
+                Core.Enums.GoalDataType.Percent => Localizer["DataTypePercent"].Value,
+                _ => goal.DataType.ToString()
+            };
+
+            var meta = Localizer["ChangeRequestSummaryGoalMeta", dataTypeText, goal.Unit ?? string.Empty].Value;
+            summary += $" · {meta}";
+
+            if (goal.MinValue.HasValue && goal.MaxValue.HasValue)
+            {
+                var range = Localizer["ChangeRequestSummaryGoalRange",
+                    goal.MinValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+                    goal.MaxValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+                    goal.Unit ?? string.Empty].Value;
+                summary += $" · {range}";
+            }
+
+            lines.Add(summary);
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    public sealed class EndDateSummaryPayload
+    {
+        public DateTime EndDate { get; set; }
+    }
+
+    public sealed class FrequencySummaryPayload
+    {
+        public Core.Enums.ProjectFrequency Frequency { get; set; }
+    }
+
+    public sealed class GoalSummaryItem
+    {
+        public string Label { get; set; } = string.Empty;
+        public Core.Enums.GoalDataType DataType { get; set; }
+        public string Unit { get; set; } = string.Empty;
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public decimal? TargetValue { get; set; }
+    }
+
+    public sealed class GoalsSummaryPayload
+    {
+        public List<GoalSummaryItem> Goals { get; set; } = new();
+    }
 }

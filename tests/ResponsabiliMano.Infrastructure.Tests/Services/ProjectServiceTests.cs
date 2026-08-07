@@ -603,4 +603,64 @@ public class ProjectServiceTests : IDisposable
         Assert.Equal("New Goal", goal.Label);
         Assert.Equal("kg", goal.Unit);
     }
+
+    [Fact]
+    public async Task RespondToChangeRequestAsync_ApproveGoals_PreservesGoalsWithCheckIns()
+    {
+        var creator = SeedUser("creator@example.com");
+        var partner = SeedUser("partner@example.com");
+        var project = SeedProject(creator.Id, partner.Id, ProjectStatus.Active);
+
+        var existingGoal = new GoalField
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = project.Id,
+            Label = "Weight",
+            DataType = GoalDataType.Decimal,
+            Unit = "kg"
+        };
+        _context.GoalFields.Add(existingGoal);
+        _context.SaveChanges();
+
+        var checkIn = new CheckIn
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = project.Id,
+            UserId = creator.Id,
+            Feeling = Feeling.Happy,
+            SubmittedAt = DateTime.UtcNow,
+            PeriodNumber = 1
+        };
+        checkIn.Metrics.Add(new CheckInMetric
+        {
+            Id = Guid.NewGuid(),
+            CheckInId = checkIn.Id,
+            GoalFieldId = existingGoal.Id,
+            Value = 80m
+        });
+        _context.CheckIns.Add(checkIn);
+        _context.SaveChanges();
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            Goals = new[]
+            {
+                new { Label = "Weight", DataType = GoalDataType.Decimal, Unit = "kg", MinValue = (decimal?)60, MaxValue = (decimal?)120, TargetValue = (decimal?)90 },
+                new { Label = "Steps", DataType = GoalDataType.Integer, Unit = "count", MinValue = (decimal?)null, MaxValue = (decimal?)null, TargetValue = (decimal?)10000 }
+            }
+        });
+        var cr = SeedChangeRequest(project.Id, creator.Id, ChangeRequestType.Goals, payload);
+        _context.ChangeTracker.Clear();
+        var service = CreateService();
+
+        await service.RespondToChangeRequestAsync(project.Id, cr.Id, partner.Id, approve: true);
+
+        var goals = await _context.GoalFields.Where(g => g.ProjectId == project.Id).ToListAsync();
+        Assert.Equal(2, goals.Count);
+        Assert.Contains(goals, g => g.Label == "Weight" && g.Unit == "kg" && g.TargetValue == 90m);
+        Assert.Contains(goals, g => g.Label == "Steps" && g.Unit == "count");
+
+        var metrics = await _context.CheckInMetrics.Where(m => m.GoalFieldId == existingGoal.Id).ToListAsync();
+        Assert.Single(metrics);
+    }
 }
