@@ -25,7 +25,7 @@ public sealed class ProposeChangeRequest
                 JsonSerializer.Serialize(new { Frequency = NewFrequency.Value }),
             ChangeRequestType.Goals when Goals is not null && Goals.Count > 0 =>
                 JsonSerializer.Serialize(new { Goals = Goals.Select(g => new {
-                    g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue
+                    g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue
                 }) }),
             _ => throw new ArgumentException("Invalid payload for the specified change type.")
         };

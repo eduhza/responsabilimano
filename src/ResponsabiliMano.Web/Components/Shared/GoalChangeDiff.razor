@@ -134,10 +134,6 @@
                 before?.Unit,
                 after?.Unit),
             new(
-                Localizer["ChangeRequestDiffTarget"],
-                before is null ? null : FormatValue(before.TargetValue, before.Unit),
-                after is null ? null : FormatValue(after.TargetValue, after.Unit)),
-            new(
                 Localizer["ChangeRequestDiffRange"],
                 before is null ? null : FormatRange(before.MinValue, before.MaxValue, before.Unit),
                 after is null ? null : FormatRange(after.MinValue, after.MaxValue, after.Unit))
@@ -149,8 +145,7 @@
         DataType = goal.DataType,
         Unit = goal.Unit,
         MinValue = goal.MinValue,
-        MaxValue = goal.MaxValue,
-        TargetValue = goal.TargetValue
+        MaxValue = goal.MaxValue
     };
 
     private static GoalValues Map(GoalPayloadItem goal) => new()
@@ -158,8 +153,7 @@
         DataType = goal.DataType,
         Unit = goal.Unit,
         MinValue = goal.MinValue,
-        MaxValue = goal.MaxValue,
-        TargetValue = goal.TargetValue
+        MaxValue = goal.MaxValue
     };
 
     @* Values here are read by a person, so they are formatted in the current culture
@@ -228,7 +222,6 @@
         public string Unit { get; set; } = string.Empty;
         public decimal? MinValue { get; set; }
         public decimal? MaxValue { get; set; }
-        public decimal? TargetValue { get; set; }
     }
 
     private sealed class DiffField
@@ -265,6 +258,5 @@
         public string Unit { get; set; } = string.Empty;
         public decimal? MinValue { get; set; }
         public decimal? MaxValue { get; set; }
-        public decimal? TargetValue { get; set; }
     }
 }

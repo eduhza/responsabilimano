@@ -50,12 +50,20 @@ public class CreateProjectTests : TestContext
             model.EndDate = DateTime.Today.AddDays(30);
             model.Frequency = ProjectFrequency.Weekly;
             model.Goals.Clear();
-            model.Goals.Add(new GoalFieldRequest
+            model.Goals.Add(new CreateProjectGoalRequest
             {
-                Label = "Weight",
-                DataType = GoalDataType.Decimal,
-                Unit = "kg",
-                TargetValue = 70m
+                Goal = new GoalFieldRequest
+                {
+                    Label = "Weight",
+                    DataType = GoalDataType.Decimal,
+                    Unit = "kg"
+                },
+                CreatorTarget = new GoalTargetRequest
+                {
+                    Baseline = 80m,
+                    TargetValue = 70m,
+                    Direction = GoalDirection.Decrease
+                }
             });
 
             // The submit button only exists on the wizard's last step.

@@ -42,16 +42,33 @@ public static class SeedHelper
             Id = Guid.NewGuid(),
             Label = "Steps",
             DataType = GoalDataType.Integer,
-            Unit = "count",
-            TargetValue = 10000
+            Unit = "count"
         };
+
+        var creatorTarget = new GoalTarget
+        {
+            Id = Guid.NewGuid(),
+            UserId = creator.Id,
+            TargetValue = 10000,
+            Direction = GoalDirection.Reach
+        };
+        goal.Targets.Add(creatorTarget);
+
+        var partnerTarget = new GoalTarget
+        {
+            Id = Guid.NewGuid(),
+            UserId = partner?.Id,
+            TargetValue = 10000,
+            Direction = GoalDirection.Reach
+        };
+        goal.Targets.Add(partnerTarget);
 
         var project = new Project
         {
             Id = Guid.NewGuid(),
             Name = "Test Project",
             CreatorId = creator.Id,
-            PartnerId = partner.Id,
+            PartnerId = partner!.Id,
             StartDate = DateTime.UtcNow.AddDays(-10),
             EndDate = DateTime.UtcNow.AddDays(80),
             Frequency = ProjectFrequency.Weekly,
@@ -88,9 +105,17 @@ public static class SeedHelper
             Id = Guid.NewGuid(),
             Label = "Steps",
             DataType = GoalDataType.Integer,
-            Unit = "count",
-            TargetValue = 10000
+            Unit = "count"
         };
+
+        var creatorTarget = new GoalTarget
+        {
+            Id = Guid.NewGuid(),
+            UserId = creator.Id,
+            TargetValue = 10000,
+            Direction = GoalDirection.Reach
+        };
+        goal.Targets.Add(creatorTarget);
 
         var project = new Project
         {

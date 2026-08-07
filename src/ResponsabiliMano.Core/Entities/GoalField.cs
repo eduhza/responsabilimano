@@ -10,9 +10,9 @@ public class GoalField
     public string Unit { get; set; } = null!;
     public decimal? MinValue { get; set; }
     public decimal? MaxValue { get; set; }
-    public decimal? TargetValue { get; set; }
 
     public Guid ProjectId { get; set; }
     public Project Project { get; set; } = null!;
+    public ICollection<GoalTarget> Targets { get; set; } = new List<GoalTarget>();
     public ICollection<CheckInMetric> Metrics { get; set; } = new List<CheckInMetric>();
 }

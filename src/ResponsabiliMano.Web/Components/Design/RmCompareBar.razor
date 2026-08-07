@@ -1,16 +1,16 @@
-@* Two bars sharing a scale, one per half of the duo. The leader's value is tinted
-   so the comparison reads without hunting for the longer bar. *@
+@* Two bars sharing a 0..100 progress scale, one per half of the duo. The leader's
+   value is tinted so the comparison reads without hunting for the longer bar. *@
 
 <div class="rm-compare @Class">
     <div class="rm-compare__row">
         <div class="rm-compare__track">
-            <div class="rm-compare__fill rm-compare__fill--you" style="width: @Percent(YouValue)%"></div>
+            <div class="rm-compare__fill rm-compare__fill--you" style="width: @BarWidth(YouProgress)%"></div>
         </div>
         <span class="rm-compare__value @(YouLeads ? "rm-you-text" : null)">@Format(YouValue)</span>
     </div>
     <div class="rm-compare__row">
         <div class="rm-compare__track">
-            <div class="rm-compare__fill rm-compare__fill--partner" style="width: @Percent(PartnerValue)%"></div>
+            <div class="rm-compare__fill rm-compare__fill--partner" style="width: @BarWidth(PartnerProgress)%"></div>
         </div>
         <span class="rm-compare__value @(!YouLeads ? "rm-partner-text" : null)">@Format(PartnerValue)</span>
     </div>
@@ -18,10 +18,16 @@
 
 @code {
     [Parameter]
-    public decimal YouValue { get; set; }
+    public decimal? YouProgress { get; set; }
 
     [Parameter]
-    public decimal PartnerValue { get; set; }
+    public decimal? PartnerProgress { get; set; }
+
+    [Parameter]
+    public decimal? YouValue { get; set; }
+
+    [Parameter]
+    public decimal? PartnerValue { get; set; }
 
     /// <summary>Appended to both values, e.g. "kg" or "%".</summary>
     [Parameter]
@@ -30,14 +36,11 @@
     [Parameter]
     public string? Class { get; set; }
 
-    private bool YouLeads => YouValue >= PartnerValue;
+    private bool YouLeads => (YouProgress ?? 0m) >= (PartnerProgress ?? 0m);
 
-    private decimal Max => Math.Max(Math.Max(YouValue, PartnerValue), 0.0001m);
+    private string BarWidth(decimal? progress) =>
+        DecimalInput.ToInvariant(Math.Clamp(progress ?? 0m, 0m, 100m));
 
-    @* CSS lengths must use "." regardless of culture, so this one stays invariant —
-       unlike the label below, which is read by a person. *@
-    private string Percent(decimal value) =>
-        DecimalInput.ToInvariant(Math.Round(Math.Clamp(value / Max, 0m, 1m) * 100m, 2));
-
-    private string Format(decimal value) => $"{DecimalInput.ToDisplay(value)}{Unit}";
+    private string Format(decimal? value) =>
+        value is { } present ? $"{DecimalInput.ToDisplay(present)}{Unit}" : "—";
 }

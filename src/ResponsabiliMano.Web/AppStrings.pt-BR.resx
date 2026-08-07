@@ -891,4 +891,37 @@
   <data name="CheckInDone" xml:space="preserve">
     <value>Feito</value>
   </data>
+  <data name="GoalBaselineLabel" xml:space="preserve">
+    <value>Base atual</value>
+  </data>
+  <data name="GoalDirectionLabel" xml:space="preserve">
+    <value>Direção</value>
+  </data>
+  <data name="GoalCreatorTargetTitle" xml:space="preserve">
+    <value>Seu alvo</value>
+  </data>
+  <data name="GoalSuggestedPartnerTargetTitle" xml:space="preserve">
+    <value>Alvo sugerido para o parceiro</value>
+  </data>
+  <data name="DirectionDecrease" xml:space="preserve">
+    <value>Diminuir</value>
+  </data>
+  <data name="DirectionIncrease" xml:space="preserve">
+    <value>Aumentar</value>
+  </data>
+  <data name="DirectionReach" xml:space="preserve">
+    <value>Alcançar</value>
+  </data>
+  <data name="DirectionMaintain" xml:space="preserve">
+    <value>Manter</value>
+  </data>
+  <data name="ProjectGoalTargetMine" xml:space="preserve">
+    <value>Seu alvo</value>
+  </data>
+  <data name="ProjectGoalTargetPartner" xml:space="preserve">
+    <value>Alvo do parceiro</value>
+  </data>
+  <data name="GoalValueTargetInconsistent" xml:space="preserve">
+    <value>O alvo de '{0}' não é consistente com a direção escolhida.</value>
+  </data>
 </root>

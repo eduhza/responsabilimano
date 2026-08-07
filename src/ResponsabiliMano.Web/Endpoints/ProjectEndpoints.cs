@@ -49,7 +49,21 @@ public static class ProjectEndpoints
         return await EndpointHelpers.ExecuteAsync(async () =>
         {
             var goals = request.Goals.Select(g => new GoalFieldInput(
-                g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue));
+                g.Goal.Label,
+                g.Goal.DataType,
+                g.Goal.Unit,
+                g.Goal.MinValue,
+                g.Goal.MaxValue,
+                new GoalTargetInput(
+                    g.CreatorTarget.Baseline,
+                    g.CreatorTarget.TargetValue,
+                    g.CreatorTarget.Direction),
+                g.SuggestedPartnerTarget is null
+                    ? null
+                    : new GoalTargetInput(
+                        g.SuggestedPartnerTarget.Baseline,
+                        g.SuggestedPartnerTarget.TargetValue,
+                        g.SuggestedPartnerTarget.Direction)));
 
             var project = await projectService.CreateProjectAsync(
                 userId, request.Name, request.StartDate, request.EndDate,
@@ -102,7 +116,22 @@ public static class ProjectEndpoints
                 project.Status,
                 CreatorName = project.Creator.Name,
                 PartnerName = project.Partner?.Name,
-                Goals = project.Goals.Select(g => new { g.Id, g.Label, g.DataType, g.Unit, g.MinValue, g.MaxValue, g.TargetValue }),
+                Goals = project.Goals.Select(g => new
+                {
+                    g.Id,
+                    g.Label,
+                    g.DataType,
+                    g.Unit,
+                    g.MinValue,
+                    g.MaxValue,
+                    Targets = g.Targets.Select(t => new
+                    {
+                        t.UserId,
+                        t.Baseline,
+                        t.TargetValue,
+                        t.Direction
+                    })
+                }),
                 ChangeRequests = project.ChangeRequests.Select(cr => new
                 {
                     cr.Id, cr.Type, cr.Status, cr.CreatedAt, cr.RequestedByUserId, cr.PayloadJson

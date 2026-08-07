@@ -23,7 +23,19 @@ public sealed class CreateProjectRequest
     public ProjectFrequency Frequency { get; set; } = ProjectFrequency.Weekly;
 
     [Required(ErrorMessage = "At least one goal is required.")]
-    public List<GoalFieldRequest> Goals { get; set; } = new();
+    [MinLength(1, ErrorMessage = "At least one goal is required.")]
+    public List<CreateProjectGoalRequest> Goals { get; set; } = new();
+}
+
+public sealed class CreateProjectGoalRequest
+{
+    [Required]
+    public GoalFieldRequest Goal { get; set; } = new();
+
+    [Required]
+    public GoalTargetRequest CreatorTarget { get; set; } = new();
+
+    public GoalTargetRequest SuggestedPartnerTarget { get; set; } = new();
 }
 
 public sealed class GoalFieldRequest
@@ -41,5 +53,11 @@ public sealed class GoalFieldRequest
 
     public decimal? MinValue { get; set; }
     public decimal? MaxValue { get; set; }
+}
+
+public sealed class GoalTargetRequest
+{
+    public decimal? Baseline { get; set; }
     public decimal? TargetValue { get; set; }
+    public GoalDirection Direction { get; set; } = GoalDirection.Reach;
 }

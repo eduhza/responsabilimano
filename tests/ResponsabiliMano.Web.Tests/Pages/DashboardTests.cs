@@ -114,7 +114,11 @@ public class DashboardTests : TestContext
             ],
             [
                 new DashboardMetricSeries(
-                    goalId, "Weight", "kg", GoalDataType.Decimal, 70m,
+                    goalId, "Weight", "kg", GoalDataType.Decimal,
+                    [
+                        new DashboardMetricTarget(user1Id, null, 70m, GoalDirection.Reach),
+                        new DashboardMetricTarget(user2Id, null, 70m, GoalDirection.Reach)
+                    ],
                     [
                         new DashboardSeriesEntry(user1Id, 1, DateTime.UtcNow, 80m, 79m),
                         new DashboardSeriesEntry(user1Id, 2, DateTime.UtcNow, 78m, 79m),
@@ -154,8 +158,8 @@ public class DashboardTests : TestContext
             8,
             [new DashboardParticipant(user1Id, "Alice", Feeling.Neutral)],
             [
-                new DashboardMetricSeries(goal1Id, "Weight", "kg", GoalDataType.Decimal, null, []),
-                new DashboardMetricSeries(goal2Id, "Sleep", "h", GoalDataType.Integer, null, [])
+                new DashboardMetricSeries(goal1Id, "Weight", "kg", GoalDataType.Decimal, [], []),
+                new DashboardMetricSeries(goal2Id, "Sleep", "h", GoalDataType.Integer, [], [])
             ]);
 
         var cut = RenderComponent<Dashboard>(p => p.Add(x => x.ProjectId, projectId));

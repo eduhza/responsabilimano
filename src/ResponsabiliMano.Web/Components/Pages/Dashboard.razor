@@ -79,8 +79,13 @@ else if (_dashboard is not null)
         <div class="dash__stats">
             @foreach (var metric in _dashboard.Metrics)
             {
+                var cv = Compare(metric);
                 <RmStatCard Label="@($"{metric.Label} ({metric.Unit})")" Icon="target">
-                    <RmCompareBar YouValue="@Average(metric, 0)" PartnerValue="@Average(metric, 1)" Unit="@metric.Unit" />
+                    <RmCompareBar YouProgress="@cv.YouProgress"
+                                  PartnerProgress="@cv.PartnerProgress"
+                                  YouValue="@cv.YouValue"
+                                  PartnerValue="@cv.PartnerValue"
+                                  Unit="@metric.Unit" />
                 </RmStatCard>
             }
 
@@ -279,14 +284,52 @@ else if (_dashboard is not null)
         await RenderChartAsync();
     }
 
-    /// <summary>Average for the participant at <paramref name="position"/>, 0 = you.</summary>
-    private decimal Average(DashboardMetricSeries metric, int position)
-    {
-        if (_dashboard is null || position >= _dashboard.Participants.Count)
-            return 0m;
+    private sealed record CompareValues(
+        decimal? YouProgress,
+        decimal? PartnerProgress,
+        decimal? YouValue,
+        decimal? PartnerValue);
 
-        var userId = _dashboard.Participants[position].UserId;
-        return metric.Series.FirstOrDefault(s => s.UserId == userId)?.AverageValue ?? 0m;
+    private CompareValues Compare(DashboardMetricSeries metric)
+    {
+        if (_dashboard is null)
+            return new CompareValues(null, null, null, null);
+
+        var youUserId = _currentUserId;
+        var partnerUserId = _dashboard.Participants
+            .FirstOrDefault(p => p.UserId != _currentUserId)?.UserId;
+
+        var (youProgress, youValue) = ProgressFor(metric, youUserId);
+        var (partnerProgress, partnerValue) = ProgressFor(metric, partnerUserId);
+
+        return new CompareValues(youProgress, partnerProgress, youValue, partnerValue);
+    }
+
+    private (decimal? Progress, decimal? Value) ProgressFor(DashboardMetricSeries metric, Guid? userId)
+    {
+        if (userId is null)
+            return (null, null);
+
+        var target = metric.Targets.FirstOrDefault(t => t.UserId == userId);
+        var average = metric.Series.FirstOrDefault(s => s.UserId == userId)?.AverageValue;
+
+        if (average is null)
+            return (null, null);
+
+        var firstCheckIn = metric.Series
+            .Where(s => s.UserId == userId)
+            .OrderBy(s => s.PeriodNumber)
+            .Select(s => (decimal?)s.Value)
+            .FirstOrDefault();
+
+        var progress = GoalProgress.Percent(
+            target?.Baseline,
+            average.Value,
+            target?.TargetValue,
+            target?.Direction ?? GoalDirection.Reach,
+            firstCheckIn);
+
+        return (progress, average.Value);
     }
 
     private async Task RenderChartAsync()

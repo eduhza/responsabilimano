@@ -48,8 +48,14 @@ public sealed record DashboardMetricSeries(
     string Label,
     string Unit,
     GoalDataType DataType,
-    decimal? TargetValue,
+    List<DashboardMetricTarget> Targets,
     List<DashboardSeriesEntry> Series);
+
+public sealed record DashboardMetricTarget(
+    Guid UserId,
+    decimal? Baseline,
+    decimal? TargetValue,
+    GoalDirection Direction);
 
 public sealed record DashboardSeriesEntry(
     Guid UserId,

@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<GoalField> GoalFields => Set<GoalField>();
+    public DbSet<GoalTarget> GoalTargets => Set<GoalTarget>();
     public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
     public DbSet<ProjectChangeRequest> ProjectChangeRequests => Set<ProjectChangeRequest>();
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
@@ -61,11 +62,27 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Label).HasColumnName("label").IsRequired().HasMaxLength(200);
             entity.Property(e => e.DataType).HasColumnName("data_type");
             entity.Property(e => e.Unit).HasColumnName("unit").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.MinValue).HasColumnName("min_value");
-            entity.Property(e => e.MaxValue).HasColumnName("max_value");
-            entity.Property(e => e.TargetValue).HasColumnName("target_value");
+            entity.Property(e => e.MinValue).HasColumnName("min_value").HasPrecision(18, 4);
+            entity.Property(e => e.MaxValue).HasColumnName("max_value").HasPrecision(18, 4);
             entity.Property(e => e.ProjectId).HasColumnName("project_id");
             entity.HasOne(e => e.Project).WithMany(p => p.Goals).HasForeignKey(e => e.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(e => e.Targets).WithOne(t => t.GoalField).HasForeignKey(t => t.GoalFieldId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GoalTarget>(entity =>
+        {
+            entity.ToTable("goal_targets");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.GoalFieldId).HasColumnName("goal_field_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Baseline).HasColumnName("baseline").HasPrecision(18, 4);
+            entity.Property(e => e.TargetValue).HasColumnName("target_value").HasPrecision(18, 4);
+            entity.Property(e => e.Direction).HasColumnName("direction");
+            entity.HasOne(e => e.GoalField).WithMany(g => g.Targets).HasForeignKey(e => e.GoalFieldId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => new { e.GoalFieldId, e.UserId }).IsUnique();
+            entity.HasIndex(e => e.GoalFieldId);
         });
 
         modelBuilder.Entity<ProjectInvitation>(entity =>
@@ -121,7 +138,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CheckInId).HasColumnName("check_in_id");
             entity.Property(e => e.GoalFieldId).HasColumnName("goal_field_id");
-            entity.Property(e => e.Value).HasColumnName("value");
+            entity.Property(e => e.Value).HasColumnName("value").HasPrecision(18, 4);
             entity.HasOne(e => e.CheckIn).WithMany(c => c.Metrics).HasForeignKey(e => e.CheckInId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.GoalField).WithMany(g => g.Metrics).HasForeignKey(e => e.GoalFieldId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.CheckInId, e.GoalFieldId }).IsUnique();

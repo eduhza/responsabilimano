@@ -4,6 +4,7 @@
 @inject IProjectService ProjectService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
+@using ResponsabiliMano.Core.Entities
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILogger<InvitationAccept> Logger
 
@@ -56,11 +57,16 @@ else if (_project is not null)
         <div class="accept__goals">
             @foreach (var goal in _project.Goals)
             {
+                var suggested = GetSuggestedTarget(goal);
                 <RmCard Flat="true">
                     <p class="accept__goal-label">@goal.Label</p>
                     <p class="accept__goal-target rm-display rm-tabular">
-                        @(goal.TargetValue?.ToString("0.##") ?? "—")<span class="accept__goal-unit">@goal.Unit</span>
+                        @(suggested?.TargetValue is null ? "—" : DecimalInput.ToDisplay(suggested.TargetValue, goal.DataType))<span class="accept__goal-unit">@goal.Unit</span>
                     </p>
+                    @if (suggested?.Baseline is not null)
+                    {
+                        <p class="accept__goal-baseline">@Localizer["GoalBaselineLabel"]: @DecimalInput.ToDisplay(suggested.Baseline, goal.DataType) @goal.Unit</p>
+                    }
                 </RmCard>
             }
         </div>
@@ -237,6 +243,13 @@ else if (_project is not null)
         Core.Enums.ProjectStatus.Cancelled => Localizer["StatusCancelled"],
         _ => status.ToString()
     };
+
+    private static GoalTarget? GetSuggestedTarget(Core.Entities.GoalField goal)
+    {
+        // Before acceptance, the suggested partner target has no user yet.
+        return goal.Targets.FirstOrDefault(t => t.UserId is null)
+            ?? goal.Targets.FirstOrDefault();
+    }
 
     private string GetFrequencyText(Core.Enums.ProjectFrequency freq) => freq switch
     {
