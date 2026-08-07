@@ -58,23 +58,55 @@ public sealed class ProjectService : IProjectService
             if (string.IsNullOrWhiteSpace(goal.Unit))
                 throw new ArgumentException("Goal unit is required.");
 
-            EnsureValidDefinition(goal.Label.Trim(), goal.DataType, goal.MinValue, goal.MaxValue, goal.TargetValue);
+            var label = goal.Label.Trim();
 
-            project.Goals.Add(new GoalField
+            EnsureValidDefinition(label, goal.DataType, goal.MinValue, goal.MaxValue);
+
+            var goalField = new GoalField
             {
                 Id = Guid.NewGuid(),
-                Label = goal.Label.Trim(),
+                Label = label,
                 DataType = goal.DataType,
                 Unit = goal.Unit.Trim(),
                 MinValue = Normalize(goal.DataType, goal.MinValue),
-                MaxValue = Normalize(goal.DataType, goal.MaxValue),
-                TargetValue = Normalize(goal.DataType, goal.TargetValue)
-            });
+                MaxValue = Normalize(goal.DataType, goal.MaxValue)
+            };
+
+            AddTarget(goalField, creatorId, goal.CreatorTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
+
+            var partnerTarget = goal.SuggestedPartnerTarget ?? goal.CreatorTarget;
+            AddTarget(goalField, null, partnerTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
+
+            project.Goals.Add(goalField);
         }
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync(cancellationToken);
         return project;
+    }
+
+    private static void AddTarget(
+        GoalField goalField,
+        Guid? userId,
+        GoalTargetInput input,
+        string label,
+        GoalDataType dataType,
+        decimal? minValue,
+        decimal? maxValue)
+    {
+        var target = new GoalTarget
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Baseline = Normalize(dataType, input.Baseline),
+            TargetValue = Normalize(dataType, input.TargetValue),
+            Direction = input.Direction
+        };
+
+        if (GoalValueRules.ValidateTarget(dataType, minValue, maxValue, target.Baseline, target.TargetValue, target.Direction) is { } error)
+            throw new GoalValueException(error, dataType, label, minValue, maxValue, target.TargetValue, target.Baseline);
+
+        goalField.Targets.Add(target);
     }
 
     public async Task<ProjectInvitation> InvitePartnerAsync(
@@ -136,6 +168,8 @@ public sealed class ProjectService : IProjectService
     {
         var invitation = await _context.ProjectInvitations
             .Include(i => i.Project)
+            .ThenInclude(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .FirstOrDefaultAsync(i => i.Token == token, cancellationToken);
 
         if (invitation is null || invitation.ExpiresAt < DateTime.UtcNow || invitation.AcceptedAt is not null)
@@ -147,8 +181,18 @@ public sealed class ProjectService : IProjectService
 
         invitation.AcceptedAt = DateTime.UtcNow;
         invitation.Project.PartnerId = userId;
+        invitation.Project.Status = ProjectStatus.Active;
+
+        foreach (var target in invitation.Project.Goals.SelectMany(g => g.Targets).Where(t => t.UserId is null))
+        {
+            target.UserId = userId;
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Invitation accepted for project {ProjectId} by user {UserId}; {TargetCount} goal targets assigned",
+            invitation.Project.Id, userId, invitation.Project.Goals.Sum(g => g.Targets.Count));
+
         return invitation.Project;
     }
 
@@ -159,6 +203,7 @@ public sealed class ProjectService : IProjectService
         var invitation = await _context.ProjectInvitations
             .Include(i => i.Project)
             .ThenInclude(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .FirstOrDefaultAsync(i => i.Token == token, cancellationToken);
 
         if (invitation is null || invitation.ExpiresAt < DateTime.UtcNow)
@@ -178,6 +223,7 @@ public sealed class ProjectService : IProjectService
         var project = await _context.Projects
             .AsNoTracking()
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .Include(p => p.ChangeRequests)
             .Include(p => p.Creator)
             .Include(p => p.Partner)
@@ -352,8 +398,7 @@ public sealed class ProjectService : IProjectService
         {
             processedLabels.Add(requested.Label);
 
-            EnsureValidDefinition(
-                requested.Label, requested.DataType, requested.MinValue, requested.MaxValue, requested.TargetValue);
+            EnsureValidDefinition(requested.Label, requested.DataType, requested.MinValue, requested.MaxValue);
 
             if (existingByLabel.TryGetValue(requested.Label, out var existing))
             {
@@ -363,7 +408,6 @@ public sealed class ProjectService : IProjectService
                 existing.Unit = requested.Unit;
                 existing.MinValue = Normalize(requested.DataType, requested.MinValue);
                 existing.MaxValue = Normalize(requested.DataType, requested.MaxValue);
-                existing.TargetValue = Normalize(requested.DataType, requested.TargetValue);
             }
             else
             {
@@ -375,8 +419,7 @@ public sealed class ProjectService : IProjectService
                     DataType = requested.DataType,
                     Unit = requested.Unit,
                     MinValue = Normalize(requested.DataType, requested.MinValue),
-                    MaxValue = Normalize(requested.DataType, requested.MaxValue),
-                    TargetValue = Normalize(requested.DataType, requested.TargetValue)
+                    MaxValue = Normalize(requested.DataType, requested.MaxValue)
                 };
                 _context.GoalFields.Add(goalField);
                 project.Goals.Add(goalField);
@@ -398,13 +441,13 @@ public sealed class ProjectService : IProjectService
     }
 
     /// <summary>
-    /// A goal whose bounds or target break its own data type is unfillable, so the
-    /// definition is rejected at the door (spec X2).
+    /// A goal whose bounds break its own data type is unfillable, so the definition
+    /// is rejected at the door (spec X2).
     /// </summary>
     private static void EnsureValidDefinition(
-        string label, GoalDataType dataType, decimal? minValue, decimal? maxValue, decimal? targetValue)
+        string label, GoalDataType dataType, decimal? minValue, decimal? maxValue)
     {
-        if (GoalValueRules.ValidateDefinition(dataType, minValue, maxValue, targetValue) is { } error)
+        if (GoalValueRules.ValidateDefinition(dataType, minValue, maxValue) is { } error)
             throw new GoalValueException(error, dataType, label, minValue, maxValue);
     }
 
@@ -481,5 +524,4 @@ internal sealed class GoalPayloadItem
     public string Unit { get; set; } = null!;
     public decimal? MinValue { get; set; }
     public decimal? MaxValue { get; set; }
-    public decimal? TargetValue { get; set; }
 }

@@ -9,7 +9,8 @@ public enum GoalValueError
     BelowMinimum,
     AboveMaximum,
     PercentOutOfRange,
-    MinGreaterThanMax
+    MinGreaterThanMax,
+    TargetInconsistentWithDirection
 }
 
 /// <summary>
@@ -63,14 +64,13 @@ public static class GoalValueRules
     }
 
     /// <summary>
-    /// Validates a goal *definition* — its bounds and target must obey the same type
-    /// rules the reported values will, otherwise the goal is unfillable.
+    /// Validates a goal *definition* — its bounds must obey the same type rules the
+    /// reported values will, otherwise the goal is unfillable.
     /// </summary>
     public static GoalValueError? ValidateDefinition(
         GoalDataType dataType,
         decimal? minValue,
-        decimal? maxValue,
-        decimal? targetValue)
+        decimal? maxValue)
     {
         if (minValue is { } min && maxValue is { } max && min > max)
             return GoalValueError.MinGreaterThanMax;
@@ -83,22 +83,51 @@ public static class GoalValueRules
                 return error;
         }
 
-        return targetValue is { } target
-            ? Validate(dataType, target, minValue, maxValue)
-            : null;
+        return null;
+    }
+
+    /// <summary>
+    /// Validates a per-participant target (baseline and target value) for a goal.
+    /// Returns <c>null</c> when acceptable.
+    /// </summary>
+    public static GoalValueError? ValidateTarget(
+        GoalDataType dataType,
+        decimal? minValue,
+        decimal? maxValue,
+        decimal? baseline,
+        decimal? targetValue,
+        GoalDirection direction)
+    {
+        if (targetValue is { } target && Validate(dataType, target, minValue, maxValue) is { } targetError)
+            return targetError;
+
+        if (baseline is { } b && Validate(dataType, b, minValue, maxValue) is { } baselineError)
+            return baselineError;
+
+        if (baseline is not null && targetValue is not null)
+        {
+            if (direction == GoalDirection.Decrease && targetValue >= baseline)
+                return GoalValueError.TargetInconsistentWithDirection;
+
+            if (direction == GoalDirection.Increase && targetValue <= baseline)
+                return GoalValueError.TargetInconsistentWithDirection;
+        }
+
+        return null;
     }
 
     /// <summary>
     /// English fallback text for logs and API responses. User-facing copy is
     /// localised in the Web layer from <see cref="GoalValueError"/>.
     /// </summary>
-    public static string Describe(GoalValueError error, string goalLabel, decimal? minValue, decimal? maxValue) => error switch
+    public static string Describe(GoalValueError error, string goalLabel, decimal? minValue, decimal? maxValue, decimal? targetValue = null) => error switch
     {
         GoalValueError.NotInteger => $"Value for '{goalLabel}' must be a whole number.",
         GoalValueError.PercentOutOfRange => $"Value for '{goalLabel}' must be between 0 and 100.",
         GoalValueError.BelowMinimum => $"Value for '{goalLabel}' is below the minimum of {minValue}.",
         GoalValueError.AboveMaximum => $"Value for '{goalLabel}' is above the maximum of {maxValue}.",
         GoalValueError.MinGreaterThanMax => $"Minimum for '{goalLabel}' cannot be greater than its maximum.",
+        GoalValueError.TargetInconsistentWithDirection => $"Target for '{goalLabel}' is not consistent with its direction.",
         _ => $"Value for '{goalLabel}' is invalid."
     };
 }
@@ -116,14 +145,18 @@ public sealed class GoalValueException : ArgumentException
         GoalDataType dataType,
         string goalLabel,
         decimal? minValue,
-        decimal? maxValue)
-        : base(GoalValueRules.Describe(error, goalLabel, minValue, maxValue))
+        decimal? maxValue,
+        decimal? targetValue = null,
+        decimal? baseline = null)
+        : base(GoalValueRules.Describe(error, goalLabel, minValue, maxValue, targetValue))
     {
         Error = error;
         DataType = dataType;
         GoalLabel = goalLabel;
         MinValue = minValue;
         MaxValue = maxValue;
+        TargetValue = targetValue;
+        Baseline = baseline;
     }
 
     public GoalValueError Error { get; }
@@ -131,4 +164,6 @@ public sealed class GoalValueException : ArgumentException
     public string GoalLabel { get; }
     public decimal? MinValue { get; }
     public decimal? MaxValue { get; }
+    public decimal? TargetValue { get; }
+    public decimal? Baseline { get; }
 }

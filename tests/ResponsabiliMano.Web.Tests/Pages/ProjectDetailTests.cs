@@ -70,7 +70,7 @@ public class ProjectDetailTests : TestContext
     public void Renders_change_request_goals_summary()
     {
         _featureManager.Enabled = true;
-        var payload = "{\"Goals\":[{\"Label\":\"Peso\",\"DataType\":0,\"Unit\":\"Kg\",\"MinValue\":80,\"MaxValue\":120,\"TargetValue\":94}]}";
+        var payload = "{\"Goals\":[{\"Label\":\"Peso\",\"DataType\":0,\"Unit\":\"Kg\",\"MinValue\":80,\"MaxValue\":120}]}";
 
         var project = ActiveProjectWithChangeRequest(ChangeRequestType.Goals, payload);
 
@@ -79,7 +79,6 @@ public class ProjectDetailTests : TestContext
 
         var summary = cut.Find("[data-test='change-request-summary']").TextContent;
         Assert.Contains("Peso", summary);
-        Assert.Contains("94", summary);
         Assert.Contains("Kg", summary);
         Assert.Contains("80", summary);
         Assert.Contains("120", summary);

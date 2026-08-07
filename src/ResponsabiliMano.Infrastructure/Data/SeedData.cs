@@ -52,10 +52,21 @@ public static class SeedData
     /// <summary>Active project, week 7 of 15, both partners checked in every week.</summary>
     private static Project BuildSummerProject(User ana, User bruno, DateTime now)
     {
-        var weight = NewGoal("Peso", GoalDataType.Decimal, "kg", 40, 200, 72);
-        var workouts = NewGoal("Adesão aos treinos", GoalDataType.Percent, "%", 0, 100, 90);
-        var diet = NewGoal("Adesão à dieta", GoalDataType.Percent, "%", 0, 100, 85);
-        var water = NewGoal("Água por dia", GoalDataType.Decimal, "L", 0, 6, 2.5m);
+        var weight = NewGoalField("Peso", GoalDataType.Decimal, "kg", 40, 200);
+        AddTarget(weight, ana.Id, 68.9m, 65.0m, GoalDirection.Decrease);
+        AddTarget(weight, bruno.Id, 92.0m, 87.8m, GoalDirection.Decrease);
+
+        var workouts = NewGoalField("Adesão aos treinos", GoalDataType.Percent, "%", 0, 100);
+        AddTarget(workouts, ana.Id, null, 90m, GoalDirection.Reach);
+        AddTarget(workouts, bruno.Id, null, 90m, GoalDirection.Reach);
+
+        var diet = NewGoalField("Adesão à dieta", GoalDataType.Percent, "%", 0, 100);
+        AddTarget(diet, ana.Id, null, 85m, GoalDirection.Reach);
+        AddTarget(diet, bruno.Id, null, 85m, GoalDirection.Reach);
+
+        var water = NewGoalField("Água por dia", GoalDataType.Decimal, "L", 0, 6);
+        AddTarget(water, ana.Id, null, 2.5m, GoalDirection.Reach);
+        AddTarget(water, bruno.Id, null, 2.5m, GoalDirection.Reach);
 
         var project = new Project
         {
@@ -137,28 +148,53 @@ public static class SeedData
         Status = ProjectStatus.Pending,
         Goals =
         [
-            NewGoal("Distância na semana", GoalDataType.Decimal, "km", 0, 100, 24),
-            NewGoal("Treinos concluídos", GoalDataType.Integer, "treinos", 0, 7, 4),
-            NewGoal("Pace médio", GoalDataType.Decimal, "min/km", 3, 12, 6)
+            NewGoalField("Distância na semana", GoalDataType.Decimal, "km", 0, 100, 24, bruno.Id, ana.Id),
+            NewGoalField("Treinos concluídos", GoalDataType.Integer, "treinos", 0, 7, 4, bruno.Id, ana.Id),
+            NewGoalField("Pace médio", GoalDataType.Decimal, "min/km", 3, 12, 6, bruno.Id, ana.Id)
         ]
     };
 
-    private static GoalField NewGoal(
+    private static GoalField NewGoalField(
         string label,
         GoalDataType dataType,
         string unit,
         decimal min,
         decimal max,
-        decimal target) => new()
+        decimal? target = null,
+        Guid? creatorId = null,
+        Guid? partnerId = null)
+    {
+        var goal = new GoalField
         {
             Id = Guid.NewGuid(),
             Label = label,
             DataType = dataType,
             Unit = unit,
             MinValue = min,
-            MaxValue = max,
-            TargetValue = target
+            MaxValue = max
         };
+
+        if (creatorId is not null && target is not null)
+            AddTarget(goal, creatorId, null, target, GoalDirection.Reach);
+
+        if (partnerId is not null && target is not null)
+            AddTarget(goal, partnerId, null, target, GoalDirection.Reach);
+
+        return goal;
+    }
+
+    private static void AddTarget(
+        GoalField goal, Guid? userId, decimal? baseline, decimal? target, GoalDirection direction)
+    {
+        goal.Targets.Add(new GoalTarget
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Baseline = baseline,
+            TargetValue = target,
+            Direction = direction
+        });
+    }
 
     private static CheckIn NewCheckIn(
         Project project,

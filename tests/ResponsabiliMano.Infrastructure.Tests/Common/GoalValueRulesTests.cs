@@ -54,19 +54,38 @@ public class GoalValueRulesTests
         Assert.Equal(expected, GoalValueRules.Normalize(dataType, value));
     }
 
-    public static TheoryData<GoalDataType, decimal?, decimal?, decimal?, GoalValueError?> DefinitionCases => new()
+    public static TheoryData<GoalDataType, decimal?, decimal?, GoalValueError?> DefinitionCases => new()
     {
-        { GoalDataType.Decimal, 0m, 10m, 5m, null },
-        { GoalDataType.Integer, 0m, 10m, 5.5m, GoalValueError.NotInteger },
-        { GoalDataType.Percent, 0m, 10m, 5m, null },
-        { GoalDataType.Decimal, 20m, 10m, 5m, GoalValueError.MinGreaterThanMax }
+        { GoalDataType.Decimal, 0m, 10m, null },
+        { GoalDataType.Integer, 0m, 10m, null },
+        { GoalDataType.Percent, 0m, 10m, null },
+        { GoalDataType.Decimal, 20m, 10m, GoalValueError.MinGreaterThanMax }
     };
 
     [Theory]
     [MemberData(nameof(DefinitionCases))]
     public void ValidateDefinition_EnforcesTypeAndBounds(
-        GoalDataType dataType, decimal? min, decimal? max, decimal? target, GoalValueError? expected)
+        GoalDataType dataType, decimal? min, decimal? max, GoalValueError? expected)
     {
-        Assert.Equal(expected, GoalValueRules.ValidateDefinition(dataType, min, max, target));
+        Assert.Equal(expected, GoalValueRules.ValidateDefinition(dataType, min, max));
+    }
+
+    public static TheoryData<GoalDataType, decimal?, decimal?, decimal?, decimal?, GoalDirection, GoalValueError?> TargetCases => new()
+    {
+        { GoalDataType.Decimal, 0m, 200m, 96.8m, 86.8m, GoalDirection.Decrease, null },
+        { GoalDataType.Decimal, 0m, 200m, 5m, 6m, GoalDirection.Increase, null },
+        { GoalDataType.Decimal, 0m, 200m, 96.8m, 86.8m, GoalDirection.Increase, GoalValueError.TargetInconsistentWithDirection },
+        { GoalDataType.Decimal, 0m, 200m, 86.8m, 96.8m, GoalDirection.Decrease, GoalValueError.TargetInconsistentWithDirection },
+        { GoalDataType.Percent, 0m, 100m, null, 90m, GoalDirection.Reach, null },
+        { GoalDataType.Integer, 0m, 10m, 0m, 5m, GoalDirection.Maintain, null },
+        { GoalDataType.Integer, 0m, 10m, 5.5m, 5m, GoalDirection.Reach, GoalValueError.NotInteger }
+    };
+
+    [Theory]
+    [MemberData(nameof(TargetCases))]
+    public void ValidateTarget_EnforcesTypeBoundsAndDirection(
+        GoalDataType dataType, decimal? min, decimal? max, decimal? baseline, decimal? target, GoalDirection direction, GoalValueError? expected)
+    {
+        Assert.Equal(expected, GoalValueRules.ValidateTarget(dataType, min, max, baseline, target, direction));
     }
 }

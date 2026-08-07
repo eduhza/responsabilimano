@@ -71,4 +71,10 @@ public sealed record GoalFieldInput(
     string Unit,
     decimal? MinValue,
     decimal? MaxValue,
-    decimal? TargetValue);
+    GoalTargetInput CreatorTarget,
+    GoalTargetInput? SuggestedPartnerTarget = null);
+
+public sealed record GoalTargetInput(
+    decimal? Baseline,
+    decimal? TargetValue,
+    GoalDirection Direction);

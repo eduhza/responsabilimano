@@ -56,9 +56,31 @@ public class DashboardServiceTests : IDisposable
             ProjectId = project.Id,
             Label = "Weight",
             DataType = GoalDataType.Decimal,
-            Unit = "kg",
-            TargetValue = targetValue
+            Unit = "kg"
         };
+
+        if (targetValue is not null)
+        {
+            goal.Targets.Add(new GoalTarget
+            {
+                Id = Guid.NewGuid(),
+                UserId = creatorId,
+                TargetValue = targetValue,
+                Direction = GoalDirection.Reach
+            });
+
+            if (partnerId is not null)
+            {
+                goal.Targets.Add(new GoalTarget
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = partnerId,
+                    TargetValue = targetValue,
+                    Direction = GoalDirection.Reach
+                });
+            }
+        }
+
         _context.Projects.Add(project);
         _context.GoalFields.Add(goal);
         _context.SaveChanges();
@@ -143,7 +165,8 @@ public class DashboardServiceTests : IDisposable
         Assert.Equal("Weight", series.Label);
         Assert.Equal("kg", series.Unit);
         Assert.Equal(GoalDataType.Decimal, series.DataType);
-        Assert.Equal(70m, series.TargetValue);
+        Assert.Equal(2, series.Targets.Count);
+        Assert.All(series.Targets, t => Assert.Equal(70m, t.TargetValue));
 
         Assert.Equal(4, series.Series.Count);
 
@@ -184,7 +207,13 @@ public class DashboardServiceTests : IDisposable
 
         Assert.Single(result.Metrics);
         Assert.Empty(result.Metrics[0].Series);
-        Assert.Null(result.Metrics[0].TargetValue);
+        Assert.Equal(2, result.Metrics[0].Targets.Count);
+        Assert.All(result.Metrics[0].Targets, t =>
+        {
+            Assert.Null(t.Baseline);
+            Assert.Null(t.TargetValue);
+            Assert.Equal(GoalDirection.Reach, t.Direction);
+        });
     }
 
     [Fact]

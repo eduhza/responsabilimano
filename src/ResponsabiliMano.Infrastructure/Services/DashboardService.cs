@@ -29,6 +29,7 @@ public sealed class DashboardService : IDashboardService
         var project = await _context.Projects
             .AsNoTracking()
             .Include(p => p.Goals)
+            .ThenInclude(g => g.Targets)
             .Include(p => p.Creator)
             .Include(p => p.Partner)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
@@ -64,7 +65,7 @@ public sealed class DashboardService : IDashboardService
                 goal.Label,
                 goal.Unit,
                 goal.DataType,
-                goal.TargetValue,
+                BuildTargets(goal, participantIds),
                 BuildSeries(checkIns, goal.Id, participantIds)))
             .ToList();
 
@@ -224,6 +225,19 @@ public sealed class DashboardService : IDashboardService
 
         return entries
             .OrderBy(e => e.PeriodNumber)
+            .ToList();
+    }
+
+    private static List<DashboardMetricTarget> BuildTargets(GoalField goal, Guid[] participantIds)
+    {
+        return participantIds
+            .Select(pid =>
+            {
+                var target = goal.Targets.FirstOrDefault(t => t.UserId == pid);
+                return target is not null
+                    ? new DashboardMetricTarget(pid, target.Baseline, target.TargetValue, target.Direction)
+                    : new DashboardMetricTarget(pid, null, null, GoalDirection.Reach);
+            })
             .ToList();
     }
 
