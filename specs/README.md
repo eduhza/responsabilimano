@@ -51,7 +51,7 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | D1 | Fundação: FluentUI + Tema + Layout | draft |
 | D2 | Telas Auth + Home com FluentUI | draft |
 | S6.1 | Painel global do usuário (`/dashboard`) | in-progress |
-| X2 | Corrigir perda de casas decimais na entrada de números | done |
+| X2 | Corrigir perda de casas decimais na entrada de números | in-progress |
 | S7.1 | Editar e cancelar o check-in do período corrente | draft |
 | S7.2 | Metas com alvo por participante | draft |
 | S7.3 | Negociação meta a meta, com histórico de contrapropostas | draft |
