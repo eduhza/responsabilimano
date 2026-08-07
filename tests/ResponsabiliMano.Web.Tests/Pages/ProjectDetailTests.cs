@@ -1,3 +1,4 @@
+using System.Globalization;
 using AngleSharp.Dom;
 using Bunit;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -200,7 +201,7 @@ public class ProjectDetailTests : TestContext
                 var value = name switch
                 {
                     "ChangeRequestsTitle" => "Solicitações de Alteração",
-                    "ChangeRequestSummaryEndDate" => "Nova data de fim: {0}",
+                    "ChangeRequestSummaryEndDate" => "Nova data de fim: {0:dd/MM/yyyy}",
                     "ChangeRequestSummaryFrequency" => "Nova frequência: {0}",
                     "ChangeRequestSummaryGoals" => "Metas propostas:",
                     "ChangeRequestSummaryGoalLine" => "{0}: {1} {2}",
@@ -228,7 +229,7 @@ public class ProjectDetailTests : TestContext
             get
             {
                 var format = this[name].Value;
-                return new LocalizedString(name, string.Format(format, arguments));
+                return new LocalizedString(name, string.Format(CultureInfo.GetCultureInfo("pt-BR"), format, arguments));
             }
         }
 

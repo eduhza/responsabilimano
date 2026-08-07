@@ -162,9 +162,12 @@
         TargetValue = goal.TargetValue
     };
 
+    @* Values here are read by a person, so they are formatted in the current culture
+       (pt-BR shows "3,6"). Formatting them invariantly showed "3.6" — the very
+       notation that caused the parsing bug in spec X2. *@
     private string FormatValue(decimal? value, string unit) =>
         value.HasValue
-            ? $"{value.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} {unit}".Trim()
+            ? $"{DecimalInput.ToDisplay(value)} {unit}".Trim()
             : "—";
 
     private string FormatRange(decimal? min, decimal? max, string unit)
@@ -174,13 +177,10 @@
 
         if (min.HasValue && max.HasValue)
         {
-            var minText = min.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-            var maxText = max.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-            return $"{minText} a {maxText} {unit}".Trim();
+            return $"{DecimalInput.ToDisplay(min)} a {DecimalInput.ToDisplay(max)} {unit}".Trim();
         }
 
-        var value = min ?? max;
-        return $"{value!.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} {unit}".Trim();
+        return $"{DecimalInput.ToDisplay(min ?? max)} {unit}".Trim();
     }
 
     private string GetDataTypeText(GoalDataType dataType) => dataType switch

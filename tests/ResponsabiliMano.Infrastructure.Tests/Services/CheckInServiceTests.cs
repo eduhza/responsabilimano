@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
@@ -143,7 +144,7 @@ public class CheckInServiceTests : IDisposable
         var (project, goal) = SeedProject(creator.Id, min: 0, max: 100);
         var service = CreateService();
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.SubmitCheckInAsync(
+        await Assert.ThrowsAsync<GoalValueException>(() => service.SubmitCheckInAsync(
             project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 150m) }));
     }
 

@@ -145,11 +145,11 @@ else
                 <RmCard Flat="true" Class="goal-tile">
                     <p class="goal-tile__label">@goal.Label</p>
                     <p class="goal-tile__target rm-display rm-tabular">
-                        @(goal.TargetValue?.ToString("0.##") ?? "—")<span class="goal-tile__unit">@goal.Unit</span>
+                        @(goal.TargetValue is null ? "—" : DecimalInput.ToDisplay(goal.TargetValue, goal.DataType))<span class="goal-tile__unit">@goal.Unit</span>
                     </p>
                     @if (goal.MinValue is not null || goal.MaxValue is not null)
                     {
-                        <p class="goal-tile__range">@goal.MinValue?.ToString("0.##") … @goal.MaxValue?.ToString("0.##") @goal.Unit</p>
+                        <p class="goal-tile__range">@DecimalInput.ToDisplay(goal.MinValue, goal.DataType) … @DecimalInput.ToDisplay(goal.MaxValue, goal.DataType) @goal.Unit</p>
                     }
                 </RmCard>
             }
@@ -271,18 +271,24 @@ else
                                 </RmField>
 
                                 <RmField Label="@Localizer["GoalMinValueLabel"]">
-                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].MinValue"
-                                           @onchange="e => _proposeGoals[index].MinValue = ParseDecimal(e.Value)" />
+                                    <RmNumberInput DataType="_proposeGoals[index].DataType"
+                                                   Value="_proposeGoals[index].MinValue"
+                                                   ValueChanged="value => _proposeGoals[index].MinValue = value"
+                                                   aria-label="@Localizer["GoalMinValueLabel"]" />
                                 </RmField>
 
                                 <RmField Label="@Localizer["GoalMaxValueLabel"]">
-                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].MaxValue"
-                                           @onchange="e => _proposeGoals[index].MaxValue = ParseDecimal(e.Value)" />
+                                    <RmNumberInput DataType="_proposeGoals[index].DataType"
+                                                   Value="_proposeGoals[index].MaxValue"
+                                                   ValueChanged="value => _proposeGoals[index].MaxValue = value"
+                                                   aria-label="@Localizer["GoalMaxValueLabel"]" />
                                 </RmField>
 
                                 <RmField Label="@Localizer["GoalTargetValueLabel"]">
-                                    <input type="number" step="any" class="rm-input" value="@_proposeGoals[index].TargetValue"
-                                           @onchange="e => _proposeGoals[index].TargetValue = ParseDecimal(e.Value)" />
+                                    <RmNumberInput DataType="_proposeGoals[index].DataType"
+                                                   Value="_proposeGoals[index].TargetValue"
+                                                   ValueChanged="value => _proposeGoals[index].TargetValue = value"
+                                                   aria-label="@Localizer["GoalTargetValueLabel"]" />
                                 </RmField>
                             </div>
                         </RmCard>
@@ -430,9 +436,6 @@ else
         string.Join(",", p.Goals.OrderBy(g => g.Id).Select(g => $"{g.Id}:{g.Label}:{g.TargetValue}")) + "|" +
         string.Join(",", p.ChangeRequests.OrderBy(c => c.Id).Select(c => $"{c.Id}:{c.Status}"));
 
-    private static decimal? ParseDecimal(object? value) =>
-        decimal.TryParse(value?.ToString(), out var parsed) ? parsed : null;
-
     private void AddProposeGoal()
     {
         _proposeGoals.Add(new GoalFieldRequest());
@@ -523,6 +526,12 @@ else
         try
         {
             await action();
+        }
+        catch (GoalValueException ex)
+        {
+            _statusMessage = GoalValueMessage(ex.Error, ex.GoalLabel, ex.MinValue, ex.MaxValue, ex.DataType);
+            _statusTone = "danger";
+            onError?.Invoke(ex);
         }
         catch (Exception ex)
         {
@@ -647,7 +656,7 @@ else
         foreach (var goal in payload.Goals)
         {
             var targetText = goal.TargetValue.HasValue
-                ? goal.TargetValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                ? DecimalInput.ToDisplay(goal.TargetValue, goal.DataType)
                 : "—";
 
             var summary = Localizer["ChangeRequestSummaryGoalLine", goal.Label, targetText, goal.Unit ?? string.Empty].Value;
@@ -666,8 +675,8 @@ else
             if (goal.MinValue.HasValue && goal.MaxValue.HasValue)
             {
                 var range = Localizer["ChangeRequestSummaryGoalRange",
-                    goal.MinValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
-                    goal.MaxValue.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+                    DecimalInput.ToDisplay(goal.MinValue, goal.DataType),
+                    DecimalInput.ToDisplay(goal.MaxValue, goal.DataType),
                     goal.Unit ?? string.Empty].Value;
                 summary += $" · {range}";
             }
@@ -677,6 +686,16 @@ else
 
         return string.Join("\n", lines);
     }
+
+    private string GoalValueMessage(
+        GoalValueError error, string label, decimal? min, decimal? max, GoalDataType dataType) => error switch
+    {
+        GoalValueError.NotInteger => Localizer["GoalValueNotInteger", label],
+        GoalValueError.PercentOutOfRange => Localizer["GoalValuePercentOutOfRange", label],
+        GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
+        GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
+        _ => Localizer["GoalValueInvalid", label]
+    };
 
     public sealed class EndDateSummaryPayload
     {
