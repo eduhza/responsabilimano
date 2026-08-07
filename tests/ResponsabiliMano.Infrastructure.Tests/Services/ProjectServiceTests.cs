@@ -18,7 +18,10 @@ public class ProjectServiceTests : IDisposable
     public void Dispose() => _context.Dispose();
 
     private ProjectService CreateService()
-        => new(_context, _email, NullLogger<ProjectService>.Instance);
+    {
+        var goalNegotiation = new GoalNegotiationService(_context, NullLogger<GoalNegotiationService>.Instance);
+        return new ProjectService(_context, _email, goalNegotiation, NullLogger<ProjectService>.Instance);
+    }
 
     private User SeedUser(string email, string name = "User")
     {
@@ -251,7 +254,7 @@ public class ProjectServiceTests : IDisposable
 
         Assert.NotNull(result);
         Assert.Equal(partner.Id, result!.PartnerId);
-        Assert.Equal(ProjectStatus.Active, result.Status);
+        Assert.Equal(ProjectStatus.Pending, result.Status);
         var refreshed = await _context.ProjectInvitations.FirstAsync(i => i.Id == invitation.Id);
         Assert.NotNull(refreshed.AcceptedAt);
     }
@@ -356,14 +359,16 @@ public class ProjectServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ApproveProjectAsync_Throws_WhenNoPartner()
+    public async Task ApproveProjectAsync_DoesNothing_WhenNoPartner()
     {
         var creator = SeedUser("creator@example.com");
         var project = SeedProject(creator.Id);
         var service = CreateService();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.ApproveProjectAsync(project.Id, creator.Id));
+        await service.ApproveProjectAsync(project.Id, creator.Id);
+
+        var refreshed = await _context.Projects.FirstAsync(p => p.Id == project.Id);
+        Assert.Equal(ProjectStatus.Pending, refreshed.Status);
     }
 
     [Fact]
@@ -371,10 +376,16 @@ public class ProjectServiceTests : IDisposable
     {
         var creator = SeedUser("creator@example.com");
         var partner = SeedUser("partner@example.com");
-        var project = SeedProject(creator.Id, partner.Id);
         var service = CreateService();
 
-        await service.ApproveProjectAsync(project.Id, creator.Id);
+        var project = await service.CreateProjectAsync(
+            creator.Id, "Sample", DateTime.UtcNow, DateTime.UtcNow.AddDays(30),
+            ProjectFrequency.Weekly, new[] { Goal() });
+
+        project.PartnerId = partner.Id;
+        await _context.SaveChangesAsync();
+
+        await service.ApproveProjectAsync(project.Id, partner.Id);
 
         var refreshed = await _context.Projects.FirstAsync(p => p.Id == project.Id);
         Assert.Equal(ProjectStatus.Active, refreshed.Status);
@@ -416,7 +427,7 @@ public class ProjectServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ProposeChangeAsync_Throws_WhenPendingRequestExists()
+    public async Task ProposeChangeAsync_Throws_WhenPendingRequestOfSameTypeExists()
     {
         var creator = SeedUser("creator@example.com");
         var project = SeedProject(creator.Id, status: ProjectStatus.Active);
@@ -434,7 +445,7 @@ public class ProjectServiceTests : IDisposable
         var service = CreateService();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ProposeChangeAsync(
-            project.Id, creator.Id, ChangeRequestType.Frequency, "{}"));
+            project.Id, creator.Id, ChangeRequestType.EndDate, "{}"));
     }
 
     [Fact]

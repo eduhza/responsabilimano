@@ -924,4 +924,43 @@
   <data name="GoalValueTargetInconsistent" xml:space="preserve">
     <value>The target for '{0}' is not consistent with the chosen direction.</value>
   </data>
+  <data name="GoalNegotiationTitle" xml:space="preserve">
+    <value>Goal negotiation</value>
+  </data>
+  <data name="GoalNegotiationCounter" xml:space="preserve">
+    <value>{0} of {1} targets accepted</value>
+  </data>
+  <data name="GoalNegotiationLoadError" xml:space="preserve">
+    <value>Could not load goal negotiation. Please try again.</value>
+  </data>
+  <data name="AcceptAllButton" xml:space="preserve">
+    <value>Accept all</value>
+  </data>
+  <data name="AcceptAllSuccess" xml:space="preserve">
+    <value>All pending targets accepted.</value>
+  </data>
+  <data name="GoalTargetStatusAccepted" xml:space="preserve">
+    <value>Accepted</value>
+  </data>
+  <data name="GoalTargetStatusPending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="AcceptButton" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="AdjustButton" xml:space="preserve">
+    <value>Adjust</value>
+  </data>
+  <data name="ProposeButton" xml:space="preserve">
+    <value>Propose</value>
+  </data>
+  <data name="GoalTargetLabel" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="GoalProposalCommentLabel" xml:space="preserve">
+    <value>Comment</value>
+  </data>
+  <data name="GoalProposalCommentTooLong" xml:space="preserve">
+    <value>Comment cannot exceed 500 characters.</value>
+  </data>
 </root>

@@ -1,0 +1,116 @@
+.negotiation__target {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    border-radius: var(--rm-radius-md);
+    background: var(--rm-muted);
+    border: 1px solid var(--rm-border);
+}
+
+.negotiation__target--editing {
+    background: var(--rm-surface);
+}
+
+.negotiation__target-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.negotiation__target-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    flex: 1 1 0;
+    min-width: 8rem;
+}
+
+.negotiation__target-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.negotiation__target-meta {
+    margin: 0.125rem 0 0;
+    font-size: 0.75rem;
+    color: var(--rm-muted-fg);
+}
+
+.negotiation__target-comment {
+    display: block;
+    margin-top: 0.25rem;
+    font-style: italic;
+    color: var(--rm-fg);
+}
+
+.negotiation__target-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 5rem;
+}
+
+.negotiation__target-value .rm-display {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.negotiation__unit {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--rm-muted-fg);
+}
+
+.negotiation__baseline {
+    font-size: 0.75rem;
+    color: var(--rm-muted-fg);
+}
+
+.negotiation__target-status {
+    min-width: 5.5rem;
+    text-align: right;
+}
+
+.negotiation__target-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+}
+
+@media (min-width: 40rem) {
+    .negotiation__target-actions {
+        flex: 0 0 auto;
+    }
+}
+
+.negotiation__target-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rm-border);
+}
+
+.negotiation__target-fields {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+    .negotiation__target-fields {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.negotiation__form-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}

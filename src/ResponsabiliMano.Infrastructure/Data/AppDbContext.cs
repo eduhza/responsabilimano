@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ResponsabiliMano.Core.Entities;
+using ResponsabiliMano.Core.Enums;
 
 namespace ResponsabiliMano.Infrastructure.Data;
 
@@ -13,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<GoalField> GoalFields => Set<GoalField>();
     public DbSet<GoalTarget> GoalTargets => Set<GoalTarget>();
+    public DbSet<GoalProposal> GoalProposals => Set<GoalProposal>();
     public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
     public DbSet<ProjectChangeRequest> ProjectChangeRequests => Set<ProjectChangeRequest>();
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
@@ -79,10 +81,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Baseline).HasColumnName("baseline").HasPrecision(18, 4);
             entity.Property(e => e.TargetValue).HasColumnName("target_value").HasPrecision(18, 4);
             entity.Property(e => e.Direction).HasColumnName("direction");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(GoalTargetStatus.PendingAcceptance);
+            entity.Property(e => e.AcceptedByCreator).HasColumnName("accepted_by_creator").HasDefaultValue(false);
+            entity.Property(e => e.AcceptedByPartner).HasColumnName("accepted_by_partner").HasDefaultValue(false);
+            entity.Property(e => e.LastProposedByUserId).HasColumnName("last_proposed_by_user_id");
+            entity.Property(e => e.LastProposedAt).HasColumnName("last_proposed_at");
             entity.HasOne(e => e.GoalField).WithMany(g => g.Targets).HasForeignKey(e => e.GoalFieldId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(e => new { e.GoalFieldId, e.UserId }).IsUnique();
             entity.HasIndex(e => e.GoalFieldId);
+            entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<GoalProposal>(entity =>
+        {
+            entity.ToTable("goal_proposals");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.GoalTargetId).HasColumnName("goal_target_id");
+            entity.Property(e => e.ProposedByUserId).HasColumnName("proposed_by_user_id");
+            entity.Property(e => e.TargetValue).HasColumnName("target_value").HasPrecision(18, 4);
+            entity.Property(e => e.Baseline).HasColumnName("baseline").HasPrecision(18, 4);
+            entity.Property(e => e.Direction).HasColumnName("direction");
+            entity.Property(e => e.Comment).HasColumnName("comment").HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.HasOne(e => e.GoalTarget).WithMany(t => t.Proposals).HasForeignKey(e => e.GoalTargetId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.ProposedByUser).WithMany().HasForeignKey(e => e.ProposedByUserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.GoalTargetId, e.CreatedAt });
         });
 
         modelBuilder.Entity<ProjectInvitation>(entity =>
