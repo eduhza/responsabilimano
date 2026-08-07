@@ -311,6 +311,52 @@ paths:
         '404': { description: 'Project not found, or the CheckIns feature is disabled' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /api/projects/{id}/checkins/current:
+    put:
+      tags: [CheckIns]
+      summary: >
+        Update the caller's check-in for the current period (antiforgery disabled).
+        Behind the CheckIns feature flag: 404 while off.
+      operationId: updateCurrentCheckIn
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmitCheckInRequest' }
+      responses:
+        '200':
+          description: Check-in updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckInCreated' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: 'Project not found, or the CheckIns feature is disabled' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [CheckIns]
+      summary: >
+        Delete the caller's check-in for the current period (antiforgery disabled).
+        Behind the CheckIns feature flag: 404 while off.
+      operationId: deleteCurrentCheckIn
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '204':
+          description: Check-in deleted
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: 'Project not found, or the CheckIns feature is disabled' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
   /api/projects/{id}/dashboard:
     get:
       tags: [Dashboard]
@@ -598,6 +644,9 @@ components:
         id: { type: string, format: uuid }
         periodNumber: { type: integer }
         feeling: { $ref: '#/components/schemas/Feeling' }
+        updatedAt:
+          type: [string, 'null']
+          format: date-time
     CronDispatchResult:
       type: object
       properties:

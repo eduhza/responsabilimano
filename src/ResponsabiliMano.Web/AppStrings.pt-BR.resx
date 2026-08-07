@@ -447,6 +447,36 @@
   <data name="CheckInInvalidValues" xml:space="preserve">
     <value>Alguns valores estão fora do intervalo permitido. Corrija-os antes de enviar.</value>
   </data>
+  <data name="CheckInEditButton" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="CheckInDeleteButton" xml:space="preserve">
+    <value>Excluir</value>
+  </data>
+  <data name="CheckInDeleteConfirmTitle" xml:space="preserve">
+    <value>Excluir check-in?</value>
+  </data>
+  <data name="CheckInDeleteConfirmMessage" xml:space="preserve">
+    <value>Isso removerá seu check-in deste período. Você poderá preenchê-lo novamente depois.</value>
+  </data>
+  <data name="CheckInSummaryTitle" xml:space="preserve">
+    <value>Seu check-in deste período</value>
+  </data>
+  <data name="CheckInSummaryValuesTitle" xml:space="preserve">
+    <value>Valores</value>
+  </data>
+  <data name="CheckInSummaryFeelingLabel" xml:space="preserve">
+    <value>Sentimento</value>
+  </data>
+  <data name="CheckInSaveButton" xml:space="preserve">
+    <value>Salvar alterações</value>
+  </data>
+  <data name="CheckInUpdateSuccess" xml:space="preserve">
+    <value>Check-in atualizado com sucesso!</value>
+  </data>
+  <data name="CheckInDeleteSuccess" xml:space="preserve">
+    <value>Check-in excluído.</value>
+  </data>
   <data name="GoalValueNotInteger" xml:space="preserve">
     <value>O valor de '{0}' deve ser um número inteiro.</value>
   </data>

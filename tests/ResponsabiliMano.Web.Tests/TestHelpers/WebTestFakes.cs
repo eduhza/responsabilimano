@@ -142,6 +142,8 @@ internal sealed class FakeCheckInService : ICheckInService
     public TaskCompletionSource<IReadOnlyList<CheckInForm>>? FormsTask { get; set; }
     public Exception? Exception { get; set; }
     public List<(Guid ProjectId, Guid UserId, Feeling Feeling, IReadOnlyCollection<CheckInMetricInput> Metrics)> Submissions { get; } = [];
+    public List<(Guid ProjectId, Guid UserId, Feeling Feeling, IReadOnlyCollection<CheckInMetricInput> Metrics)> Updates { get; } = [];
+    public List<(Guid ProjectId, Guid UserId)> Deletions { get; } = [];
 
     public Task<CheckInForm?> GetCheckInFormAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
     {
@@ -173,6 +175,37 @@ internal sealed class FakeCheckInService : ICheckInService
             PeriodNumber = 1,
             SubmittedAt = DateTime.UtcNow
         });
+    }
+
+    public Task<CheckIn?> UpdateCurrentCheckInAsync(
+        Guid projectId,
+        Guid userId,
+        Feeling feeling,
+        IReadOnlyCollection<CheckInMetricInput> metrics,
+        CancellationToken cancellationToken = default)
+    {
+        if (Exception is not null) return Task.FromException<CheckIn?>(Exception);
+        Updates.Add((projectId, userId, feeling, metrics));
+        return Task.FromResult<CheckIn?>(new CheckIn
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = userId,
+            Feeling = feeling,
+            PeriodNumber = 1,
+            SubmittedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
+
+    public Task<bool> DeleteCurrentCheckInAsync(
+        Guid projectId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (Exception is not null) return Task.FromException<bool>(Exception);
+        Deletions.Add((projectId, userId));
+        return Task.FromResult(true);
     }
 }
 
