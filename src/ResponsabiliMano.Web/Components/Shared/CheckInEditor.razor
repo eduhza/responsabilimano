@@ -26,19 +26,22 @@ else
                         @entry.Goal.Unit
                         @if (entry.Goal.MinValue is not null || entry.Goal.MaxValue is not null)
                         {
-                            <text> · @entry.Goal.MinValue?.ToString("0.##") … @entry.Goal.MaxValue?.ToString("0.##")</text>
+                            <text> · @DecimalInput.ToDisplay(entry.Goal.MinValue, entry.Goal.DataType) … @DecimalInput.ToDisplay(entry.Goal.MaxValue, entry.Goal.DataType)</text>
                         }
                         @if (entry.Goal.TargetValue is not null)
                         {
-                            <text> · @Localizer["GoalTargetValueLabel"]: @entry.Goal.TargetValue?.ToString("0.##")</text>
+                            <text> · @Localizer["GoalTargetValueLabel"]: @DecimalInput.ToDisplay(entry.Goal.TargetValue, entry.Goal.DataType)</text>
                         }
                     </Hint>
                     <ChildContent>
-                        <input type="number" step="any" class="rm-input rm-tabular"
-                               min="@entry.Goal.MinValue?.ToString("0.##")"
-                               max="@entry.Goal.MaxValue?.ToString("0.##")"
-                               value="@entry.Value"
-                               @onchange="e => entry.Value = decimal.TryParse(e.Value?.ToString(), out var v) ? v : null" />
+                        <RmNumberInput DataType="entry.Goal.DataType"
+                                       Value="entry.Value"
+                                       ValueChanged="value => entry.Value = value"
+                                       aria-label="@entry.Goal.Label" />
+                        @if (entry.Error is { } error)
+                        {
+                            <span class="validation-message">@GoalValueMessage(error, entry.Goal)</span>
+                        }
                     </ChildContent>
                 </RmField>
             </RmCard>
@@ -131,6 +134,20 @@ else
                 return;
             }
 
+            // Same rule the service enforces (GoalValueRules), run here so the message
+            // lands next to the offending field and in the user's language.
+            foreach (var metric in _metrics)
+            {
+                metric.Error = GoalValueRules.Validate(
+                    metric.Goal.DataType, metric.Value!.Value, metric.Goal.MinValue, metric.Goal.MaxValue);
+            }
+
+            if (_metrics.Any(m => m.Error is not null))
+            {
+                _error = Localizer["CheckInInvalidValues"];
+                return;
+            }
+
             var metrics = _metrics
                 .Select(m => new CheckInMetricInput(m.Goal.Id, m.Value!.Value))
                 .ToList();
@@ -138,6 +155,10 @@ else
             await CheckInService.SubmitCheckInAsync(Form.Project.Id, UserId, _feeling, metrics);
             _success = true;
             await OnSubmitted.InvokeAsync();
+        }
+        catch (GoalValueException ex)
+        {
+            _error = GoalValueMessage(ex.Error, ex.GoalLabel, ex.MinValue, ex.MaxValue, ex.DataType);
         }
         catch (ArgumentException ex)
         {
@@ -158,6 +179,19 @@ else
         }
     }
 
+    private string GoalValueMessage(GoalValueError error, GoalField goal) =>
+        GoalValueMessage(error, goal.Label, goal.MinValue, goal.MaxValue, goal.DataType);
+
+    private string GoalValueMessage(
+        GoalValueError error, string label, decimal? min, decimal? max, GoalDataType dataType) => error switch
+    {
+        GoalValueError.NotInteger => Localizer["GoalValueNotInteger", label],
+        GoalValueError.PercentOutOfRange => Localizer["GoalValuePercentOutOfRange", label],
+        GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
+        GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
+        _ => Localizer["GoalValueInvalid", label]
+    };
+
     private string FeelingText(Feeling feeling) => feeling switch
     {
         Feeling.VerySad => Localizer["FeelingVerySad"],
@@ -173,5 +207,8 @@ else
         public MetricEntry(GoalField goal) => Goal = goal;
         public GoalField Goal { get; }
         public decimal? Value { get; set; }
+
+        /// <summary>Set on submit so the message renders under the offending field.</summary>
+        public GoalValueError? Error { get; set; }
     }
 }

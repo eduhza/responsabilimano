@@ -444,6 +444,24 @@
   <data name="CheckInMissingValues" xml:space="preserve">
     <value>Preencha um valor para cada métrica.</value>
   </data>
+  <data name="CheckInInvalidValues" xml:space="preserve">
+    <value>Alguns valores estão fora do intervalo permitido. Corrija-os antes de enviar.</value>
+  </data>
+  <data name="GoalValueNotInteger" xml:space="preserve">
+    <value>O valor de '{0}' deve ser um número inteiro.</value>
+  </data>
+  <data name="GoalValuePercentOutOfRange" xml:space="preserve">
+    <value>O valor de '{0}' deve estar entre 0 e 100.</value>
+  </data>
+  <data name="GoalValueBelowMinimum" xml:space="preserve">
+    <value>O valor de '{0}' está abaixo do mínimo de {1}.</value>
+  </data>
+  <data name="GoalValueAboveMaximum" xml:space="preserve">
+    <value>O valor de '{0}' está acima do máximo de {1}.</value>
+  </data>
+  <data name="GoalValueInvalid" xml:space="preserve">
+    <value>O valor de '{0}' é inválido.</value>
+  </data>
   <data name="FeelingVerySad" xml:space="preserve">
     <value>Muito mal</value>
   </data>

@@ -34,8 +34,10 @@
 
     private decimal Max => Math.Max(Math.Max(YouValue, PartnerValue), 0.0001m);
 
+    @* CSS lengths must use "." regardless of culture, so this one stays invariant —
+       unlike the label below, which is read by a person. *@
     private string Percent(decimal value) =>
-        (Math.Clamp(value / Max, 0m, 1m) * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        DecimalInput.ToInvariant(Math.Round(Math.Clamp(value / Max, 0m, 1m) * 100m, 2));
 
-    private string Format(decimal value) => $"{value:0.#}{Unit}";
+    private string Format(decimal value) => $"{DecimalInput.ToDisplay(value)}{Unit}";
 }

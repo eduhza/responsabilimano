@@ -161,17 +161,16 @@ public sealed class CheckInService : ICheckInService
             if (!seen.Add(metric.GoalFieldId))
                 throw new ArgumentException($"Duplicate value for goal field '{metric.GoalFieldId}'.");
 
-            if (goal.MinValue is { } min && metric.Value < min)
-                throw new ArgumentException($"Value for '{goal.Label}' is below the minimum of {min}.");
-
-            if (goal.MaxValue is { } max && metric.Value > max)
-                throw new ArgumentException($"Value for '{goal.Label}' is above the maximum of {max}.");
+            // Server-side guard for the data type and bounds (spec X2). The UI runs the
+            // same GoalValueRules, but a direct API call must not get past this.
+            if (GoalValueRules.Validate(goal.DataType, metric.Value, goal.MinValue, goal.MaxValue) is { } error)
+                throw new GoalValueException(error, goal.DataType, goal.Label, goal.MinValue, goal.MaxValue);
 
             result.Add(new CheckInMetric
             {
                 Id = Guid.NewGuid(),
                 GoalFieldId = metric.GoalFieldId,
-                Value = metric.Value
+                Value = GoalValueRules.Normalize(goal.DataType, metric.Value)
             });
         }
 
