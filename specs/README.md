@@ -51,9 +51,41 @@ Sprint 3). Sprint 4 (dashboard) e Sprint 5 (polimento) estão no roadmap
 | D1 | Fundação: FluentUI + Tema + Layout | draft |
 | D2 | Telas Auth + Home com FluentUI | draft |
 | S6.1 | Painel global do usuário (`/dashboard`) | in-progress |
+| X2 | Corrigir perda de casas decimais na entrada de números | done |
+| S7.1 | Editar e cancelar o check-in do período corrente | draft |
+| S7.2 | Metas com alvo por participante | draft |
+| S7.3 | Negociação meta a meta, com histórico de contrapropostas | draft |
+| S7.4 | Tipos de meta booleano e escala | draft |
+| S7.5 | Biblioteca de modelos de meta e wizard repensado | draft |
 
 > As specs de produto (`S*`/`X*`) nascem `draft`; o PM aprova (muda para
 > `approved`) no Gate 1, uma de cada vez, antes de implementar.
+
+## Fase P3 (metas flexíveis) — Sprint 7
+
+O app nasceu voltado a metas físicas. A Sprint 7 amplia o produto para estudos,
+concurso, carreira e hábitos, e corrige dois defeitos que apareceram no uso real
+(casas decimais e check-in imutável). Ordem de dependência:
+
+```
+X2  ──► S7.1 ──┐                    (correção + alívio imediato)
+               ├─► S7.2 ──► S7.3    (alvo individual → negociação meta a meta)
+               └─► S7.4 ──► S7.5    (novos tipos → biblioteca de modelos)
+```
+
+Decisões do PM que valem para toda a sprint:
+
+- Modelo de metas: **campo comum, alvo por pessoa** (`GoalField` compartilhado +
+  `GoalTarget` por participante, com `Baseline` e `GoalDirection`).
+- Negociação: **aceite por meta com histórico** de contrapropostas.
+- Novos tipos de dado: **booleano** e **escala** (contagem/duração e checklist
+  ficaram fora).
+- Editar check-in: **apenas o período corrente**, sem trilha de auditoria.
+- **Sem correção dos dados já gravados errados** por script (ADR/decisão: corrigir
+  pela UI depois da S7.1).
+- **Sem nova feature flag** (ADR-0008): poucos usuários, e uma flag duplicaria o
+  caminho de código no fluxo do acordo. Segurança de rollout fica nas migrations
+  com backfill — que devem rodar em banco com dados sem erro.
 
 ## Fase P1 (higiene de engenharia) — feito
 

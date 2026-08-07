@@ -129,16 +129,25 @@
                                 <InputText class="rm-input" @bind-Value="_model.Goals[index].Unit" />
                             </RmField>
 
+                            @* RmNumberInput, not InputNumber: the framework control posts and
+                               parses in invariant format with thousands separators allowed, so
+                               "3,6" became 36 (spec X2). *@
                             <RmField Label="@Localizer["GoalMinValueLabel"]">
-                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].MinValue" />
+                                <RmNumberInput DataType="_model.Goals[index].DataType"
+                                               @bind-Value="_model.Goals[index].MinValue"
+                                               aria-label="@Localizer["GoalMinValueLabel"]" />
                             </RmField>
 
                             <RmField Label="@Localizer["GoalMaxValueLabel"]">
-                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].MaxValue" />
+                                <RmNumberInput DataType="_model.Goals[index].DataType"
+                                               @bind-Value="_model.Goals[index].MaxValue"
+                                               aria-label="@Localizer["GoalMaxValueLabel"]" />
                             </RmField>
 
                             <RmField Label="@Localizer["GoalTargetValueLabel"]">
-                                <InputNumber class="rm-input" @bind-Value="_model.Goals[index].TargetValue" />
+                                <RmNumberInput DataType="_model.Goals[index].DataType"
+                                               @bind-Value="_model.Goals[index].TargetValue"
+                                               aria-label="@Localizer["GoalTargetValueLabel"]" />
                             </RmField>
                         </div>
                     </RmCard>
@@ -268,6 +277,12 @@
             _createdProjectId = project.Id;
             _success = true;
         }
+        catch (GoalValueException ex)
+        {
+            _error = GoalValueMessage(ex.Error, ex.GoalLabel, ex.MinValue, ex.MaxValue, ex.DataType);
+            // Validation failures live on the review step, so stay there to show them.
+            _step = Steps.Length - 1;
+        }
         catch (ArgumentException ex)
         {
             _error = ex.Message;
@@ -285,4 +300,14 @@
             _isLoading = false;
         }
     }
+
+    private string GoalValueMessage(
+        GoalValueError error, string label, decimal? min, decimal? max, GoalDataType dataType) => error switch
+    {
+        GoalValueError.NotInteger => Localizer["GoalValueNotInteger", label],
+        GoalValueError.PercentOutOfRange => Localizer["GoalValuePercentOutOfRange", label],
+        GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
+        GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
+        _ => Localizer["GoalValueInvalid", label]
+    };
 }

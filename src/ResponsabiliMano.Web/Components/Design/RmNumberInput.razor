@@ -1,0 +1,87 @@
+@* Decimal-safe numeric field (spec X2).
+
+   Deliberately NOT <input type="number">: that control always posts the invariant
+   form ("3.6"), which the pt-BR server then read as a thousands separator and
+   turned into 36. A text input with inputmode="decimal" keeps the numeric keypad
+   on mobile, lets a Brazilian type "3,6" naturally, and hands the raw string to
+   DecimalInput, which is explicit about culture.
+
+   The typed text is buffered so a half-finished entry ("3,") survives re-render and
+   an unparseable entry stays on screen, flagged, instead of silently vanishing. *@
+
+<input type="text"
+       inputmode="@InputMode"
+       id="@Id"
+       class="@CssClass"
+       value="@_text"
+       data-value="@DecimalInput.ToInvariant(Value)"
+       aria-invalid="@AriaInvalid"
+       placeholder="@Placeholder"
+       disabled="@Disabled"
+       @onchange="HandleChange"
+       @attributes="AdditionalAttributes" />
+
+@code {
+    [Parameter]
+    public decimal? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> ValueChanged { get; set; }
+
+    /// <summary>Drives how many decimals are shown and which keypad is requested.</summary>
+    [Parameter]
+    public GoalDataType DataType { get; set; } = GoalDataType.Decimal;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string _text = string.Empty;
+    private bool _invalid;
+
+    private string InputMode => DataType == GoalDataType.Integer ? "numeric" : "decimal";
+
+    private string? AriaInvalid => _invalid ? "true" : null;
+
+    private string CssClass =>
+        string.IsNullOrWhiteSpace(Class) ? "rm-input rm-tabular" : $"rm-input rm-tabular {Class}";
+
+    protected override void OnParametersSet()
+    {
+        // Reformat only when the buffered text no longer means the incoming Value —
+        // otherwise typing "3," would be rewritten from under the caret.
+        if (DecimalInput.TryParse(_text) != Value)
+        {
+            _text = DecimalInput.ToDisplay(Value, DataType);
+            _invalid = false;
+        }
+    }
+
+    private async Task HandleChange(ChangeEventArgs args)
+    {
+        _text = args.Value?.ToString() ?? string.Empty;
+
+        var parsed = DecimalInput.TryParse(_text);
+        // Unparseable input clears the value and flags the field: the form's own
+        // "fill every metric" guard then blocks the submit, so a typo can never be
+        // quietly stored as a different number.
+        _invalid = parsed is null && !string.IsNullOrWhiteSpace(_text);
+
+        if (parsed != Value)
+        {
+            Value = parsed;
+            await ValueChanged.InvokeAsync(parsed);
+        }
+    }
+}
