@@ -127,6 +127,8 @@ public static class DecimalInput
     {
         GoalDataType.Integer => "0",
         GoalDataType.Percent => "0.##",
+        GoalDataType.Boolean => "0",
+        GoalDataType.Scale => "0",
         _ => "0.####"
     };
 

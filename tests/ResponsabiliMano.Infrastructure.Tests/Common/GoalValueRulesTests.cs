@@ -11,7 +11,10 @@ public class GoalValueRulesTests
         { GoalDataType.Integer, 5m, null, null, null },
         { GoalDataType.Percent, 50m, 0m, 100m, null },
         { GoalDataType.Decimal, 3.6m, 0m, 100m, null },
-        { GoalDataType.Integer, 5m, 0m, 10m, null }
+        { GoalDataType.Integer, 5m, 0m, 10m, null },
+        { GoalDataType.Boolean, 0m, 0m, 1m, null },
+        { GoalDataType.Boolean, 1m, 0m, 1m, null },
+        { GoalDataType.Scale, 3m, 1m, 5m, null }
     };
 
     [Theory]
@@ -28,7 +31,13 @@ public class GoalValueRulesTests
         { GoalDataType.Percent, 150m, null, null, GoalValueError.PercentOutOfRange },
         { GoalDataType.Percent, -5m, null, null, GoalValueError.PercentOutOfRange },
         { GoalDataType.Decimal, 5m, 10m, 20m, GoalValueError.BelowMinimum },
-        { GoalDataType.Decimal, 25m, 10m, 20m, GoalValueError.AboveMaximum }
+        { GoalDataType.Decimal, 25m, 10m, 20m, GoalValueError.AboveMaximum },
+        { GoalDataType.Boolean, 0.5m, 0m, 1m, GoalValueError.BooleanOutOfRange },
+        { GoalDataType.Boolean, 2m, 0m, 1m, GoalValueError.BooleanOutOfRange },
+        { GoalDataType.Boolean, -1m, 0m, 1m, GoalValueError.BooleanOutOfRange },
+        { GoalDataType.Scale, 3.5m, 1m, 5m, GoalValueError.NotInteger },
+        { GoalDataType.Scale, 6m, 1m, 5m, GoalValueError.AboveMaximum },
+        { GoalDataType.Scale, 0m, 1m, 5m, GoalValueError.BelowMinimum }
     };
 
     [Theory]
@@ -44,7 +53,12 @@ public class GoalValueRulesTests
         { GoalDataType.Decimal, 1.23456m, 1.2346m },
         { GoalDataType.Decimal, 1.2344m, 1.2344m },
         { GoalDataType.Percent, 33.333m, 33.33m },
-        { GoalDataType.Integer, 7m, 7m }
+        { GoalDataType.Integer, 7m, 7m },
+        { GoalDataType.Boolean, 1m, 1m },
+        { GoalDataType.Boolean, 0m, 0m },
+        { GoalDataType.Boolean, 5m, 1m },
+        { GoalDataType.Scale, 3.9m, 3m },
+        { GoalDataType.Scale, 4m, 4m }
     };
 
     [Theory]
@@ -59,7 +73,13 @@ public class GoalValueRulesTests
         { GoalDataType.Decimal, 0m, 10m, null },
         { GoalDataType.Integer, 0m, 10m, null },
         { GoalDataType.Percent, 0m, 10m, null },
-        { GoalDataType.Decimal, 20m, 10m, GoalValueError.MinGreaterThanMax }
+        { GoalDataType.Decimal, 20m, 10m, GoalValueError.MinGreaterThanMax },
+        { GoalDataType.Boolean, 0m, 1m, null },
+        { GoalDataType.Boolean, 1m, 1m, GoalValueError.BooleanOutOfRange },
+        { GoalDataType.Scale, 1m, 5m, null },
+        { GoalDataType.Scale, 1.5m, 5m, GoalValueError.NotInteger },
+        { GoalDataType.Scale, 1m, 1m, GoalValueError.ScaleBoundsInvalid },
+        { GoalDataType.Scale, null, 5m, GoalValueError.ScaleBoundsInvalid }
     };
 
     [Theory]
@@ -78,7 +98,14 @@ public class GoalValueRulesTests
         { GoalDataType.Decimal, 0m, 200m, 86.8m, 96.8m, GoalDirection.Decrease, GoalValueError.TargetInconsistentWithDirection },
         { GoalDataType.Percent, 0m, 100m, null, 90m, GoalDirection.Reach, null },
         { GoalDataType.Integer, 0m, 10m, 0m, 5m, GoalDirection.Maintain, null },
-        { GoalDataType.Integer, 0m, 10m, 5.5m, 5m, GoalDirection.Reach, GoalValueError.NotInteger }
+        { GoalDataType.Integer, 0m, 10m, 5.5m, 5m, GoalDirection.Reach, GoalValueError.NotInteger },
+        { GoalDataType.Boolean, 0m, 1m, 0m, 1m, GoalDirection.Reach, null },
+        { GoalDataType.Boolean, 0m, 1m, 0m, 0m, GoalDirection.Reach, GoalValueError.BooleanTargetValueInvalid },
+        { GoalDataType.Boolean, 0m, 1m, 0m, 1m, GoalDirection.Increase, GoalValueError.BooleanInvalidDirection },
+        { GoalDataType.Scale, 1m, 5m, 1m, 5m, GoalDirection.Reach, null },
+        { GoalDataType.Scale, 1m, 5m, 1m, 5m, GoalDirection.Increase, null },
+        { GoalDataType.Scale, 1m, 5m, 1m, 5m, GoalDirection.Maintain, GoalValueError.ScaleInvalidDirection },
+        { GoalDataType.Scale, 1m, 5m, 2m, 1m, GoalDirection.Increase, GoalValueError.TargetInconsistentWithDirection }
     };
 
     [Theory]

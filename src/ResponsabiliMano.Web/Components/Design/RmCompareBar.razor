@@ -6,13 +6,17 @@
         <div class="rm-compare__track">
             <div class="rm-compare__fill rm-compare__fill--you" style="width: @BarWidth(YouProgress)%"></div>
         </div>
-        <span class="rm-compare__value @(YouLeads ? "rm-you-text" : null)">@Format(YouValue)</span>
+        <span class="rm-compare__value @(YouLeads ? "rm-you-text" : null)">
+            <GoalValueDisplay Value="YouValue" DataType="DataType" Unit="Unit" MinValue="MinValue" MaxValue="MaxValue" />
+        </span>
     </div>
     <div class="rm-compare__row">
         <div class="rm-compare__track">
             <div class="rm-compare__fill rm-compare__fill--partner" style="width: @BarWidth(PartnerProgress)%"></div>
         </div>
-        <span class="rm-compare__value @(!YouLeads ? "rm-partner-text" : null)">@Format(PartnerValue)</span>
+        <span class="rm-compare__value @(!YouLeads ? "rm-partner-text" : null)">
+            <GoalValueDisplay Value="PartnerValue" DataType="DataType" Unit="Unit" MinValue="MinValue" MaxValue="MaxValue" />
+        </span>
     </div>
 </div>
 
@@ -29,9 +33,18 @@
     [Parameter]
     public decimal? PartnerValue { get; set; }
 
-    /// <summary>Appended to both values, e.g. "kg" or "%".</summary>
+    [Parameter]
+    public GoalDataType DataType { get; set; } = GoalDataType.Decimal;
+
+    /// <summary>Used for Decimal/Integer; Percent and Scale format themselves.</summary>
     [Parameter]
     public string? Unit { get; set; }
+
+    [Parameter]
+    public decimal? MinValue { get; set; }
+
+    [Parameter]
+    public decimal? MaxValue { get; set; }
 
     [Parameter]
     public string? Class { get; set; }
@@ -40,7 +53,4 @@
 
     private string BarWidth(decimal? progress) =>
         DecimalInput.ToInvariant(Math.Clamp(progress ?? 0m, 0m, 100m));
-
-    private string Format(decimal? value) =>
-        value is { } present ? $"{DecimalInput.ToDisplay(present)}{Unit}" : "—";
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
@@ -123,6 +124,66 @@ public class ProjectServiceTests : IDisposable
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateProjectAsync(
             Guid.NewGuid(), "P", DateTime.UtcNow, DateTime.UtcNow.AddDays(5),
             ProjectFrequency.Daily, new[] { new GoalFieldInput("Label", GoalDataType.Integer, " ", null, null, new GoalTargetInput(null, null, GoalDirection.Reach)) }));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_Creates_BooleanGoal_WithAutoBoundsAndTarget()
+    {
+        var service = CreateService();
+        var creatorId = SeedUser("creator@example.com").Id;
+
+        var project = await service.CreateProjectAsync(
+            creatorId,
+            "P",
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(10),
+            ProjectFrequency.Weekly,
+            new[] { new GoalFieldInput("Worked out?", GoalDataType.Boolean, "", null, null,
+                new GoalTargetInput(null, null, GoalDirection.Reach)) });
+
+        var goal = Assert.Single(project.Goals);
+        Assert.Equal(GoalDataType.Boolean, goal.DataType);
+        Assert.Equal(0m, goal.MinValue);
+        Assert.Equal(1m, goal.MaxValue);
+        Assert.Equal(string.Empty, goal.Unit);
+        Assert.All(goal.Targets, t =>
+        {
+            Assert.Equal(0m, t.Baseline);
+            Assert.Equal(1m, t.TargetValue);
+            Assert.Equal(GoalDirection.Reach, t.Direction);
+        });
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_Creates_ScaleGoal_WithDefaults()
+    {
+        var service = CreateService();
+        var creatorId = SeedUser("creator@example.com").Id;
+
+        var project = await service.CreateProjectAsync(
+            creatorId,
+            "P",
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(10),
+            ProjectFrequency.Weekly,
+            new[] { new GoalFieldInput("Mood", GoalDataType.Scale, "level", null, null,
+                new GoalTargetInput(null, null, GoalDirection.Reach)) });
+
+        var goal = Assert.Single(project.Goals);
+        Assert.Equal(GoalDataType.Scale, goal.DataType);
+        Assert.Equal(1m, goal.MinValue);
+        Assert.Equal(5m, goal.MaxValue);
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_Throws_WhenScaleBoundsInvalid()
+    {
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<GoalValueException>(() => service.CreateProjectAsync(
+            Guid.NewGuid(), "P", DateTime.UtcNow, DateTime.UtcNow.AddDays(5),
+            ProjectFrequency.Daily, new[] { new GoalFieldInput("Mood", GoalDataType.Scale, "level", 1m, 1m,
+                new GoalTargetInput(null, null, GoalDirection.Reach)) }));
     }
 
     // ---------- InvitePartnerAsync ----------

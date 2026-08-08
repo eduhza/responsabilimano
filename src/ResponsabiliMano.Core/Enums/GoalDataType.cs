@@ -4,5 +4,7 @@ public enum GoalDataType
 {
     Decimal,
     Integer,
-    Percent
+    Percent,
+    Boolean,
+    Scale
 }

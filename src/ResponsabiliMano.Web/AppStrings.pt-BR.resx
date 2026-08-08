@@ -204,6 +204,24 @@
   <data name="DataTypePercent" xml:space="preserve">
     <value>Percentual</value>
   </data>
+  <data name="DataTypeBoolean" xml:space="preserve">
+    <value>Sim/Não</value>
+  </data>
+  <data name="DataTypeScale" xml:space="preserve">
+    <value>Escala</value>
+  </data>
+  <data name="DataTypeBooleanHelp" xml:space="preserve">
+    <value>Uma resposta sim/não. O alvo é sempre "sim".</value>
+  </data>
+  <data name="DataTypeScaleHelp" xml:space="preserve">
+    <value>Uma nota de número inteiro do mínimo ao máximo.</value>
+  </data>
+  <data name="BooleanYes" xml:space="preserve">
+    <value>Sim</value>
+  </data>
+  <data name="BooleanNo" xml:space="preserve">
+    <value>Não</value>
+  </data>
   <data name="BackToHome" xml:space="preserve">
     <value>Voltar para o Início</value>
   </data>
@@ -491,6 +509,33 @@
   </data>
   <data name="GoalValueInvalid" xml:space="preserve">
     <value>O valor de '{0}' é inválido.</value>
+  </data>
+  <data name="GoalValueBooleanOutOfRange" xml:space="preserve">
+    <value>O valor de '{0}' deve ser sim (1) ou não (0).</value>
+  </data>
+  <data name="GoalValueScaleBoundsInvalid" xml:space="preserve">
+    <value>A escala de '{0}' precisa de mínimo e máximo inteiros, com o máximo maior que o mínimo.</value>
+  </data>
+  <data name="GoalValueBooleanInvalidDirection" xml:space="preserve">
+    <value>A meta '{0}' deve usar a direção Atingir.</value>
+  </data>
+  <data name="GoalValueScaleInvalidDirection" xml:space="preserve">
+    <value>A meta '{0}' deve usar as direções Aumentar ou Atingir.</value>
+  </data>
+  <data name="GoalValueBooleanTargetValueInvalid" xml:space="preserve">
+    <value>O alvo de '{0}' deve ser 1 (sim).</value>
+  </data>
+  <data name="StepDecrease" xml:space="preserve">
+    <value>Diminuir</value>
+  </data>
+  <data name="StepIncrease" xml:space="preserve">
+    <value>Aumentar</value>
+  </data>
+  <data name="PercentSliderLabel" xml:space="preserve">
+    <value>Controle deslizante de porcentagem</value>
+  </data>
+  <data name="GoalValueInputLabel" xml:space="preserve">
+    <value>Valor da meta</value>
   </data>
   <data name="FeelingVerySad" xml:space="preserve">
     <value>Muito mal</value>

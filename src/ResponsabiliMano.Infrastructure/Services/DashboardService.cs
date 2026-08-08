@@ -65,8 +65,10 @@ public sealed class DashboardService : IDashboardService
                 goal.Label,
                 goal.Unit,
                 goal.DataType,
+                goal.MinValue,
+                goal.MaxValue,
                 BuildTargets(goal, participantIds),
-                BuildSeries(checkIns, goal.Id, participantIds)))
+                BuildSeries(checkIns, goal, participantIds)))
             .ToList();
 
         _logger.LogInformation(
@@ -192,7 +194,7 @@ public sealed class DashboardService : IDashboardService
     }
 
     private static List<DashboardSeriesEntry> BuildSeries(
-        List<CheckInSnapshot> checkIns, Guid goalFieldId, Guid[] participantIds)
+        List<CheckInSnapshot> checkIns, GoalField goal, Guid[] participantIds)
     {
         var entries = new List<DashboardSeriesEntry>();
 
@@ -201,17 +203,17 @@ public sealed class DashboardService : IDashboardService
             var valuesForGoal = checkIns
                 .Where(c => c.UserId == pid)
                 .SelectMany(c => c.Metrics)
-                .Where(m => m.GoalFieldId == goalFieldId)
+                .Where(m => m.GoalFieldId == goal.Id)
                 .Select(m => m.Value)
                 .ToList();
 
             decimal? average = valuesForGoal.Count > 0
-                ? Math.Round(valuesForGoal.Average(), 2)
+                ? AggregateForDashboard(goal.DataType, valuesForGoal)
                 : null;
 
             foreach (var checkIn in checkIns.Where(c => c.UserId == pid).OrderBy(c => c.PeriodNumber))
             {
-                foreach (var metric in checkIn.Metrics.Where(m => m.GoalFieldId == goalFieldId))
+                foreach (var metric in checkIn.Metrics.Where(m => m.GoalFieldId == goal.Id))
                 {
                     entries.Add(new DashboardSeriesEntry(
                         pid,
@@ -226,6 +228,22 @@ public sealed class DashboardService : IDashboardService
         return entries
             .OrderBy(e => e.PeriodNumber)
             .ToList();
+    }
+
+    private static decimal? AggregateForDashboard(GoalDataType dataType, List<decimal> values)
+    {
+        if (dataType == GoalDataType.Boolean)
+        {
+            var rate = values.Count == 0
+                ? 0m
+                : (decimal)values.Count(v => v == 1m) / values.Count;
+            return Math.Round(rate, 2);
+        }
+
+        if (dataType == GoalDataType.Scale)
+            return Math.Round(values.Average(), 1);
+
+        return Math.Round(values.Average(), 2);
     }
 
     private static List<DashboardMetricTarget> BuildTargets(GoalField goal, Guid[] participantIds)

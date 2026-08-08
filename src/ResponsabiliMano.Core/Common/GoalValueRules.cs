@@ -10,7 +10,12 @@ public enum GoalValueError
     AboveMaximum,
     PercentOutOfRange,
     MinGreaterThanMax,
-    TargetInconsistentWithDirection
+    TargetInconsistentWithDirection,
+    BooleanOutOfRange,
+    ScaleBoundsInvalid,
+    BooleanInvalidDirection,
+    ScaleInvalidDirection,
+    BooleanTargetValueInvalid
 }
 
 /// <summary>
@@ -35,6 +40,8 @@ public static class GoalValueRules
     {
         GoalDataType.Percent => Math.Round(value, 2, MidpointRounding.ToEven),
         GoalDataType.Integer => value,
+        GoalDataType.Boolean => value == 0m ? 0m : 1m,
+        GoalDataType.Scale => Math.Truncate(value),
         _ => Math.Round(value, DecimalScale, MidpointRounding.ToEven)
     };
 
@@ -53,6 +60,12 @@ public static class GoalValueRules
 
         if (dataType == GoalDataType.Percent && (value < PercentMinimum || value > PercentMaximum))
             return GoalValueError.PercentOutOfRange;
+
+        if (dataType == GoalDataType.Boolean && value != 0m && value != 1m)
+            return GoalValueError.BooleanOutOfRange;
+
+        if (dataType == GoalDataType.Scale && decimal.Truncate(value) != value)
+            return GoalValueError.NotInteger;
 
         if (minValue is { } min && value < min)
             return GoalValueError.BelowMinimum;
@@ -74,6 +87,26 @@ public static class GoalValueRules
     {
         if (minValue is { } min && maxValue is { } max && min > max)
             return GoalValueError.MinGreaterThanMax;
+
+        if (dataType == GoalDataType.Boolean)
+        {
+            if (minValue is not null && minValue != 0m)
+                return GoalValueError.BooleanOutOfRange;
+            if (maxValue is not null && maxValue != 1m)
+                return GoalValueError.BooleanOutOfRange;
+        }
+
+        if (dataType == GoalDataType.Scale)
+        {
+            if (minValue is null || maxValue is null)
+                return GoalValueError.ScaleBoundsInvalid;
+            if (decimal.Truncate(minValue.Value) != minValue.Value)
+                return GoalValueError.NotInteger;
+            if (decimal.Truncate(maxValue.Value) != maxValue.Value)
+                return GoalValueError.NotInteger;
+            if (maxValue <= minValue)
+                return GoalValueError.ScaleBoundsInvalid;
+        }
 
         foreach (var bound in new[] { minValue, maxValue })
         {
@@ -104,6 +137,17 @@ public static class GoalValueRules
         if (baseline is { } b && Validate(dataType, b, minValue, maxValue) is { } baselineError)
             return baselineError;
 
+        if (dataType == GoalDataType.Boolean)
+        {
+            if (direction != GoalDirection.Reach)
+                return GoalValueError.BooleanInvalidDirection;
+            if (targetValue is not null && targetValue != 1m)
+                return GoalValueError.BooleanTargetValueInvalid;
+        }
+
+        if (dataType == GoalDataType.Scale && direction is GoalDirection.Decrease or GoalDirection.Maintain)
+            return GoalValueError.ScaleInvalidDirection;
+
         if (baseline is not null && targetValue is not null)
         {
             if (direction == GoalDirection.Decrease && targetValue >= baseline)
@@ -128,6 +172,11 @@ public static class GoalValueRules
         GoalValueError.AboveMaximum => $"Value for '{goalLabel}' is above the maximum of {maxValue}.",
         GoalValueError.MinGreaterThanMax => $"Minimum for '{goalLabel}' cannot be greater than its maximum.",
         GoalValueError.TargetInconsistentWithDirection => $"Target for '{goalLabel}' is not consistent with its direction.",
+        GoalValueError.BooleanOutOfRange => $"Value for '{goalLabel}' must be 0 or 1.",
+        GoalValueError.ScaleBoundsInvalid => $"Scale for '{goalLabel}' must have whole-number minimum and maximum, with the maximum greater than the minimum.",
+        GoalValueError.BooleanInvalidDirection => $"Goal '{goalLabel}' must use the 'Reach' direction.",
+        GoalValueError.ScaleInvalidDirection => $"Goal '{goalLabel}' must use 'Increase' or 'Reach' direction.",
+        GoalValueError.BooleanTargetValueInvalid => $"Target for '{goalLabel}' must be 1 (yes).",
         _ => $"Value for '{goalLabel}' is invalid."
     };
 }

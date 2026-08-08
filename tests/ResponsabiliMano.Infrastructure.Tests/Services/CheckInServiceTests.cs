@@ -41,7 +41,8 @@ public class CheckInServiceTests : IDisposable
         DateTime? startDate = null,
         DateTime? endDate = null,
         decimal? min = null,
-        decimal? max = null)
+        decimal? max = null,
+        GoalDataType dataType = GoalDataType.Decimal)
     {
         var project = new Project
         {
@@ -58,9 +59,9 @@ public class CheckInServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             ProjectId = project.Id,
-            Label = "Weight",
-            DataType = GoalDataType.Decimal,
-            Unit = "kg",
+            Label = dataType == GoalDataType.Boolean ? "Yes/No" : "Weight",
+            DataType = dataType,
+            Unit = dataType == GoalDataType.Boolean ? "" : "kg",
             MinValue = min,
             MaxValue = max
         };
@@ -146,6 +147,61 @@ public class CheckInServiceTests : IDisposable
 
         await Assert.ThrowsAsync<GoalValueException>(() => service.SubmitCheckInAsync(
             project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 150m) }));
+    }
+
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(2)]
+    public async Task SubmitCheckInAsync_Throws_WhenBooleanValueNot0Or1(decimal value)
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, min: 0, max: 1, dataType: GoalDataType.Boolean);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<GoalValueException>(() => service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, value) }));
+    }
+
+    [Fact]
+    public async Task SubmitCheckInAsync_Persists_BooleanValue()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, min: 0, max: 1, dataType: GoalDataType.Boolean);
+        var service = CreateService();
+
+        var checkIn = await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 1m) });
+
+        var stored = await _context.CheckIns.Include(c => c.Metrics).SingleAsync();
+        Assert.Equal(1m, Assert.Single(stored.Metrics).Value);
+    }
+
+    [Theory]
+    [InlineData(3.5)]
+    [InlineData(6)]
+    [InlineData(0)]
+    public async Task SubmitCheckInAsync_Throws_WhenScaleValueInvalid(decimal value)
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, min: 1, max: 5, dataType: GoalDataType.Scale);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<GoalValueException>(() => service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, value) }));
+    }
+
+    [Fact]
+    public async Task SubmitCheckInAsync_Persists_ScaleValue()
+    {
+        var creator = SeedUser();
+        var (project, goal) = SeedProject(creator.Id, min: 1, max: 5, dataType: GoalDataType.Scale);
+        var service = CreateService();
+
+        await service.SubmitCheckInAsync(
+            project.Id, creator.Id, Feeling.Happy, new[] { new CheckInMetricInput(goal.Id, 4m) });
+
+        var stored = await _context.CheckIns.Include(c => c.Metrics).SingleAsync();
+        Assert.Equal(4m, Assert.Single(stored.Metrics).Value);
     }
 
     [Fact]
