@@ -142,13 +142,13 @@ else
                     <RmCard Flat="true" Class="goal-tile">
                         <p class="goal-tile__label">@goal.Label</p>
                         <p class="goal-tile__target rm-display rm-tabular">
-                            @TargetText(mine, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
+                            <GoalValueDisplay Value="mine?.TargetValue" DataType="goal.DataType" Unit="goal.Unit" MinValue="goal.MinValue" MaxValue="goal.MaxValue" />
                         </p>
                         <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetMine"]</p>
                         @if (partner is not null)
                         {
                             <p class="goal-tile__partner-target rm-display rm-tabular">
-                                @TargetText(partner, goal.DataType)<span class="goal-tile__unit">@goal.Unit</span>
+                                <GoalValueDisplay Value="partner?.TargetValue" DataType="goal.DataType" Unit="goal.Unit" MinValue="goal.MinValue" MaxValue="goal.MaxValue" />
                             </p>
                             <p class="goal-tile__target-label">@Localizer["ProjectGoalTargetPartner"]</p>
                         }
@@ -503,18 +503,6 @@ else
         _ => status.ToString()
     };
 
-    private string TargetText(GoalTarget? target, GoalDataType dataType)
-    {
-        if (target?.TargetValue is null)
-            return "—";
-
-        var value = DecimalInput.ToDisplay(target.TargetValue, dataType);
-        if (target.Baseline is not null)
-            return $"{value} ({Localizer["GoalBaselineLabel"]} {DecimalInput.ToDisplay(target.Baseline, dataType)})";
-
-        return value;
-    }
-
     private GoalTarget? GetTargetFor(Core.Entities.GoalField goal, Guid userId)
     {
         return goal.Targets.FirstOrDefault(t => t.UserId == userId);
@@ -608,6 +596,8 @@ else
                 Core.Enums.GoalDataType.Decimal => Localizer["DataTypeDecimal"].Value,
                 Core.Enums.GoalDataType.Integer => Localizer["DataTypeInteger"].Value,
                 Core.Enums.GoalDataType.Percent => Localizer["DataTypePercent"].Value,
+                Core.Enums.GoalDataType.Boolean => Localizer["DataTypeBoolean"].Value,
+                Core.Enums.GoalDataType.Scale => Localizer["DataTypeScale"].Value,
                 _ => goal.DataType.ToString()
             };
 
@@ -637,6 +627,11 @@ else
         GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
         GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
         GoalValueError.TargetInconsistentWithDirection => Localizer["GoalValueTargetInconsistent", label],
+        GoalValueError.BooleanOutOfRange => Localizer["GoalValueBooleanOutOfRange", label],
+        GoalValueError.BooleanInvalidDirection => Localizer["GoalValueBooleanInvalidDirection", label],
+        GoalValueError.ScaleInvalidDirection => Localizer["GoalValueScaleInvalidDirection", label],
+        GoalValueError.BooleanTargetValueInvalid => Localizer["GoalValueBooleanTargetValueInvalid", label],
+        GoalValueError.ScaleBoundsInvalid => Localizer["GoalValueScaleBoundsInvalid", label],
         _ => Localizer["GoalValueInvalid", label]
     };
 

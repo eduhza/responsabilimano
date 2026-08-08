@@ -25,13 +25,12 @@
 
         <div class="negotiation__target-value">
             <span class="rm-display rm-tabular">
-                @DecimalInput.ToDisplay(Target.TargetValue, Goal.DataType)
-                <span class="negotiation__unit">@Goal.Unit</span>
+                <GoalValueDisplay Value="Target.TargetValue" DataType="Goal.DataType" Unit="Goal.Unit" MinValue="Goal.MinValue" MaxValue="Goal.MaxValue" />
             </span>
             @if (Target.Baseline is not null)
             {
                 <span class="negotiation__baseline">
-                    (@Localizer["GoalBaselineLabel"] @DecimalInput.ToDisplay(Target.Baseline, Goal.DataType))
+                    (@Localizer["GoalBaselineLabel"] <GoalValueDisplay Value="Target.Baseline" DataType="Goal.DataType" Unit="Goal.Unit" MinValue="Goal.MinValue" MaxValue="Goal.MaxValue" />)
                 </span>
             }
         </div>
@@ -86,10 +85,18 @@
 
                 <RmField Label="@Localizer["GoalDirectionLabel"]" For="@($"direction-{Target.GoalTargetId}")">
                     <select id="@($"direction-{Target.GoalTargetId}")" class="rm-select" @bind="_form.Direction">
-                        <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
-                        <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
-                        <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
-                        <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                        @if (Goal.DataType == GoalDataType.Scale)
+                        {
+                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                        }
+                        else
+                        {
+                            <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                            <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                        }
                     </select>
                 </RmField>
             </div>
@@ -155,7 +162,7 @@
         && Target.LastProposedByUserId != CurrentUserId
         && (_isCurrentUserCreator ? !Target.AcceptedByCreator : !Target.AcceptedByPartner);
 
-    private bool _canAdjust => _isMine;
+    private bool _canAdjust => _isMine && Goal.DataType != GoalDataType.Boolean;
 
     private string _title => _isMine ? Localizer["ProjectGoalTargetMine"] : Localizer["ProjectGoalTargetPartner"];
 

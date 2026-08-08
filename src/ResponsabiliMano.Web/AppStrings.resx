@@ -204,6 +204,24 @@
   <data name="DataTypePercent" xml:space="preserve">
     <value>Percent</value>
   </data>
+  <data name="DataTypeBoolean" xml:space="preserve">
+    <value>Yes/No</value>
+  </data>
+  <data name="DataTypeScale" xml:space="preserve">
+    <value>Scale</value>
+  </data>
+  <data name="DataTypeBooleanHelp" xml:space="preserve">
+    <value>A yes/no answer. The target is always "yes".</value>
+  </data>
+  <data name="DataTypeScaleHelp" xml:space="preserve">
+    <value>A whole-number rating from minimum to maximum.</value>
+  </data>
+  <data name="BooleanYes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="BooleanNo" xml:space="preserve">
+    <value>No</value>
+  </data>
   <data name="BackToHome" xml:space="preserve">
     <value>Back to Home</value>
   </data>
@@ -491,6 +509,33 @@
   </data>
   <data name="GoalValueInvalid" xml:space="preserve">
     <value>The value for '{0}' is invalid.</value>
+  </data>
+  <data name="GoalValueBooleanOutOfRange" xml:space="preserve">
+    <value>The value for '{0}' must be yes (1) or no (0).</value>
+  </data>
+  <data name="GoalValueScaleBoundsInvalid" xml:space="preserve">
+    <value>The scale for '{0}' must have whole-number minimum and maximum, with the maximum greater than the minimum.</value>
+  </data>
+  <data name="GoalValueBooleanInvalidDirection" xml:space="preserve">
+    <value>The goal '{0}' must use the Reach direction.</value>
+  </data>
+  <data name="GoalValueScaleInvalidDirection" xml:space="preserve">
+    <value>The goal '{0}' must use the Increase or Reach direction.</value>
+  </data>
+  <data name="GoalValueBooleanTargetValueInvalid" xml:space="preserve">
+    <value>The target for '{0}' must be 1 (yes).</value>
+  </data>
+  <data name="StepDecrease" xml:space="preserve">
+    <value>Decrease</value>
+  </data>
+  <data name="StepIncrease" xml:space="preserve">
+    <value>Increase</value>
+  </data>
+  <data name="PercentSliderLabel" xml:space="preserve">
+    <value>Percentage slider</value>
+  </data>
+  <data name="GoalValueInputLabel" xml:space="preserve">
+    <value>Goal value</value>
   </data>
   <data name="FeelingVerySad" xml:space="preserve">
     <value>Very sad</value>

@@ -50,7 +50,9 @@
     private string _text = string.Empty;
     private bool _invalid;
 
-    private string InputMode => DataType == GoalDataType.Integer ? "numeric" : "decimal";
+    private string InputMode => DataType is GoalDataType.Integer or GoalDataType.Scale or GoalDataType.Boolean
+        ? "numeric"
+        : "decimal";
 
     private string? AriaInvalid => _invalid ? "true" : null;
 

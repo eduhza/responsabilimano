@@ -118,83 +118,120 @@
                             </RmField>
 
                             <RmField Label="@Localizer["GoalDataTypeLabel"]">
-                                <InputSelect class="rm-select" @bind-Value="_model.Goals[index].Goal.DataType">
+                                <select class="rm-select"
+                                        value="@_model.Goals[index].Goal.DataType"
+                                        @onchange="e => OnDataTypeChanged(index, e)">
                                     <option value="@GoalDataType.Decimal">@Localizer["DataTypeDecimal"]</option>
                                     <option value="@GoalDataType.Integer">@Localizer["DataTypeInteger"]</option>
                                     <option value="@GoalDataType.Percent">@Localizer["DataTypePercent"]</option>
-                                </InputSelect>
+                                    <option value="@GoalDataType.Boolean">@Localizer["DataTypeBoolean"]</option>
+                                    <option value="@GoalDataType.Scale">@Localizer["DataTypeScale"]</option>
+                                </select>
+                                @if (_model.Goals[index].Goal.DataType == GoalDataType.Boolean)
+                                {
+                                    <span class="rm-field__hint">@Localizer["DataTypeBooleanHelp"]</span>
+                                }
+                                else if (_model.Goals[index].Goal.DataType == GoalDataType.Scale)
+                                {
+                                    <span class="rm-field__hint">@Localizer["DataTypeScaleHelp"]</span>
+                                }
                             </RmField>
 
-                            <RmField Label="@Localizer["GoalUnitLabel"]">
-                                <InputText class="rm-input" @bind-Value="_model.Goals[index].Goal.Unit" />
-                            </RmField>
+                            @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
+                            {
+                                <RmField Label="@Localizer["GoalUnitLabel"]">
+                                    <InputText class="rm-input" @bind-Value="_model.Goals[index].Goal.Unit" />
+                                </RmField>
+                            }
 
-                            <RmField Label="@Localizer["GoalMinValueLabel"]">
-                                <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                               @bind-Value="_model.Goals[index].Goal.MinValue"
-                                               aria-label="@Localizer["GoalMinValueLabel"]" />
-                            </RmField>
+                            @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
+                            {
+                                <RmField Label="@Localizer["GoalMinValueLabel"]">
+                                    <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                   @bind-Value="_model.Goals[index].Goal.MinValue"
+                                                   aria-label="@Localizer["GoalMinValueLabel"]" />
+                                </RmField>
 
-                            <RmField Label="@Localizer["GoalMaxValueLabel"]">
-                                <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                               @bind-Value="_model.Goals[index].Goal.MaxValue"
-                                               aria-label="@Localizer["GoalMaxValueLabel"]" />
-                            </RmField>
+                                <RmField Label="@Localizer["GoalMaxValueLabel"]">
+                                    <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                   @bind-Value="_model.Goals[index].Goal.MaxValue"
+                                                   aria-label="@Localizer["GoalMaxValueLabel"]" />
+                                </RmField>
+                            }
                         </div>
 
-                        <div class="goal__targets">
-                            <RmCard Flat="true" Class="goal__target">
-                                <h3 class="goal__target-title">@Localizer["GoalCreatorTargetTitle"]</h3>
-                                <div class="goal__target-grid">
-                                    <RmField Label="@Localizer["GoalBaselineLabel"]">
-                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                                       @bind-Value="_model.Goals[index].CreatorTarget.Baseline"
-                                                       aria-label="@Localizer["GoalBaselineLabel"]" />
-                                    </RmField>
+                        @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
+                        {
+                            <div class="goal__targets">
+                                <RmCard Flat="true" Class="goal__target">
+                                    <h3 class="goal__target-title">@Localizer["GoalCreatorTargetTitle"]</h3>
+                                    <div class="goal__target-grid">
+                                        <RmField Label="@Localizer["GoalBaselineLabel"]">
+                                            <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                           @bind-Value="_model.Goals[index].CreatorTarget.Baseline"
+                                                           aria-label="@Localizer["GoalBaselineLabel"]" />
+                                        </RmField>
 
-                                    <RmField Label="@Localizer["GoalTargetValueLabel"]">
-                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                                       @bind-Value="_model.Goals[index].CreatorTarget.TargetValue"
-                                                       aria-label="@Localizer["GoalTargetValueLabel"]" />
-                                    </RmField>
+                                        <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                            <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                           @bind-Value="_model.Goals[index].CreatorTarget.TargetValue"
+                                                           aria-label="@Localizer["GoalTargetValueLabel"]" />
+                                        </RmField>
 
-                                    <RmField Label="@Localizer["GoalDirectionLabel"]">
-                                        <InputSelect class="rm-select" @bind-Value="_model.Goals[index].CreatorTarget.Direction">
-                                            <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
-                                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
-                                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
-                                            <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
-                                        </InputSelect>
-                                    </RmField>
-                                </div>
-                            </RmCard>
+                                        <RmField Label="@Localizer["GoalDirectionLabel"]">
+                                            <InputSelect class="rm-select" @bind-Value="_model.Goals[index].CreatorTarget.Direction">
+                                                @if (_model.Goals[index].Goal.DataType == GoalDataType.Scale)
+                                                {
+                                                    <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                                    <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                                                    <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                                    <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                                    <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                                                }
+                                            </InputSelect>
+                                        </RmField>
+                                    </div>
+                                </RmCard>
 
-                            <RmCard Flat="true" Class="goal__target">
-                                <h3 class="goal__target-title">@Localizer["GoalSuggestedPartnerTargetTitle"]</h3>
-                                <div class="goal__target-grid">
-                                    <RmField Label="@Localizer["GoalBaselineLabel"]">
-                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                                       @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Baseline"
-                                                       aria-label="@Localizer["GoalBaselineLabel"]" />
-                                    </RmField>
+                                <RmCard Flat="true" Class="goal__target">
+                                    <h3 class="goal__target-title">@Localizer["GoalSuggestedPartnerTargetTitle"]</h3>
+                                    <div class="goal__target-grid">
+                                        <RmField Label="@Localizer["GoalBaselineLabel"]">
+                                            <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                           @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Baseline"
+                                                           aria-label="@Localizer["GoalBaselineLabel"]" />
+                                        </RmField>
 
-                                    <RmField Label="@Localizer["GoalTargetValueLabel"]">
-                                        <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
-                                                       @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.TargetValue"
-                                                       aria-label="@Localizer["GoalTargetValueLabel"]" />
-                                    </RmField>
+                                        <RmField Label="@Localizer["GoalTargetValueLabel"]">
+                                            <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
+                                                           @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.TargetValue"
+                                                           aria-label="@Localizer["GoalTargetValueLabel"]" />
+                                        </RmField>
 
-                                    <RmField Label="@Localizer["GoalDirectionLabel"]">
-                                        <InputSelect class="rm-select" @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Direction">
-                                            <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
-                                            <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
-                                            <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
-                                            <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
-                                        </InputSelect>
-                                    </RmField>
-                                </div>
-                            </RmCard>
-                        </div>
+                                        <RmField Label="@Localizer["GoalDirectionLabel"]">
+                                            <InputSelect class="rm-select" @bind-Value="_model.Goals[index].SuggestedPartnerTarget!.Direction">
+                                                @if (_model.Goals[index].Goal.DataType == GoalDataType.Scale)
+                                                {
+                                                    <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                                    <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@GoalDirection.Decrease">@Localizer["DirectionDecrease"]</option>
+                                                    <option value="@GoalDirection.Increase">@Localizer["DirectionIncrease"]</option>
+                                                    <option value="@GoalDirection.Reach">@Localizer["DirectionReach"]</option>
+                                                    <option value="@GoalDirection.Maintain">@Localizer["DirectionMaintain"]</option>
+                                                }
+                                            </InputSelect>
+                                        </RmField>
+                                    </div>
+                                </RmCard>
+                            </div>
+                        }
                     </RmCard>
                 }
 
@@ -377,6 +414,42 @@
         }
     }
 
+    private void OnDataTypeChanged(int index, ChangeEventArgs e)
+    {
+        if (!Enum.TryParse<GoalDataType>(e.Value?.ToString(), out var value))
+            return;
+
+        _model.Goals[index].Goal.DataType = value;
+
+        if (value == GoalDataType.Boolean)
+        {
+            _model.Goals[index].Goal.Unit = string.Empty;
+            _model.Goals[index].Goal.MinValue = 0m;
+            _model.Goals[index].Goal.MaxValue = 1m;
+            _model.Goals[index].CreatorTarget.Baseline = 0m;
+            _model.Goals[index].CreatorTarget.TargetValue = 1m;
+            _model.Goals[index].CreatorTarget.Direction = GoalDirection.Reach;
+            _model.Goals[index].SuggestedPartnerTarget!.Baseline = 0m;
+            _model.Goals[index].SuggestedPartnerTarget!.TargetValue = 1m;
+            _model.Goals[index].SuggestedPartnerTarget!.Direction = GoalDirection.Reach;
+        }
+        else if (value == GoalDataType.Scale)
+        {
+            _model.Goals[index].Goal.MinValue ??= 1m;
+            _model.Goals[index].Goal.MaxValue ??= 5m;
+            _model.Goals[index].CreatorTarget.Baseline ??= _model.Goals[index].Goal.MinValue;
+            _model.Goals[index].CreatorTarget.TargetValue ??= _model.Goals[index].Goal.MaxValue;
+            _model.Goals[index].SuggestedPartnerTarget!.Baseline ??= _model.Goals[index].Goal.MinValue;
+            _model.Goals[index].SuggestedPartnerTarget!.TargetValue ??= _model.Goals[index].Goal.MaxValue;
+
+            if (_model.Goals[index].CreatorTarget.Direction is GoalDirection.Decrease or GoalDirection.Maintain)
+                _model.Goals[index].CreatorTarget.Direction = GoalDirection.Reach;
+
+            if (_model.Goals[index].SuggestedPartnerTarget!.Direction is GoalDirection.Decrease or GoalDirection.Maintain)
+                _model.Goals[index].SuggestedPartnerTarget!.Direction = GoalDirection.Reach;
+        }
+    }
+
     private string GoalValueMessage(
         GoalValueError error, string label, decimal? min, decimal? max, GoalDataType dataType) => error switch
     {
@@ -385,6 +458,11 @@
         GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
         GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
         GoalValueError.TargetInconsistentWithDirection => Localizer["GoalValueTargetInconsistent", label],
+        GoalValueError.BooleanOutOfRange => Localizer["GoalValueBooleanOutOfRange", label],
+        GoalValueError.BooleanInvalidDirection => Localizer["GoalValueBooleanInvalidDirection", label],
+        GoalValueError.ScaleInvalidDirection => Localizer["GoalValueScaleInvalidDirection", label],
+        GoalValueError.BooleanTargetValueInvalid => Localizer["GoalValueBooleanTargetValueInvalid", label],
+        GoalValueError.ScaleBoundsInvalid => Localizer["GoalValueScaleBoundsInvalid", label],
         _ => Localizer["GoalValueInvalid", label]
     };
 }

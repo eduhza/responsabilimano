@@ -61,11 +61,21 @@ else if (_project is not null)
                 <RmCard Flat="true">
                     <p class="accept__goal-label">@goal.Label</p>
                     <p class="accept__goal-target rm-display rm-tabular">
-                        @(suggested?.TargetValue is null ? "—" : DecimalInput.ToDisplay(suggested.TargetValue, goal.DataType))<span class="accept__goal-unit">@goal.Unit</span>
+                        @if (suggested?.TargetValue is null)
+                        {
+                            <span>—</span>
+                        }
+                        else
+                        {
+                            <GoalValueDisplay Value="suggested.TargetValue" DataType="goal.DataType" Unit="goal.Unit" MinValue="goal.MinValue" MaxValue="goal.MaxValue" />
+                        }
                     </p>
                     @if (suggested?.Baseline is not null)
                     {
-                        <p class="accept__goal-baseline">@Localizer["GoalBaselineLabel"]: @DecimalInput.ToDisplay(suggested.Baseline, goal.DataType) @goal.Unit</p>
+                        <p class="accept__goal-baseline">
+                            @Localizer["GoalBaselineLabel"]:
+                            <GoalValueDisplay Value="suggested.Baseline" DataType="goal.DataType" Unit="goal.Unit" MinValue="goal.MinValue" MaxValue="goal.MaxValue" />
+                        </p>
                     }
                 </RmCard>
             }

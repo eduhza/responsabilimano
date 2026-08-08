@@ -1,0 +1,147 @@
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="rm-goal-value-input @Class" id="@Id" @attributes="AdditionalAttributes">
+    @switch (DataType)
+    {
+        case GoalDataType.Boolean:
+            <div class="rm-segmented" role="radiogroup" aria-label="@AriaLabel">
+                <button type="button"
+                        class="rm-segmented__item @(Value == 1m ? "is-active" : null)"
+                        aria-pressed="@(Value == 1m)"
+                        @onclick="() => SetValue(1m)">
+                    @Localizer["BooleanYes"]
+                </button>
+                <button type="button"
+                        class="rm-segmented__item @(Value == 0m ? "is-active" : null)"
+                        aria-pressed="@(Value == 0m)"
+                        @onclick="() => SetValue(0m)">
+                    @Localizer["BooleanNo"]
+                </button>
+            </div>
+            break;
+
+        case GoalDataType.Scale:
+            <div class="rm-segmented" role="radiogroup" aria-label="@AriaLabel">
+                @for (var i = (int)(MinValue ?? 1m); i <= (int)(MaxValue ?? 5m); i++)
+                {
+                    var current = i;
+                    <button type="button"
+                            class="rm-segmented__item @(Value == current ? "is-active" : null)"
+                            aria-pressed="@(Value == current)"
+                            @onclick="() => SetValue(current)">
+                        @current
+                    </button>
+                }
+            </div>
+            break;
+
+        case GoalDataType.Integer:
+            <div class="rm-stepper" role="group" aria-label="@AriaLabel">
+                <button type="button" class="rm-stepper__button" aria-label="@Localizer["StepDecrease"]" @onclick="Decrement">
+                    −
+                </button>
+                <RmNumberInput DataType="GoalDataType.Integer"
+                               Value="Value"
+                               ValueChanged="SetValue"
+                               Disabled="Disabled" />
+                <button type="button" class="rm-stepper__button" aria-label="@Localizer["StepIncrease"]" @onclick="Increment">
+                    +
+                </button>
+            </div>
+            break;
+
+        case GoalDataType.Percent:
+            <div class="rm-percent-input" role="group" aria-label="@AriaLabel">
+                <input type="range"
+                       class="rm-slider"
+                       min="0"
+                       max="100"
+                       step="1"
+                       value="@SliderValue"
+                       aria-label="@Localizer["PercentSliderLabel"]"
+                       @oninput="OnSliderInput" />
+                <RmNumberInput DataType="GoalDataType.Percent"
+                               Value="Value"
+                               ValueChanged="SetValue"
+                               Disabled="Disabled" />
+            </div>
+            break;
+
+        default:
+            <RmNumberInput DataType="DataType"
+                           Value="Value"
+                           ValueChanged="SetValue"
+                           Disabled="Disabled" />
+            break;
+    }
+</div>
+
+@code {
+    [Parameter]
+    public decimal? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> ValueChanged { get; set; }
+
+    [Parameter]
+    public GoalDataType DataType { get; set; } = GoalDataType.Decimal;
+
+    [Parameter]
+    public decimal? MinValue { get; set; }
+
+    [Parameter]
+    public decimal? MaxValue { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string AriaLabel => Label ?? Id ?? Localizer["GoalValueInputLabel"];
+
+    private string SliderValue => DecimalInput.ToInvariant(Value ?? 0m);
+
+    private async Task SetValue(decimal? value)
+    {
+        if (value != Value)
+        {
+            Value = value;
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private async Task Increment()
+    {
+        var next = (Value ?? 0m) + 1m;
+        if (MaxValue is { } max && next > max)
+            next = max;
+        await SetValue(next);
+    }
+
+    private async Task Decrement()
+    {
+        var next = (Value ?? 0m) - 1m;
+        if (MinValue is { } min && next < min)
+            next = min;
+        await SetValue(next);
+    }
+
+    private async Task OnSliderInput(ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString() ?? string.Empty;
+        if (decimal.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            await SetValue(value);
+        }
+    }
+}

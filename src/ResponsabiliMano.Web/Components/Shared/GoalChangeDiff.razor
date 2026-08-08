@@ -135,8 +135,8 @@
                 after?.Unit),
             new(
                 Localizer["ChangeRequestDiffRange"],
-                before is null ? null : FormatRange(before.MinValue, before.MaxValue, before.Unit),
-                after is null ? null : FormatRange(after.MinValue, after.MaxValue, after.Unit))
+                before is null ? null : FormatRange(before.DataType, before.MinValue, before.MaxValue, before.Unit),
+                after is null ? null : FormatRange(after.DataType, after.MinValue, after.MaxValue, after.Unit))
         };
     }
 
@@ -156,25 +156,17 @@
         MaxValue = goal.MaxValue
     };
 
-    @* Values here are read by a person, so they are formatted in the current culture
-       (pt-BR shows "3,6"). Formatting them invariantly showed "3.6" — the very
-       notation that caused the parsing bug in spec X2. *@
-    private string FormatValue(decimal? value, string unit) =>
-        value.HasValue
-            ? $"{DecimalInput.ToDisplay(value)} {unit}".Trim()
-            : "—";
-
-    private string FormatRange(decimal? min, decimal? max, string unit)
+    private string FormatRange(GoalDataType dataType, decimal? min, decimal? max, string unit)
     {
         if (!min.HasValue && !max.HasValue)
             return "—";
 
         if (min.HasValue && max.HasValue)
         {
-            return $"{DecimalInput.ToDisplay(min)} a {DecimalInput.ToDisplay(max)} {unit}".Trim();
+            return $"{DecimalInput.ToDisplay(min, dataType)} a {DecimalInput.ToDisplay(max, dataType)} {unit}".Trim();
         }
 
-        return $"{DecimalInput.ToDisplay(min ?? max)} {unit}".Trim();
+        return $"{DecimalInput.ToDisplay(min ?? max, dataType)} {unit}".Trim();
     }
 
     private string GetDataTypeText(GoalDataType dataType) => dataType switch
@@ -182,6 +174,8 @@
         GoalDataType.Decimal => Localizer["DataTypeDecimal"].Value,
         GoalDataType.Integer => Localizer["DataTypeInteger"].Value,
         GoalDataType.Percent => Localizer["DataTypePercent"].Value,
+        GoalDataType.Boolean => Localizer["DataTypeBoolean"].Value,
+        GoalDataType.Scale => Localizer["DataTypeScale"].Value,
         _ => dataType.ToString()
     };
 

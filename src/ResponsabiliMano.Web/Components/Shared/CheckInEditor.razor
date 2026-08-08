@@ -32,8 +32,7 @@ else if (Form.AlreadySubmitted && !_editing)
                     var value = Form.Existing.Metrics.FirstOrDefault(m => m.GoalFieldId == goal.Id)?.Value;
                     <dt>@goal.Label</dt>
                     <dd>
-                        @DecimalInput.ToDisplay(value, goal.DataType)
-                        <span class="checkin-editor__summary-unit">@goal.Unit</span>
+                        <GoalValueDisplay Value="value" DataType="goal.DataType" Unit="goal.Unit" MinValue="goal.MinValue" MaxValue="goal.MaxValue" />
                     </dd>
                 }
             </dl>
@@ -72,18 +71,21 @@ else
                         }
                         @if (target is not null)
                         {
-                            <text> · @Localizer["GoalTargetValueLabel"]: @DecimalInput.ToDisplay(target.TargetValue, entry.Goal.DataType)</text>
+                            <text> · @Localizer["GoalTargetValueLabel"]: <GoalValueDisplay Value="target.TargetValue" DataType="entry.Goal.DataType" Unit="entry.Goal.Unit" MinValue="entry.Goal.MinValue" MaxValue="entry.Goal.MaxValue" /></text>
                             @if (target.Baseline is not null)
                             {
-                                <text> · @Localizer["GoalBaselineLabel"]: @DecimalInput.ToDisplay(target.Baseline, entry.Goal.DataType)</text>
+                                <text> · @Localizer["GoalBaselineLabel"]: <GoalValueDisplay Value="target.Baseline" DataType="entry.Goal.DataType" Unit="entry.Goal.Unit" MinValue="entry.Goal.MinValue" MaxValue="entry.Goal.MaxValue" /></text>
                             }
                         }
                     </Hint>
                     <ChildContent>
-                        <RmNumberInput DataType="entry.Goal.DataType"
-                                       Value="entry.Value"
-                                       ValueChanged="value => entry.Value = value"
-                                       aria-label="@entry.Goal.Label" />
+                        <RmGoalValueInput DataType="entry.Goal.DataType"
+                                          MinValue="entry.Goal.MinValue"
+                                          MaxValue="entry.Goal.MaxValue"
+                                          Value="entry.Value"
+                                          ValueChanged="value => entry.Value = value"
+                                          Label="@entry.Goal.Label"
+                                          aria-label="@entry.Goal.Label" />
                         @if (entry.Error is { } error)
                         {
                             <span class="validation-message">@GoalValueMessage(error, entry.Goal)</span>
@@ -357,6 +359,11 @@ else
         GoalValueError.PercentOutOfRange => Localizer["GoalValuePercentOutOfRange", label],
         GoalValueError.BelowMinimum => Localizer["GoalValueBelowMinimum", label, DecimalInput.ToDisplay(min, dataType)],
         GoalValueError.AboveMaximum => Localizer["GoalValueAboveMaximum", label, DecimalInput.ToDisplay(max, dataType)],
+        GoalValueError.BooleanOutOfRange => Localizer["GoalValueBooleanOutOfRange", label],
+        GoalValueError.BooleanInvalidDirection => Localizer["GoalValueBooleanInvalidDirection", label],
+        GoalValueError.ScaleInvalidDirection => Localizer["GoalValueScaleInvalidDirection", label],
+        GoalValueError.BooleanTargetValueInvalid => Localizer["GoalValueBooleanTargetValueInvalid", label],
+        GoalValueError.ScaleBoundsInvalid => Localizer["GoalValueScaleBoundsInvalid", label],
         _ => Localizer["GoalValueInvalid", label]
     };
 

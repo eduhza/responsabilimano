@@ -47,7 +47,6 @@ public sealed class GoalFieldRequest
     [Required(ErrorMessage = "Data type is required.")]
     public GoalDataType DataType { get; set; } = GoalDataType.Decimal;
 
-    [Required(ErrorMessage = "Unit is required.")]
     [StringLength(50, ErrorMessage = "Unit cannot exceed 50 characters.")]
     public string Unit { get; set; } = string.Empty;
 
