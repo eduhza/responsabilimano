@@ -1,10 +1,12 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
+using ResponsabiliMano.Core.Common;
 using ResponsabiliMano.Core.Entities;
 using ResponsabiliMano.Core.Enums;
 using ResponsabiliMano.Core.Services;
@@ -68,7 +70,7 @@ public class CreateProjectTests : TestContext
 
             // The submit button only exists on the wizard's last step.
             var stepField = instance.GetType().GetField("_step", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            stepField!.SetValue(instance, 2);
+            stepField!.SetValue(instance, 3);
 
             var form = cut.Find("form");
             form.Submit();
@@ -91,6 +93,96 @@ public class CreateProjectTests : TestContext
 
         cut.WaitForState(() => cut.Markup.Contains("CreateProjectSuccess"));
         Assert.Contains("CreateProjectSuccess", cut.Markup);
+    }
+
+    [Fact]
+    public void Applying_concurso_template_prefills_four_goals_with_expected_types()
+    {
+        var cut = RenderComponent<CreateProject>();
+
+        // The template gallery is the first step. Click the "Concurso & Provas" card.
+        var concursoCard = cut.FindAll(".template-card")
+            .Single(b => b.TextContent.Contains("Concurso & Provas"));
+        concursoCard.Click();
+
+        var model = GetModel(cut);
+
+        // AC 2: name, icon and frequency are pre-filled from the template.
+        Assert.Equal("Concurso & Provas", model.Name);
+        Assert.Equal("📚", model.Icon);
+        Assert.Equal(ProjectFrequency.Weekly, model.Frequency);
+
+        // AC 7: exactly the four declared goals, with the catalog's data types.
+        Assert.Equal(4, model.Goals.Count);
+        Assert.Equal(GoalDataType.Decimal, model.Goals[0].Goal.DataType);
+        Assert.Equal(GoalDataType.Integer, model.Goals[1].Goal.DataType);
+        Assert.Equal(GoalDataType.Boolean, model.Goals[2].Goal.DataType);
+        Assert.Equal(GoalDataType.Scale, model.Goals[3].Goal.DataType);
+
+        // The suggested partner target is pre-filled equal to the creator target.
+        foreach (var goal in model.Goals)
+        {
+            Assert.NotNull(goal.SuggestedPartnerTarget);
+            Assert.Equal(goal.CreatorTarget.TargetValue, goal.SuggestedPartnerTarget!.TargetValue);
+            Assert.Equal(goal.CreatorTarget.Direction, goal.SuggestedPartnerTarget.Direction);
+        }
+    }
+
+    [Fact]
+    public void Switching_goal_to_percent_locks_unit_and_bounds_and_hides_minmax()
+    {
+        var cut = RenderComponent<CreateProject>();
+        SetStep(cut, 2); // goals step
+
+        var model = GetModel(cut);
+        model.Goals[0].Goal.DataType = GoalDataType.Decimal;
+
+        // Drive the wizard's OnDataTypeChanged handler directly. bUnit's select.Change
+        // does not reliably fire @onchange for selects using value/@onchange (rather
+        // than @bind-Value), so invoke the private handler the same way the event would.
+        var instance = cut.Instance;
+        var method = instance.GetType().GetMethod(
+            "OnDataTypeChanged",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+        method!.Invoke(instance, [0, new ChangeEventArgs { Value = GoalDataType.Percent.ToString() }]);
+        cut.Render();
+
+        // AC 4: Percent fixes unit to "%" and bounds to 0..100.
+        Assert.Equal("%", model.Goals[0].Goal.Unit);
+        Assert.Equal(0m, model.Goals[0].Goal.MinValue);
+        Assert.Equal(100m, model.Goals[0].Goal.MaxValue);
+
+        // The unit field renders disabled with value "%".
+        var markup = cut.Markup;
+        Assert.Contains("value=\"%\"", markup);
+        Assert.Contains("disabled", markup);
+    }
+
+    [Fact]
+    public void Goals_step_renders_a_live_checkin_preview_per_goal()
+    {
+        var cut = RenderComponent<CreateProject>();
+        SetStep(cut, 2); // goals step
+
+        // AC 3: RmGoalValueInput renders one preview per goal (class rm-goal-value-input).
+        var previews = cut.FindAll(".goal__preview .rm-goal-value-input");
+        Assert.Equal(GetModel(cut).Goals.Count, previews.Count);
+    }
+
+    private static CreateProjectRequest GetModel(IRenderedComponent<CreateProject> cut)
+    {
+        var instance = cut.Instance;
+        var modelField = instance.GetType().GetField("_model", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        return (CreateProjectRequest)modelField!.GetValue(instance)!;
+    }
+
+    private static void SetStep(IRenderedComponent<CreateProject> cut, int step)
+    {
+        var instance = cut.Instance;
+        var stepField = instance.GetType().GetField("_step", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        stepField!.SetValue(instance, step);
+        cut.Render();
     }
 
     // --- Fakes ---

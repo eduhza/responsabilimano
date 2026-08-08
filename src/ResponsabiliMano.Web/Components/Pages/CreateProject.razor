@@ -1,14 +1,17 @@
 @page "/projects/new"
 @rendermode InteractiveServer
 @attribute [Authorize]
+@using ResponsabiliMano.Core.Common
+@using ResponsabiliMano.Core.Enums
 @inject IProjectService ProjectService
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILogger<CreateProject> Logger
 
-@* Three visual steps over a single EditForm — the wizard is presentation only, so
-   validation and submission stay one atomic operation. *@
+@* Four visual steps over a single EditForm — the wizard is presentation only, so
+   validation and submission stay one atomic operation. Step 0 (templates) only
+   pre-fills the model; the server revalidates everything on submit. *@
 
 <PageTitle>@Localizer["CreateProjectTitle"]</PageTitle>
 
@@ -54,6 +57,35 @@
             @* Every step stays mounted so bound values survive navigation; only the
                active one is displayed. *@
             <div class="create__step" hidden="@(_step != 0)">
+                <h2 class="create__step-title">@Localizer["TemplateStepTitle"]</h2>
+                <p class="create__step-subtitle">@Localizer["TemplateStepSubtitle"]</p>
+
+                <div class="template-gallery">
+                    <button type="button"
+                            class="template-card template-card--blank @(_selectedTemplateKey == GoalTemplates.BlankKey ? "is-selected" : null)"
+                            aria-pressed="@(_selectedTemplateKey == GoalTemplates.BlankKey)"
+                            @onclick="StartFromBlank">
+                        <span class="template-card__icon">✏️</span>
+                        <span class="template-card__name">@Localizer["TemplateBlankTitle"]</span>
+                        <span class="template-card__sub">@Localizer["TemplateBlankSubtitle"]</span>
+                    </button>
+                    @foreach (var template in GoalTemplates.All)
+                    {
+                        var t = template;
+                        <button type="button"
+                                class="template-card @(_selectedTemplateKey == t.Key ? "is-selected" : null)"
+                                aria-pressed="@(_selectedTemplateKey == t.Key)"
+                                @onclick="() => ApplyTemplate(t)">
+                            <span class="template-card__icon">@t.Icon</span>
+                            <span class="template-card__name">@t.Name</span>
+                            <span class="template-card__sub">@Localizer["TemplateGoalsCount", t.Goals.Count]</span>
+                            <span class="template-card__action">@Localizer["TemplateUseButton"]</span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="create__step" hidden="@(_step != 1)">
                 <RmField Label="@Localizer["ProjectNameLabel"]" For="name">
                     <InputText id="name" class="rm-input" @bind-Value="_model.Name"
                                placeholder="@Localizer["ProjectNamePlaceholder"]" />
@@ -96,7 +128,7 @@
                 </RmField>
             </div>
 
-            <div class="create__step" hidden="@(_step != 1)">
+            <div class="create__step" hidden="@(_step != 2)">
                 @for (var i = 0; i < _model.Goals.Count; i++)
                 {
                     var index = i;
@@ -137,14 +169,23 @@
                                 }
                             </RmField>
 
-                            @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
+                            @if (_model.Goals[index].Goal.DataType == GoalDataType.Percent)
+                            {
+                                <RmField Label="@Localizer["GoalUnitLabel"]">
+                                    <input class="rm-input" value="%" disabled aria-label="@Localizer["GoalUnitLabel"]" />
+                                </RmField>
+                            }
+                            else if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
                             {
                                 <RmField Label="@Localizer["GoalUnitLabel"]">
                                     <InputText class="rm-input" @bind-Value="_model.Goals[index].Goal.Unit" />
                                 </RmField>
                             }
 
-                            @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
+                            @* Min/max are only meaningful for Decimal/Integer (free bounds) and Scale
+                               (defines the rating range). Boolean is fixed 0..1 and Percent is fixed
+                               0..100, so both stay hidden. *@
+                            @if (_model.Goals[index].Goal.DataType is GoalDataType.Decimal or GoalDataType.Integer or GoalDataType.Scale)
                             {
                                 <RmField Label="@Localizer["GoalMinValueLabel"]">
                                     <RmNumberInput DataType="_model.Goals[index].Goal.DataType"
@@ -158,6 +199,18 @@
                                                    aria-label="@Localizer["GoalMaxValueLabel"]" />
                                 </RmField>
                             }
+                        </div>
+
+                        @* Live preview of the check-in control, so the user sees what they will
+                           fill in every week before committing to the goal definition. *@
+                        <div class="goal__preview">
+                            <span class="goal__preview-label">@Localizer["GoalPreviewLabel"]</span>
+                            <RmGoalValueInput DataType="_model.Goals[index].Goal.DataType"
+                                              MinValue="_model.Goals[index].Goal.MinValue"
+                                              MaxValue="_model.Goals[index].Goal.MaxValue"
+                                              Label="@Localizer["GoalPreviewLabel"]"
+                                              Value="_previewValues[index]"
+                                              ValueChanged="v => _previewValues[index] = v" />
                         </div>
 
                         @if (_model.Goals[index].Goal.DataType != GoalDataType.Boolean)
@@ -231,6 +284,7 @@
                                     </div>
                                 </RmCard>
                             </div>
+                            <p class="goal__partner-hint">@Localizer["PartnerTargetHint"]</p>
                         }
                     </RmCard>
                 }
@@ -241,7 +295,7 @@
                 </RmButton>
             </div>
 
-            <div class="create__step" hidden="@(_step != 2)">
+            <div class="create__step" hidden="@(_step != 3)">
                 <RmCard>
                     <div class="create__summary-head">
                         <span class="rm-icon-tile rm-icon-tile--lg">@(_model.Icon ?? "🎯")</span>
@@ -249,12 +303,42 @@
                             <p class="create__summary-name">@(string.IsNullOrWhiteSpace(_model.Name) ? Localizer["CreateProjectUnnamed"] : _model.Name)</p>
                             <p class="create__summary-meta">
                                 @_model.StartDate.ToString("dd/MM/yyyy") — @_model.EndDate.ToString("dd/MM/yyyy")
-                                · @Localizer["ProjectGoalCount", _model.Goals.Count]
+                                · @FrequencyLabel(_model.Frequency)
                             </p>
                         </div>
                     </div>
-                    <p class="create__summary-text">@Localizer["CreateProjectInviteHint"]</p>
                 </RmCard>
+
+                <h3 class="create__review-heading">@Localizer["ReviewGoalsTitle"]</h3>
+                <ul class="create__review-goals">
+                    @for (var i = 0; i < _model.Goals.Count; i++)
+                    {
+                        var index = i;
+                        var goal = _model.Goals[index];
+                        <li class="create__review-goal">
+                            <span class="create__review-goal-label">@(string.IsNullOrWhiteSpace(goal.Goal.Label) ? Localizer["GoalLabel", index + 1] : goal.Goal.Label)</span>
+                            <span class="create__review-goal-type">@GoalTypeLabel(goal.Goal.DataType)</span>
+                            <span class="create__review-goal-mine">
+                                <span class="create__review-goal-caption">@Localizer["ReviewMyTargetShort"]</span>
+                                <GoalValueDisplay Value="goal.CreatorTarget.TargetValue"
+                                                  DataType="goal.Goal.DataType"
+                                                  Unit="goal.Goal.Unit"
+                                                  MinValue="goal.Goal.MinValue"
+                                                  MaxValue="goal.Goal.MaxValue" />
+                            </span>
+                            <span class="create__review-goal-partner">
+                                <span class="create__review-goal-caption">@Localizer["ReviewPartnerTargetShort"]</span>
+                                <GoalValueDisplay Value="goal.SuggestedPartnerTarget?.TargetValue"
+                                                  DataType="goal.Goal.DataType"
+                                                  Unit="goal.Goal.Unit"
+                                                  MinValue="goal.Goal.MinValue"
+                                                  MaxValue="goal.Goal.MaxValue" />
+                            </span>
+                        </li>
+                    }
+                </ul>
+
+                <p class="create__summary-text">@Localizer["CreateProjectInviteHint"]</p>
 
                 @if (!string.IsNullOrEmpty(_error))
                 {
@@ -275,14 +359,14 @@
                     </RmButton>
                 }
 
-                @if (_step < Steps.Length - 1)
+                @if (_step > 0 && _step < Steps.Length - 1)
                 {
                     <RmButton @onclick="() => _step++">
                         @Localizer["StepNext"]
                         <RmIcon Name="arrow-right" />
                     </RmButton>
                 }
-                else
+                else if (_step == Steps.Length - 1)
                 {
                     <button type="submit" class="rm-btn rm-btn--primary" disabled="@_isLoading">
                         @(_isLoading ? Localizer["Creating"] : Localizer["CreateProjectButton"])
@@ -294,9 +378,11 @@
 </div>
 
 @code {
-    private static readonly string[] IconChoices = ["🌊", "🏃", "💪", "🥗", "🧘", "🚴", "🏋️", "🎯"];
+    private static readonly string[] IconChoices = ["🌊", "🏃", "💪", "🥗", "🧘", "🚴", "🏋️", "🎯", "📚", "💻", "💰"];
 
     private CreateProjectRequest _model = new();
+    private List<decimal?> _previewValues = new();
+    private string _selectedTemplateKey = GoalTemplates.BlankKey;
     private string? _error;
     private bool _isLoading;
     private bool _success;
@@ -305,9 +391,10 @@
 
     private (int Index, string Icon, string Label)[] Steps =>
     [
-        (0, "pencil", Localizer["CreateStepDetails"]),
-        (1, "target", Localizer["GoalsSectionTitle"]),
-        (2, "mail", Localizer["CreateStepInvite"])
+        (0, "layers", Localizer["CreateStepTemplates"]),
+        (1, "pencil", Localizer["CreateStepDetails"]),
+        (2, "target", Localizer["CreateStepGoals"]),
+        (3, "check", Localizer["CreateStepReview"])
     ];
 
     protected override void OnInitialized()
@@ -318,11 +405,61 @@
         }
 
         _model.Icon ??= IconChoices[0];
+        SyncPreviewValues();
+    }
+
+    private void ApplyTemplate(GoalTemplate template)
+    {
+        _selectedTemplateKey = template.Key;
+        _model.Name = template.Name;
+        _model.Icon = template.Icon;
+        _model.Frequency = template.Frequency;
+
+        _model.Goals.Clear();
+        foreach (var g in template.Goals)
+        {
+            var target = new GoalTargetRequest
+            {
+                Baseline = g.Baseline,
+                TargetValue = g.TargetValue,
+                Direction = g.Direction
+            };
+            _model.Goals.Add(new CreateProjectGoalRequest
+            {
+                Goal = new GoalFieldRequest
+                {
+                    Label = g.Label,
+                    DataType = g.DataType,
+                    Unit = g.Unit,
+                    MinValue = g.Min,
+                    MaxValue = g.Max
+                },
+                CreatorTarget = target,
+                SuggestedPartnerTarget = Copy(target)
+            });
+        }
+
+        SyncPreviewValues();
+        _step = 1;
+
+        Logger.LogInformation("Template '{TemplateKey}' applied to new project draft", template.Key);
+    }
+
+    private void StartFromBlank()
+    {
+        _selectedTemplateKey = GoalTemplates.BlankKey;
+        if (_model.Goals.Count == 0)
+        {
+            _model.Goals.Add(CreateDefaultGoalRequest());
+        }
+        SyncPreviewValues();
+        _step = 1;
     }
 
     private void AddGoal()
     {
         _model.Goals.Add(CreateDefaultGoalRequest());
+        SyncPreviewValues();
     }
 
     private static CreateProjectGoalRequest CreateDefaultGoalRequest()
@@ -349,8 +486,52 @@
         if (_model.Goals.Count > 1)
         {
             _model.Goals.RemoveAt(index);
+            SyncPreviewValues();
         }
     }
+
+    /// <summary>Keeps the preview value list in sync with the goal count, defaulting each
+    /// preview to a sensible value for its data type so the control renders meaningfully.</summary>
+    private void SyncPreviewValues()
+    {
+        while (_previewValues.Count < _model.Goals.Count)
+        {
+            var goal = _model.Goals[_previewValues.Count];
+            _previewValues.Add(DefaultPreviewValue(goal));
+        }
+        while (_previewValues.Count > _model.Goals.Count)
+        {
+            _previewValues.RemoveAt(_previewValues.Count - 1);
+        }
+    }
+
+    private static decimal? DefaultPreviewValue(CreateProjectGoalRequest goal) => goal.Goal.DataType switch
+    {
+        GoalDataType.Boolean => 1m,
+        GoalDataType.Percent => 80m,
+        GoalDataType.Scale => goal.Goal.MaxValue ?? 5m,
+        GoalDataType.Integer => goal.CreatorTarget.TargetValue ?? 0m,
+        _ => goal.CreatorTarget.TargetValue ?? 0m
+    };
+
+    private string GoalTypeLabel(GoalDataType dataType) => dataType switch
+    {
+        GoalDataType.Decimal => Localizer["GoalTypeLabelDecimal"],
+        GoalDataType.Integer => Localizer["GoalTypeLabelInteger"],
+        GoalDataType.Percent => Localizer["GoalTypeLabelPercent"],
+        GoalDataType.Boolean => Localizer["GoalTypeLabelBoolean"],
+        GoalDataType.Scale => Localizer["GoalTypeLabelScale"],
+        _ => dataType.ToString()
+    };
+
+    private string FrequencyLabel(ProjectFrequency frequency) => frequency switch
+    {
+        ProjectFrequency.Daily => Localizer["FrequencyDaily"],
+        ProjectFrequency.Weekly => Localizer["FrequencyWeekly"],
+        ProjectFrequency.Biweekly => Localizer["FrequencyBiweekly"],
+        ProjectFrequency.Monthly => Localizer["FrequencyMonthly"],
+        _ => frequency.ToString()
+    };
 
     private async Task HandleSubmit()
     {
@@ -433,6 +614,12 @@
             _model.Goals[index].SuggestedPartnerTarget!.TargetValue = 1m;
             _model.Goals[index].SuggestedPartnerTarget!.Direction = GoalDirection.Reach;
         }
+        else if (value == GoalDataType.Percent)
+        {
+            _model.Goals[index].Goal.Unit = "%";
+            _model.Goals[index].Goal.MinValue = 0m;
+            _model.Goals[index].Goal.MaxValue = 100m;
+        }
         else if (value == GoalDataType.Scale)
         {
             _model.Goals[index].Goal.MinValue ??= 1m;
@@ -448,6 +635,8 @@
             if (_model.Goals[index].SuggestedPartnerTarget!.Direction is GoalDirection.Decrease or GoalDirection.Maintain)
                 _model.Goals[index].SuggestedPartnerTarget!.Direction = GoalDirection.Reach;
         }
+
+        _previewValues[index] = DefaultPreviewValue(_model.Goals[index]);
     }
 
     private string GoalValueMessage(

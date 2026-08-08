@@ -820,7 +820,7 @@
     <value>Icon</value>
   </data>
   <data name="ProjectNamePlaceholder" xml:space="preserve">
-    <value>e.g. Summer Project</value>
+    <value>e.g. Our Agreement</value>
   </data>
   <data name="CreateProjectSubtitle" xml:space="preserve">
     <value>Set up the agreement. Your partner can suggest changes before it starts.</value>
@@ -1007,5 +1007,62 @@
   </data>
   <data name="GoalProposalCommentTooLong" xml:space="preserve">
     <value>Comment cannot exceed 500 characters.</value>
+  </data>
+  <data name="CreateStepTemplates" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="CreateStepGoals" xml:space="preserve">
+    <value>Goals</value>
+  </data>
+  <data name="CreateStepReview" xml:space="preserve">
+    <value>Review</value>
+  </data>
+  <data name="TemplateStepTitle" xml:space="preserve">
+    <value>Pick a starting point</value>
+  </data>
+  <data name="TemplateStepSubtitle" xml:space="preserve">
+    <value>Use a ready-made template or start from scratch. You can edit everything next.</value>
+  </data>
+  <data name="TemplateBlankTitle" xml:space="preserve">
+    <value>Start from scratch</value>
+  </data>
+  <data name="TemplateBlankSubtitle" xml:space="preserve">
+    <value>Build your own goals one by one.</value>
+  </data>
+  <data name="TemplateGoalsCount" xml:space="preserve">
+    <value>{0} goals</value>
+  </data>
+  <data name="TemplateUseButton" xml:space="preserve">
+    <value>Use template</value>
+  </data>
+  <data name="GoalPreviewLabel" xml:space="preserve">
+    <value>You'll fill this in every check-in</value>
+  </data>
+  <data name="PartnerTargetHint" xml:space="preserve">
+    <value>Your partner can adjust their own target before the project starts.</value>
+  </data>
+  <data name="ReviewGoalsTitle" xml:space="preserve">
+    <value>Goals</value>
+  </data>
+  <data name="GoalTypeLabelDecimal" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="GoalTypeLabelInteger" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="GoalTypeLabelPercent" xml:space="preserve">
+    <value>Percentage</value>
+  </data>
+  <data name="GoalTypeLabelBoolean" xml:space="preserve">
+    <value>Yes/No</value>
+  </data>
+  <data name="GoalTypeLabelScale" xml:space="preserve">
+    <value>Scale</value>
+  </data>
+  <data name="ReviewMyTargetShort" xml:space="preserve">
+    <value>You</value>
+  </data>
+  <data name="ReviewPartnerTargetShort" xml:space="preserve">
+    <value>Partner</value>
   </data>
 </root>

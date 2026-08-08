@@ -45,6 +45,7 @@ public static class SeedData
 
         context.Projects.Add(BuildSummerProject(ana, bruno, now));
         context.Projects.Add(BuildRunningProject(ana, bruno, now));
+        context.Projects.Add(BuildCodingProject(ana, bruno, now));
 
         await context.SaveChangesAsync();
     }
@@ -153,6 +154,86 @@ public static class SeedData
             NewGoalField("Pace médio", GoalDataType.Decimal, "min/km", 3, 12, 6, bruno.Id, ana.Id)
         ]
     };
+
+    /// <summary>Active non-physical project mirroring the "Programação & Carreira" template,
+    /// so the app demonstrates its breadth beyond fitness on first login. Uses Boolean and
+    /// Scale goals to exercise those types in the seed dashboard.</summary>
+    private static Project BuildCodingProject(User ana, User bruno, DateTime now)
+    {
+        var hours = NewGoalField("Horas de código", GoalDataType.Decimal, "h", 0, 80);
+        AddTarget(hours, ana.Id, ana.Id, 5m, 15m, GoalDirection.Increase, GoalTargetStatus.Accepted, true, true);
+        AddTarget(hours, bruno.Id, bruno.Id, 3m, 12m, GoalDirection.Increase, GoalTargetStatus.Accepted, true, true);
+
+        var commits = NewGoalField("Commits/exercícios", GoalDataType.Integer, "commits", 0, 50);
+        AddTarget(commits, ana.Id, ana.Id, null, 10m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+        AddTarget(commits, bruno.Id, bruno.Id, null, 8m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+
+        var studied = NewGoalField("Estudei algo novo?", GoalDataType.Boolean, "", 0, 1);
+        AddTarget(studied, ana.Id, ana.Id, 0m, 1m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+        AddTarget(studied, bruno.Id, bruno.Id, 0m, 1m, GoalDirection.Reach, GoalTargetStatus.Accepted, true, true);
+
+        var confidence = NewGoalField("Confiança técnica", GoalDataType.Scale, "nota", 1, 5);
+        AddTarget(confidence, ana.Id, ana.Id, 2m, 4m, GoalDirection.Increase, GoalTargetStatus.Accepted, true, true);
+        AddTarget(confidence, bruno.Id, bruno.Id, 2m, 4m, GoalDirection.Increase, GoalTargetStatus.Accepted, true, true);
+
+        var project = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Code & Carreira",
+            Icon = "💻",
+            CreatorId = ana.Id,
+            PartnerId = bruno.Id,
+            StartDate = now.AddDays(-49),
+            EndDate = now.AddDays(55),
+            Frequency = ProjectFrequency.Weekly,
+            Status = ProjectStatus.Active,
+            Goals = [hours, commits, studied, confidence]
+        };
+
+        decimal[] anaHours = [5m, 7m, 8m, 10m, 9m, 12m, 14m];
+        decimal[] brunoHours = [3m, 5m, 6m, 7m, 8m, 9m, 11m];
+        decimal[] anaCommits = [4m, 6m, 8m, 7m, 9m, 10m, 11m];
+        decimal[] brunoCommits = [3m, 4m, 5m, 6m, 7m, 8m, 9m];
+        decimal[] anaStudied = [1m, 0m, 1m, 1m, 1m, 0m, 1m];
+        decimal[] brunoStudied = [0m, 1m, 1m, 0m, 1m, 1m, 1m];
+        decimal[] anaConfidence = [2m, 2m, 3m, 3m, 3m, 4m, 4m];
+        decimal[] brunoConfidence = [2m, 2m, 2m, 3m, 3m, 3m, 4m];
+
+        Feeling[] anaMood =
+        [
+            Feeling.Neutral, Feeling.Happy, Feeling.Happy, Feeling.Neutral,
+            Feeling.Happy, Feeling.Happy, Feeling.VeryHappy
+        ];
+        Feeling[] brunoMood =
+        [
+            Feeling.Sad, Feeling.Neutral, Feeling.Happy, Feeling.Happy,
+            Feeling.Neutral, Feeling.Happy, Feeling.Happy
+        ];
+
+        for (var week = 0; week < 7; week++)
+        {
+            var period = week + 1;
+            var submittedAt = now.AddDays(-((6 - week) * 7) - 2);
+
+            project.CheckIns.Add(NewCheckIn(project, ana, period, submittedAt, anaMood[week],
+            [
+                (hours, anaHours[week]),
+                (commits, anaCommits[week]),
+                (studied, anaStudied[week]),
+                (confidence, anaConfidence[week])
+            ]));
+
+            project.CheckIns.Add(NewCheckIn(project, bruno, period, submittedAt, brunoMood[week],
+            [
+                (hours, brunoHours[week]),
+                (commits, brunoCommits[week]),
+                (studied, brunoStudied[week]),
+                (confidence, brunoConfidence[week])
+            ]));
+        }
+
+        return project;
+    }
 
     private static GoalField NewGoalField(
         string label,
