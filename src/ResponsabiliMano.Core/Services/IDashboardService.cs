@@ -48,6 +48,8 @@ public sealed record DashboardMetricSeries(
     string Label,
     string Unit,
     GoalDataType DataType,
+    decimal? MinValue,
+    decimal? MaxValue,
     List<DashboardMetricTarget> Targets,
     List<DashboardSeriesEntry> Series);
 

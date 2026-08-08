@@ -61,27 +61,25 @@ public sealed class ProjectService : IProjectService
             if (string.IsNullOrWhiteSpace(goal.Label))
                 throw new ArgumentException("Goal label is required.");
 
-            if (string.IsNullOrWhiteSpace(goal.Unit))
-                throw new ArgumentException("Goal unit is required.");
-
             var label = goal.Label.Trim();
+            var (dataType, unit, minValue, maxValue, creatorTarget, partnerTarget) =
+                ApplyTypeDefaults(label, goal.DataType, goal.Unit, goal.MinValue, goal.MaxValue,
+                    goal.CreatorTarget, goal.SuggestedPartnerTarget ?? goal.CreatorTarget);
 
-            EnsureValidDefinition(label, goal.DataType, goal.MinValue, goal.MaxValue);
+            EnsureValidDefinition(label, dataType, minValue, maxValue);
 
             var goalField = new GoalField
             {
                 Id = Guid.NewGuid(),
                 Label = label,
-                DataType = goal.DataType,
-                Unit = goal.Unit.Trim(),
-                MinValue = Normalize(goal.DataType, goal.MinValue),
-                MaxValue = Normalize(goal.DataType, goal.MaxValue)
+                DataType = dataType,
+                Unit = unit,
+                MinValue = Normalize(dataType, minValue),
+                MaxValue = Normalize(dataType, maxValue)
             };
 
-            AddTarget(goalField, creatorId, creatorId, goal.CreatorTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
-
-            var partnerTarget = goal.SuggestedPartnerTarget ?? goal.CreatorTarget;
-            AddTarget(goalField, null, creatorId, partnerTarget, label, goal.DataType, goal.MinValue, goal.MaxValue);
+            AddTarget(goalField, creatorId, creatorId, creatorTarget, label, dataType, goalField.MinValue, goalField.MaxValue);
+            AddTarget(goalField, null, creatorId, partnerTarget, label, dataType, goalField.MinValue, goalField.MaxValue);
 
             project.Goals.Add(goalField);
         }
@@ -397,16 +395,25 @@ public sealed class ProjectService : IProjectService
         {
             processedLabels.Add(requested.Label);
 
-            EnsureValidDefinition(requested.Label, requested.DataType, requested.MinValue, requested.MaxValue);
+            var (_, unit, minValue, maxValue, _, _) = ApplyTypeDefaults(
+                requested.Label,
+                requested.DataType,
+                requested.Unit,
+                requested.MinValue,
+                requested.MaxValue,
+                new GoalTargetInput(null, null, GoalDirection.Reach),
+                new GoalTargetInput(null, null, GoalDirection.Reach));
+
+            EnsureValidDefinition(requested.Label, requested.DataType, minValue, maxValue);
 
             if (existingByLabel.TryGetValue(requested.Label, out var existing))
             {
                 // Preserve the existing goal (and its check-in history) while
                 // updating its definition to the requested values.
                 existing.DataType = requested.DataType;
-                existing.Unit = requested.Unit;
-                existing.MinValue = Normalize(requested.DataType, requested.MinValue);
-                existing.MaxValue = Normalize(requested.DataType, requested.MaxValue);
+                existing.Unit = unit;
+                existing.MinValue = Normalize(requested.DataType, minValue);
+                existing.MaxValue = Normalize(requested.DataType, maxValue);
             }
             else
             {
@@ -416,9 +423,9 @@ public sealed class ProjectService : IProjectService
                     ProjectId = project.Id,
                     Label = requested.Label,
                     DataType = requested.DataType,
-                    Unit = requested.Unit,
-                    MinValue = Normalize(requested.DataType, requested.MinValue),
-                    MaxValue = Normalize(requested.DataType, requested.MaxValue)
+                    Unit = unit,
+                    MinValue = Normalize(requested.DataType, minValue),
+                    MaxValue = Normalize(requested.DataType, maxValue)
                 };
                 _context.GoalFields.Add(goalField);
                 project.Goals.Add(goalField);
@@ -452,6 +459,37 @@ public sealed class ProjectService : IProjectService
 
     private static decimal? Normalize(GoalDataType dataType, decimal? value) =>
         value is { } present ? GoalValueRules.Normalize(dataType, present) : null;
+
+    private static (GoalDataType DataType, string Unit, decimal? MinValue, decimal? MaxValue, GoalTargetInput CreatorTarget, GoalTargetInput PartnerTarget)
+        ApplyTypeDefaults(
+            string label,
+            GoalDataType dataType,
+            string? unit,
+            decimal? minValue,
+            decimal? maxValue,
+            GoalTargetInput creatorTarget,
+            GoalTargetInput partnerTarget)
+    {
+        var trimmedUnit = (unit ?? string.Empty).Trim();
+
+        if (dataType == GoalDataType.Boolean)
+        {
+            var booleanTarget = new GoalTargetInput(0m, 1m, GoalDirection.Reach);
+            return (dataType, string.Empty, 0m, 1m, booleanTarget, booleanTarget);
+        }
+
+        if (string.IsNullOrWhiteSpace(trimmedUnit))
+            throw new ArgumentException("Goal unit is required.");
+
+        if (dataType == GoalDataType.Scale)
+        {
+            var scaleMin = minValue ?? 1m;
+            var scaleMax = maxValue ?? 5m;
+            return (dataType, trimmedUnit, scaleMin, scaleMax, creatorTarget, partnerTarget);
+        }
+
+        return (dataType, trimmedUnit, minValue, maxValue, creatorTarget, partnerTarget);
+    }
 
     public async Task<(int Current, int Best)> GetStreakAsync(
         Guid projectId,

@@ -551,8 +551,8 @@ components:
       enum: [0, 1, 2, 3]
     GoalDataType:
       type: integer
-      description: '0=Decimal, 1=Integer, 2=Percent'
-      enum: [0, 1, 2]
+      description: '0=Decimal, 1=Integer, 2=Percent, 3=Boolean, 4=Scale'
+      enum: [0, 1, 2, 3, 4]
     GoalDirection:
       type: integer
       description: '0=Decrease, 1=Increase, 2=Reach, 3=Maintain'

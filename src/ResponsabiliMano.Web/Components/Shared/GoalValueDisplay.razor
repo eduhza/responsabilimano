@@ -1,0 +1,41 @@
+@inject IStringLocalizer<AppStrings> Localizer
+
+<span class="@CssClass">
+    @Text
+</span>
+
+@code {
+    [Parameter]
+    public decimal? Value { get; set; }
+
+    [Parameter]
+    public GoalDataType DataType { get; set; }
+
+    [Parameter]
+    public string? Unit { get; set; }
+
+    [Parameter]
+    public decimal? MinValue { get; set; }
+
+    [Parameter]
+    public decimal? MaxValue { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string CssClass =>
+        string.IsNullOrWhiteSpace(Class) ? "goal-value" : $"goal-value {Class}";
+
+    private string Text => DataType switch
+    {
+        GoalDataType.Boolean when Value == 1m => Localizer["BooleanYes"],
+        GoalDataType.Boolean when Value == 0m => Localizer["BooleanNo"],
+        GoalDataType.Boolean => $"{DecimalInput.ToDisplay(Value * 100m)} %",
+        GoalDataType.Scale => $"{DecimalInput.ToDisplay(Value)} / {DecimalInput.ToDisplay(MaxValue ?? 5m)}",
+        GoalDataType.Percent => $"{DecimalInput.ToDisplay(Value)} %",
+        _ => AppendUnit(DecimalInput.ToDisplay(Value, DataType), Unit)
+    };
+
+    private static string AppendUnit(string value, string? unit) =>
+        string.IsNullOrWhiteSpace(unit) ? value : $"{value} {unit}";
+}

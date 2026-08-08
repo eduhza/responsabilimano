@@ -80,12 +80,18 @@ else if (_dashboard is not null)
             @foreach (var metric in _dashboard.Metrics)
             {
                 var cv = Compare(metric);
-                <RmStatCard Label="@($"{metric.Label} ({metric.Unit})")" Icon="target">
+                var label = string.IsNullOrWhiteSpace(metric.Unit)
+                    ? metric.Label
+                    : $"{metric.Label} ({metric.Unit})";
+                <RmStatCard Label="@label" Icon="target">
                     <RmCompareBar YouProgress="@cv.YouProgress"
                                   PartnerProgress="@cv.PartnerProgress"
                                   YouValue="@cv.YouValue"
                                   PartnerValue="@cv.PartnerValue"
-                                  Unit="@metric.Unit" />
+                                  DataType="metric.DataType"
+                                  Unit="metric.Unit"
+                                  MinValue="metric.MinValue"
+                                  MaxValue="metric.MaxValue" />
                 </RmStatCard>
             }
 
@@ -379,6 +385,14 @@ else if (_dashboard is not null)
             });
         }
 
+        var (yMin, yMax) = ChartRange(metric);
+        var yScale = new Dictionary<string, object?>
+        {
+            ["title"] = new { display = true, text = Localizer["DashboardValueAxis"].ToString() }
+        };
+        if (yMin is not null) yScale["min"] = yMin;
+        if (yMax is not null) yScale["max"] = yMax;
+
         return new
         {
             type = "line",
@@ -394,11 +408,20 @@ else if (_dashboard is not null)
                 scales = new
                 {
                     x = new { title = new { display = true, text = Localizer["DashboardPeriodAxis"].ToString() } },
-                    y = new { title = new { display = true, text = Localizer["DashboardValueAxis"].ToString() } }
+                    y = yScale
                 }
             }
         };
     }
+
+    private static (decimal? Min, decimal? Max) ChartRange(DashboardMetricSeries metric) => metric.DataType switch
+    {
+        GoalDataType.Boolean => (0m, 1m),
+        GoalDataType.Percent => (0m, 100m),
+        GoalDataType.Scale when metric.MinValue is not null && metric.MaxValue is not null => (metric.MinValue, metric.MaxValue),
+        _ when metric.MinValue is not null && metric.MaxValue is not null => (metric.MinValue, metric.MaxValue),
+        _ => (null, null)
+    };
 
     private string FeelingText(Feeling feeling) => feeling switch
     {

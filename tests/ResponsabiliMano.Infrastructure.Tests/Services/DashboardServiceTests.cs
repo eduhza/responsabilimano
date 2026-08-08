@@ -37,7 +37,11 @@ public class DashboardServiceTests : IDisposable
         Guid creatorId,
         Guid? partnerId = null,
         string name = "Sample",
-        decimal? targetValue = null)
+        decimal? targetValue = null,
+        GoalDataType dataType = GoalDataType.Decimal,
+        decimal? minValue = null,
+        decimal? maxValue = null,
+        string? unit = null)
     {
         var project = new Project
         {
@@ -54,9 +58,11 @@ public class DashboardServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             ProjectId = project.Id,
-            Label = "Weight",
-            DataType = GoalDataType.Decimal,
-            Unit = "kg"
+            Label = dataType == GoalDataType.Boolean ? "Worked out?" : "Weight",
+            DataType = dataType,
+            Unit = unit ?? (dataType == GoalDataType.Boolean ? "" : "kg"),
+            MinValue = minValue,
+            MaxValue = maxValue
         };
 
         if (targetValue is not null)
@@ -269,6 +275,49 @@ public class DashboardServiceTests : IDisposable
         var series = result!.Metrics[0].Series;
         Assert.Equal(3, series.Count);
         Assert.All(series, e => Assert.Equal(70m, e.AverageValue));
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_BooleanAggregatesAsRateNotAverage()
+    {
+        var creator = SeedUser("Alice", "alice@example.com");
+        var (project, goal) = SeedProject(creator.Id, dataType: GoalDataType.Boolean, minValue: 0m, maxValue: 1m, targetValue: 1m);
+
+        SeedCheckIn(project.Id, creator.Id, 1, Feeling.Happy, (goal.Id, 1m));
+        SeedCheckIn(project.Id, creator.Id, 2, Feeling.Happy, (goal.Id, 0m));
+        SeedCheckIn(project.Id, creator.Id, 3, Feeling.Happy, (goal.Id, 1m));
+        SeedCheckIn(project.Id, creator.Id, 4, Feeling.Happy, (goal.Id, 1m));
+
+        var service = CreateService();
+        var result = await service.GetDashboardAsync(project.Id, creator.Id);
+
+        Assert.NotNull(result);
+        var series = result!.Metrics[0].Series;
+        Assert.Equal(4, series.Count);
+        Assert.All(series, e =>
+        {
+            Assert.True(e.Value == 0m || e.Value == 1m);
+            Assert.Equal(0.75m, e.AverageValue);
+        });
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ScaleAggregatesWithOneDecimal()
+    {
+        var creator = SeedUser("Alice", "alice@example.com");
+        var (project, goal) = SeedProject(creator.Id, dataType: GoalDataType.Scale, minValue: 1m, maxValue: 5m, targetValue: 5m);
+
+        SeedCheckIn(project.Id, creator.Id, 1, Feeling.Happy, (goal.Id, 3m));
+        SeedCheckIn(project.Id, creator.Id, 2, Feeling.Happy, (goal.Id, 4m));
+        SeedCheckIn(project.Id, creator.Id, 3, Feeling.Happy, (goal.Id, 5m));
+
+        var service = CreateService();
+        var result = await service.GetDashboardAsync(project.Id, creator.Id);
+
+        Assert.NotNull(result);
+        var series = result!.Metrics[0].Series;
+        Assert.Equal(3, series.Count);
+        Assert.All(series, e => Assert.Equal(4.0m, e.AverageValue));
     }
 
     [Fact]
